@@ -9,6 +9,8 @@ export interface ResumenFinanciero {
     monedaSimbolo: string;
     sueldoBaseMensual: number;
     diaPagoSueldo: number;
+    tipoCambioUSD: number;
+    metaAhorroMensual: number;
   };
   ingresos: Array<{
     id: string;
@@ -16,6 +18,9 @@ export interface ResumenFinanciero {
     tipo: TipoIngreso;
     concepto: string;
     monto: number;
+    monedaOriginal: string;
+    montoOriginal?: number | null;
+    tipoCambio: number;
     fechaEsperada: string;
     recibido: boolean;
   }>;
@@ -36,9 +41,11 @@ export interface ResumenFinanciero {
     cuotaId: string;
     banco: string;
     concepto: string;
-    numeroCuota: number;
-    cuotasTotales: number;
+    montoTotal: number;
     montoCuota: number;
+    cuotaActual: number;
+    cuotasTotales: number;
+    tasaInteresAnual: number;
     diaPago: number;
     estado: EstadoPago;
     fechaPagoReal?: string | null;
@@ -62,6 +69,9 @@ export interface ResumenFinanciero {
     id: string;
     concepto: string;
     monto: number;
+    monedaOriginal: string;
+    montoOriginal?: number | null;
+    tipoCambio: number;
     fechaGasto: string;
     metodoPago: MetodoPago;
     categoria: string;
@@ -73,7 +83,9 @@ export interface ResumenFinanciero {
   totalPagado: number;
   totalAdelantado: number;
   totalPendiente: number;
-  dineroDisponible: number;
+  dineroDisponibleBruto: number;
+  metaAhorro: number;
+  dineroDisponibleNeto: number;
   proyeccionMultiMes: Array<{
     periodo: string;
     ingresos: number;
@@ -94,6 +106,8 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
         monedaSimbolo: 'S/',
         sueldoBaseMensual: 6000.00,
         diaPagoSueldo: 30,
+        tipoCambioUSD: 4.00,
+        metaAhorroMensual: 1000.00,
       },
     });
   }
@@ -119,7 +133,7 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     ingresosDb.push(nuevoSueldo);
   }
 
-  // Comprobar si el mes corresponde a Gratificación (Julio 07 o Diciembre 12)
+  // Gratificación (Julio 07 o Diciembre 12)
   const mesNumero = parseInt(periodo.split('-')[1], 10);
   const tieneGrati = ingresosDb.some((i) => i.tipo === TipoIngreso.GRATIFICACION);
   if ((mesNumero === 7 || mesNumero === 12) && !tieneGrati) {
@@ -136,7 +150,7 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     ingresosDb.push(nuevaGrati);
   }
 
-  // Comprobar si corresponde a Utilidades (Marzo 03)
+  // Utilidades (Marzo 03)
   const tieneUtilidades = ingresosDb.some((i) => i.tipo === TipoIngreso.UTILIDADES);
   if (mesNumero === 3 && !tieneUtilidades) {
     const nuevaUtilidad = await prisma.ingresoMes.create({
@@ -157,6 +171,9 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     tipo: i.tipo,
     concepto: i.concepto,
     monto: Number(i.monto),
+    monedaOriginal: i.monedaOriginal,
+    montoOriginal: i.montoOriginal ? Number(i.montoOriginal) : null,
+    tipoCambio: Number(i.tipoCambio),
     fechaEsperada: i.fechaEsperada.toISOString(),
     recibido: i.recibido,
   }));
@@ -181,7 +198,6 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
   for (const cf of costosFijosBase) {
     let reg = cf.registrosMes[0];
     if (!reg) {
-      // Crear registro automático para este periodo si aún no existe
       reg = await prisma.registroCostoFijoMes.create({
         data: {
           costoFijoId: cf.id,
@@ -224,7 +240,6 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
   for (const p of prestamosDb) {
     let cuota = p.cuotas[0];
     if (!cuota) {
-      // Calcular número de cuota correspondiente al periodo
       const fechaInicio = new Date(p.fechaInicio);
       const [pAnio, pMes] = periodo.split('-').map(Number);
       const mesesDiferencia = (pAnio - fechaInicio.getFullYear()) * 12 + (pMes - (fechaInicio.getMonth() + 1)) + 1;
@@ -250,9 +265,11 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
         cuotaId: cuota.id,
         banco: p.banco,
         concepto: p.concepto,
-        numeroCuota: cuota.numeroCuota,
-        cuotasTotales: p.cuotasTotales,
+        montoTotal: Number(p.montoTotal),
         montoCuota: montoNum,
+        cuotaActual: cuota.numeroCuota,
+        cuotasTotales: p.cuotasTotales,
+        tasaInteresAnual: Number(p.tasaInteresAnual),
         diaPago: p.diaPago,
         estado: cuota.estado,
         fechaPagoReal: cuota.fechaPagoReal ? cuota.fechaPagoReal.toISOString() : null,
@@ -275,7 +292,6 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     orderBy: { nombre: 'asc' },
   });
 
-  // También obtener gastos de tarjetas para el siguiente periodo (los que pasaron corte)
   const [sAnio, sMes] = periodo.split('-').map(Number);
   const nextDate = new Date(sAnio, sMes, 1);
   const siguientePeriodo = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
@@ -311,6 +327,9 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
         id: g.id,
         concepto: g.concepto,
         monto: Number(g.monto),
+        monedaOriginal: g.monedaOriginal,
+        montoOriginal: g.montoOriginal ? Number(g.montoOriginal) : null,
+        tipoCambio: Number(g.tipoCambio),
         fechaGasto: g.fechaGasto.toISOString(),
         categoria: g.categoria?.nombre || 'General',
         estado: g.estado,
@@ -323,6 +342,9 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
         id: g.id,
         concepto: g.concepto,
         monto: Number(g.monto),
+        monedaOriginal: g.monedaOriginal,
+        montoOriginal: g.montoOriginal ? Number(g.montoOriginal) : null,
+        tipoCambio: Number(g.tipoCambio),
         fechaGasto: g.fechaGasto.toISOString(),
         categoria: g.categoria?.nombre || 'General',
         estado: g.estado,
@@ -332,7 +354,7 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     });
   }
 
-  // 6. Gastos Directos (Débito, Efectivo, Transferencia)
+  // 6. Gastos Directos
   const gastosDirectosDb = await prisma.gasto.findMany({
     where: {
       periodoPago: periodo,
@@ -346,6 +368,9 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     id: g.id,
     concepto: g.concepto,
     monto: Number(g.monto),
+    monedaOriginal: g.monedaOriginal,
+    montoOriginal: g.montoOriginal ? Number(g.montoOriginal) : null,
+    tipoCambio: Number(g.tipoCambio),
     fechaGasto: g.fechaGasto.toISOString(),
     metodoPago: g.metodoPago,
     categoria: g.categoria?.nombre || 'General',
@@ -355,26 +380,23 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
 
   const totalGastosDirectos = gastosDirectos.reduce((acc, g) => acc + g.monto, 0);
 
-  // 7. Cálculo de Totales por Estado (Pagado, Adelantado, Pendiente)
+  // 7. Cálculos de Totales
   let totalPagado = 0;
   let totalAdelantado = 0;
   let totalPendiente = 0;
 
-  // Costos fijos
   for (const cf of costosFijos) {
     if (cf.estado === EstadoPago.PAGADO) totalPagado += cf.monto;
     else if (cf.estado === EstadoPago.ADELANTADO) totalAdelantado += cf.monto;
     else totalPendiente += cf.monto;
   }
 
-  // Préstamos
   for (const p of prestamos) {
     if (p.estado === EstadoPago.PAGADO) totalPagado += p.montoCuota;
     else if (p.estado === EstadoPago.ADELANTADO) totalAdelantado += p.montoCuota;
     else totalPendiente += p.montoCuota;
   }
 
-  // Tarjetas
   for (const t of tarjetasCredito) {
     for (const g of t.gastosPeriodo) {
       if (g.estado === EstadoPago.PAGADO) totalPagado += g.monto;
@@ -383,7 +405,6 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     }
   }
 
-  // Gastos Directos
   for (const g of gastosDirectos) {
     if (g.estado === EstadoPago.PAGADO) totalPagado += g.monto;
     else if (g.estado === EstadoPago.ADELANTADO) totalAdelantado += g.monto;
@@ -391,9 +412,11 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
   }
 
   const totalEgresos = totalCostosFijos + totalPrestamos + totalTarjetas + totalGastosDirectos;
-  const dineroDisponible = totalIngresos - totalEgresos;
+  const dineroDisponibleBruto = totalIngresos - totalEgresos;
+  const metaAhorro = Number(config.metaAhorroMensual || 1000);
+  const dineroDisponibleNeto = dineroDisponibleBruto - metaAhorro;
 
-  // 8. Proyección Multi-Mes (Línea de tiempo de 6 meses desde el periodo actual)
+  // 8. Proyección Multi-Mes
   const proyeccionMultiMes = await getMultiMesProyeccion(periodo, 6);
 
   return {
@@ -403,6 +426,8 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
       monedaSimbolo: config.monedaSimbolo,
       sueldoBaseMensual: Number(config.sueldoBaseMensual),
       diaPagoSueldo: config.diaPagoSueldo,
+      tipoCambioUSD: Number(config.tipoCambioUSD || 4.00),
+      metaAhorroMensual: metaAhorro,
     },
     ingresos,
     totalIngresos,
@@ -418,7 +443,9 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     totalPagado,
     totalAdelantado,
     totalPendiente,
-    dineroDisponible,
+    dineroDisponibleBruto,
+    metaAhorro,
+    dineroDisponibleNeto,
     proyeccionMultiMes,
   };
 }
@@ -430,7 +457,6 @@ export async function getMultiMesProyeccion(periodoInicio: string, cantidadMeses
   const config = await prisma.configuracionUsuario.findFirst();
   const sueldoBase = Number(config?.sueldoBaseMensual || 6000);
 
-  // Costos fijos base activos
   const fijosActivos = await prisma.costoFijo.aggregate({
     where: { activo: true },
     _sum: { monto: true },
@@ -446,7 +472,6 @@ export async function getMultiMesProyeccion(periodoInicio: string, cantidadMeses
     const esGrati = pMes === 7 || pMes === 12;
     const esUtilidad = pMes === 3;
 
-    // Ingresos del periodo en BD
     const ingresosDb = await prisma.ingresoMes.findMany({ where: { periodo: p } });
     let totalIngresos = ingresosDb.reduce((acc, curr) => acc + Number(curr.monto), 0);
 
@@ -456,15 +481,12 @@ export async function getMultiMesProyeccion(periodoInicio: string, cantidadMeses
       if (esUtilidad) totalIngresos += sueldoBase * 1.5;
     }
 
-    // Egresos del periodo en BD
-    // Préstamos para el mes
     const prestamosCuotas = await prisma.cuotaPrestamo.aggregate({
       where: { periodo: p },
       _sum: { monto: true },
     });
     const totalPrestamos = Number(prestamosCuotas._sum.monto || 0);
 
-    // Gastos asignados para el mes
     const gastosMes = await prisma.gasto.aggregate({
       where: { periodoPago: p },
       _sum: { monto: true },
@@ -490,6 +512,9 @@ export async function getMultiMesProyeccion(periodoInicio: string, cantidadMeses
 export async function registrarNuevoGasto(params: {
   concepto: string;
   monto: number;
+  monedaOriginal?: string;
+  montoOriginal?: number;
+  tipoCambio?: number;
   fechaGasto: string | Date;
   metodoPago: MetodoPago;
   tarjetaId?: string;
@@ -501,6 +526,9 @@ export async function registrarNuevoGasto(params: {
   const {
     concepto,
     monto,
+    monedaOriginal = 'PEN',
+    montoOriginal,
+    tipoCambio = 4.00,
     fechaGasto,
     metodoPago,
     tarjetaId,
@@ -521,16 +549,15 @@ export async function registrarNuevoGasto(params: {
     const calculo = calcularPeriodoFacturacion(fecha, diaCorte, diaPago);
     periodoInicial = calculo.periodoPago;
   } else {
-    // Si es débito/efectivo, impacta en el mes de la fecha del gasto
     const anio = fecha.getFullYear();
     const mes = String(fecha.getMonth() + 1).padStart(2, '0');
     periodoInicial = `${anio}-${mes}`;
   }
 
   if (totalCuotas > 1 && metodoPago === MetodoPago.TARJETA_CREDITO) {
-    // Distribuir en cuotas
     const periodos = calcularCuotasPeriodos(periodoInicial, totalCuotas);
     const montoCuota = Number((monto / totalCuotas).toFixed(2));
+    const montoOrigCuota = montoOriginal ? Number((montoOriginal / totalCuotas).toFixed(2)) : null;
     const padreId = crypto.randomUUID();
 
     const gastosCreados = [];
@@ -540,6 +567,9 @@ export async function registrarNuevoGasto(params: {
           id: i === 0 ? padreId : undefined,
           concepto: `${concepto} (Cuota ${i + 1}/${totalCuotas})`,
           monto: montoCuota,
+          monedaOriginal,
+          montoOriginal: montoOrigCuota,
+          tipoCambio,
           fechaGasto: fecha,
           periodoPago: periodos[i],
           metodoPago,
@@ -560,6 +590,9 @@ export async function registrarNuevoGasto(params: {
       data: {
         concepto,
         monto,
+        monedaOriginal,
+        montoOriginal: montoOriginal || null,
+        tipoCambio,
         fechaGasto: fecha,
         periodoPago: periodoInicial,
         metodoPago,

@@ -33,6 +33,9 @@ export async function POST(request: NextRequest) {
     const result = await registrarNuevoGasto({
       concepto: body.concepto,
       monto: parseFloat(body.monto),
+      monedaOriginal: body.monedaOriginal || 'PEN',
+      montoOriginal: body.montoOriginal ? parseFloat(body.montoOriginal) : undefined,
+      tipoCambio: body.tipoCambio ? parseFloat(body.tipoCambio) : 4.00,
       fechaGasto: body.fechaGasto || new Date(),
       metodoPago: body.metodoPago,
       tarjetaId: body.tarjetaId,

@@ -260,7 +260,7 @@ export function FijosClient() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {prestamos.map((p) => {
-              const progreso = Math.round((p.numeroCuota / p.cuotasTotales) * 100);
+              const progreso = Math.round((p.cuotaActual / p.cuotasTotales) * 100);
               const isLoading = loadingAction === `cuota-${p.cuotaId}`;
 
               return (
@@ -284,7 +284,7 @@ export function FijosClient() {
                         {formatMoney(p.montoCuota, moneda)}
                       </div>
                       <div className="text-[11px] text-muted-foreground font-semibold">
-                        Cuota {p.numeroCuota} de {p.cuotasTotales}
+                        Cuota {p.cuotaActual} de {p.cuotasTotales}
                       </div>
                     </div>
                   </div>

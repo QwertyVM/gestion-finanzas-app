@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
-import { Settings, CreditCard, DollarSign, Plus, CheckCircle2 } from 'lucide-react';
+import { Settings, CreditCard, DollarSign, Plus, PiggyBank, ArrowRightLeft } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function ConfiguracionClient() {
   const { resumen, refresh } = useFinanzas();
   const [sueldoBase, setSueldoBase] = useState('6000');
-  const [moneda, setMoneda] = useState('S/');
+  const [tipoCambio, setTipoCambio] = useState('4.00');
+  const [metaAhorro, setMetaAhorro] = useState('1000');
   const [diaPago, setDiaPago] = useState('30');
   const [savingConfig, setSavingConfig] = useState(false);
 
@@ -24,7 +25,8 @@ export function ConfiguracionClient() {
   useEffect(() => {
     if (resumen?.config) {
       setSueldoBase(String(resumen.config.sueldoBaseMensual));
-      setMoneda(resumen.config.monedaSimbolo);
+      setTipoCambio(String(resumen.config.tipoCambioUSD || '4.00'));
+      setMetaAhorro(String(resumen.config.metaAhorroMensual || '1000'));
       setDiaPago(String(resumen.config.diaPagoSueldo));
     }
   }, [resumen]);
@@ -38,13 +40,14 @@ export function ConfiguracionClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sueldoBaseMensual: parseFloat(sueldoBase),
-          monedaSimbolo: moneda,
+          tipoCambioUSD: parseFloat(tipoCambio),
+          metaAhorroMensual: parseFloat(metaAhorro),
           diaPagoSueldo: parseInt(diaPago, 10),
         }),
       });
 
       if (!res.ok) throw new Error('Error al guardar configuración');
-      toast.success('Configuración guardada correctamente');
+      toast.success('Ajustes guardados correctamente');
       await refresh();
     } catch (err: any) {
       toast.error(err.message || 'Error al guardar');
@@ -88,29 +91,29 @@ export function ConfiguracionClient() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-300">
+    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
       <div>
         <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
           <Settings className="w-6 h-6 text-sky-500" />
-          <span>Configuración de Finanzas</span>
+          <span>Ajustes Generales</span>
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Ajusta tu sueldo base mensual habitual, moneda y administra tus tarjetas de crédito con su día de corte.
+          Configuración de tu sueldo base, tipo de cambio fijo para compras en dólares, meta de ahorro y tarjetas.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Parámetros de Sueldo y Moneda */}
+        {/* Parámetros Financieros */}
         <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-4">
-          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <DollarSign className="w-5 h-5 text-emerald-500" />
-            <span>Sueldo & Moneda</span>
+          <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <DollarSign className="w-4 h-4 text-emerald-500" />
+            <span>Sueldo, Tipo de Cambio & Ahorro</span>
           </h2>
 
           <form onSubmit={handleGuardarConfig} className="space-y-4 text-xs">
             <div className="space-y-1.5">
               <label className="font-semibold text-foreground">
-                Sueldo Base Mensual Planilla:
+                Sueldo Base Mensual (S/):
               </label>
               <input
                 type="number"
@@ -118,54 +121,59 @@ export function ConfiguracionClient() {
                 required
                 value={sueldoBase}
                 onChange={(e) => setSueldoBase(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground font-bold text-sm"
+                className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground font-bold"
               />
-              <span className="text-[11px] text-muted-foreground block">
-                Se usará como base para proyectar cada mes y para el cálculo de Gratificaciones (Julio y Diciembre).
-              </span>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
-                <label className="font-semibold text-foreground">Moneda:</label>
-                <select
-                  value={moneda}
-                  onChange={(e) => setMoneda(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-background border border-border text-foreground outline-none"
-                >
-                  <option value="S/">Soles (S/)</option>
-                  <option value="$">Dólares ($)</option>
-                </select>
+                <label className="font-semibold text-foreground flex items-center gap-1">
+                  <ArrowRightLeft className="w-3.5 h-3.5 text-sky-500" />
+                  <span>Tipo de Cambio USD:</span>
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  required
+                  value={tipoCambio}
+                  onChange={(e) => setTipoCambio(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground font-bold"
+                />
+                <span className="text-[10px] text-muted-foreground">Fijo en S/ 4.00</span>
               </div>
 
               <div className="space-y-1.5">
-                <label className="font-semibold text-foreground">Día de Pago de Sueldo:</label>
+                <label className="font-semibold text-foreground flex items-center gap-1">
+                  <PiggyBank className="w-3.5 h-3.5 text-emerald-500" />
+                  <span>Meta de Ahorro (S/):</span>
+                </label>
                 <input
                   type="number"
-                  min="1"
-                  max="31"
-                  value={diaPago}
-                  onChange={(e) => setDiaPago(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none text-foreground"
+                  step="50"
+                  required
+                  value={metaAhorro}
+                  onChange={(e) => setMetaAhorro(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground font-bold"
                 />
+                <span className="text-[10px] text-muted-foreground">Reservado del disponible</span>
               </div>
             </div>
 
             <button
               type="submit"
               disabled={savingConfig}
-              className="w-full py-2.5 px-4 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold shadow transition active:scale-98 disabled:opacity-50"
+              className="w-full py-2.5 px-4 rounded-xl bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold shadow transition active:scale-98 disabled:opacity-50"
             >
-              {savingConfig ? 'Guardando...' : 'Guardar Parámetros'}
+              {savingConfig ? 'Guardando...' : 'Guardar Ajustes'}
             </button>
           </form>
         </div>
 
-        {/* Tarjetas de Crédito Registradas */}
+        {/* Tarjetas de Crédito */}
         <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-4">
-          <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-indigo-500" />
-            <span>Tarjetas de Crédito ({resumen?.tarjetasCredito?.length || 0})</span>
+          <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+            <CreditCard className="w-4 h-4 text-indigo-500" />
+            <span>Tarjetas de Crédito & Corte</span>
           </h2>
 
           <div className="space-y-2">
@@ -175,7 +183,7 @@ export function ConfiguracionClient() {
                 className="p-3 rounded-xl bg-secondary/50 border border-border flex items-center justify-between text-xs"
               >
                 <div className="flex items-center gap-2.5">
-                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: t.color }} />
+                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
                   <div>
                     <div className="font-bold text-foreground">{t.nombre}</div>
                     <div className="text-[11px] text-muted-foreground">{t.banco}</div>
@@ -183,7 +191,7 @@ export function ConfiguracionClient() {
                 </div>
 
                 <div className="text-right">
-                  <span className="font-semibold text-sky-400 block">
+                  <span className="font-bold text-sky-400 block">
                     Corte: Día {t.diaCorte}
                   </span>
                   <span className="text-[10px] text-muted-foreground">
@@ -201,16 +209,14 @@ export function ConfiguracionClient() {
               <span>Agregar otra Tarjeta</span>
             </h3>
 
-            <div className="space-y-1">
-              <input
-                type="text"
-                required
-                placeholder="Nombre (ej. Interbank Amex Black)"
-                value={nombreTarjeta}
-                onChange={(e) => setNombreTarjeta(e.target.value)}
-                className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none text-foreground"
-              />
-            </div>
+            <input
+              type="text"
+              required
+              placeholder="Nombre (ej. Interbank Amex Black)"
+              value={nombreTarjeta}
+              onChange={(e) => setNombreTarjeta(e.target.value)}
+              className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none text-foreground"
+            />
 
             <div className="grid grid-cols-3 gap-2">
               <input
@@ -224,7 +230,7 @@ export function ConfiguracionClient() {
                 type="number"
                 min="1"
                 max="31"
-                placeholder="Día Corte (10)"
+                placeholder="Corte (10)"
                 value={diaCorte}
                 onChange={(e) => setDiaCorte(e.target.value)}
                 className="px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none text-foreground"
@@ -233,7 +239,7 @@ export function ConfiguracionClient() {
                 type="number"
                 min="1"
                 max="31"
-                placeholder="Día Pago (30)"
+                placeholder="Pago (30)"
                 value={diaPagoTarjeta}
                 onChange={(e) => setDiaPagoTarjeta(e.target.value)}
                 className="px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none text-foreground"

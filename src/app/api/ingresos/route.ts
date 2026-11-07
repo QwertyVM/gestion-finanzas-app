@@ -4,7 +4,7 @@ import { TipoIngreso } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   try {
-    const { periodo, tipo, concepto, monto, fechaEsperada, recibido } = await request.json();
+    const { periodo, tipo, concepto, monto, monedaOriginal = 'PEN', montoOriginal, tipoCambio = 4.00, fechaEsperada, recibido } = await request.json();
 
     const ingreso = await prisma.ingresoMes.upsert({
       where: {
@@ -16,6 +16,9 @@ export async function POST(request: NextRequest) {
       },
       update: {
         monto: parseFloat(monto),
+        monedaOriginal,
+        montoOriginal: montoOriginal ? parseFloat(montoOriginal) : null,
+        tipoCambio: parseFloat(tipoCambio),
         fechaEsperada: new Date(fechaEsperada),
         recibido: !!recibido,
         fechaRecibido: recibido ? new Date() : null,
@@ -25,6 +28,9 @@ export async function POST(request: NextRequest) {
         tipo: tipo as TipoIngreso,
         concepto,
         monto: parseFloat(monto),
+        monedaOriginal,
+        montoOriginal: montoOriginal ? parseFloat(montoOriginal) : null,
+        tipoCambio: parseFloat(tipoCambio),
         fechaEsperada: new Date(fechaEsperada),
         recibido: !!recibido,
         fechaRecibido: recibido ? new Date() : null,
@@ -32,6 +38,19 @@ export async function POST(request: NextRequest) {
     });
 
     return NextResponse.json({ success: true, data: ingreso });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+    if (!id) return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+
+    await prisma.ingresoMes.delete({ where: { id } });
+    return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
