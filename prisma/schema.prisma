@@ -1,0 +1,158 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum EstadoPago {
+  PENDIENTE
+  PAGADO
+  ADELANTADO
+}
+
+enum MetodoPago {
+  EFECTIVO_DEBITO
+  TARJETA_CREDITO
+  TRANSFERENCIA
+}
+
+enum TipoIngreso {
+  SUELDO
+  GRATIFICACION
+  UTILIDADES
+  EXTRA
+}
+
+model ConfiguracionUsuario {
+  id                String   @id @default(uuid())
+  nombre            String   @default("Víctor")
+  monedaSimbolo     String   @default("S/")
+  sueldoBaseMensual Decimal  @default(0.00) @db.Decimal(12, 2)
+  diaPagoSueldo     Int      @default(30)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model TarjetaCredito {
+  id            String   @id @default(uuid())
+  nombre        String   // Ej: BCP Visa Signature
+  banco         String   // BCP, BBVA, Interbank, etc.
+  ultimosCuatro String?  // Ej: 4521
+  diaCorte      Int      @default(10) // Día de corte (ej: 10)
+  diaPago       Int      @default(30) // Día límite de pago (fin de mes)
+  color         String   @default("#2563eb")
+  activa        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  gastos        Gasto[]
+}
+
+model Categoria {
+  id          String      @id @default(uuid())
+  nombre      String      @unique
+  icono       String?     // Nombre del ícono lucide
+  color       String?     // Código hex o color tailwind
+  esFijo      Boolean     @default(false)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  gastos      Gasto[]
+  costosFijos CostoFijo[]
+}
+
+model CostoFijo {
+  id             String                @id @default(uuid())
+  concepto       String                // Ej: Alquiler, Comida mensual, Netflix
+  monto          Decimal               @db.Decimal(12, 2)
+  diaVencimiento Int                   @default(30) // Día del mes
+  categoriaId    String?
+  categoria      Categoria?            @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  activo         Boolean               @default(true)
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  registrosMes   RegistroCostoFijoMes[]
+}
+
+model RegistroCostoFijoMes {
+  id            String     @id @default(uuid())
+  costoFijoId   String
+  costoFijo     CostoFijo  @relation(fields: [costoFijoId], references: [id], onDelete: Cascade)
+  periodo       String     // YYYY-MM (ej: "2026-11", "2026-12")
+  monto         Decimal    @db.Decimal(12, 2)
+  estado        EstadoPago @default(PENDIENTE)
+  fechaPagoReal DateTime?
+  notas         String?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([costoFijoId, periodo])
+}
+
+model Prestamo {
+  id            String          @id @default(uuid())
+  banco         String          // Ej: BCP, BBVA, Interbank
+  concepto      String          // Ej: Préstamo personal, Crédito vehicular
+  montoTotal    Decimal         @db.Decimal(12, 2)
+  montoCuota    Decimal         @db.Decimal(12, 2)
+  cuotasTotales Int
+  diaPago       Int             @default(25)
+  fechaInicio   DateTime
+  activo        Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  cuotas        CuotaPrestamo[]
+}
+
+model CuotaPrestamo {
+  id            String     @id @default(uuid())
+  prestamoId    String
+  prestamo      Prestamo   @relation(fields: [prestamoId], references: [id], onDelete: Cascade)
+  numeroCuota   Int        // Ej: 5 (de 24)
+  periodo       String     // YYYY-MM
+  monto         Decimal    @db.Decimal(12, 2)
+  estado        EstadoPago @default(PENDIENTE)
+  fechaPagoReal DateTime?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  @@unique([prestamoId, numeroCuota])
+}
+
+model Gasto {
+  id            String          @id @default(uuid())
+  concepto      String
+  monto         Decimal         @db.Decimal(12, 2)
+  fechaGasto    DateTime
+  periodoPago   String          // YYYY-MM en el que se liquida con el sueldo
+  metodoPago    MetodoPago
+  tarjetaId     String?
+  tarjeta       TarjetaCredito? @relation(fields: [tarjetaId], references: [id], onDelete: SetNull)
+  cuotaActual   Int             @default(1)
+  totalCuotas   Int             @default(1)
+  categoriaId   String?
+  categoria     Categoria?      @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  estado        EstadoPago      @default(PENDIENTE)
+  fechaPagoReal DateTime?
+  gastoPadreId  String?         // Para agrupar compras en cuotas
+  notas         String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model IngresoMes {
+  id            String      @id @default(uuid())
+  periodo       String      // YYYY-MM
+  tipo          TipoIngreso
+  concepto      String      // "Sueldo", "Gratificación Julio", "Utilidades", etc.
+  monto         Decimal     @db.Decimal(12, 2)
+  fechaEsperada DateTime
+  recibido      Boolean     @default(false)
+  fechaRecibido DateTime?
+  notas         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@unique([periodo, tipo, concepto])
+}
