@@ -196,6 +196,10 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
   let totalCostosFijos = 0;
 
   for (const cf of costosFijosBase) {
+    // Si tiene mesInicio o mesFin definidos, respetar su vigencia
+    if (cf.mesInicio && periodo < cf.mesInicio) continue;
+    if (cf.mesFin && periodo > cf.mesFin) continue;
+
     let reg = cf.registrosMes[0];
     if (!reg) {
       reg = await prisma.registroCostoFijoMes.create({
@@ -455,13 +459,7 @@ export async function getMultiMesProyeccion(periodoInicio: string, cantidadMeses
   const result = [];
 
   const config = await prisma.configuracionUsuario.findFirst();
-  const sueldoBase = Number(config?.sueldoBaseMensual || 6000);
-
-  const fijosActivos = await prisma.costoFijo.aggregate({
-    where: { activo: true },
-    _sum: { monto: true },
-  });
-  const totalFijosBase = Number(fijosActivos._sum.monto || 0);
+  const sueldoBase = Number(config?.sueldoBaseMensual || 8200);
 
   for (let i = 0; i < cantidadMeses; i++) {
     const d = new Date(initAnio, initMes - 1 + i, 1);
@@ -481,6 +479,22 @@ export async function getMultiMesProyeccion(periodoInicio: string, cantidadMeses
       if (esUtilidad) totalIngresos += sueldoBase * 1.5;
     }
 
+    // Costos fijos vigentes para este periodo
+    const fijosRegistrados = await prisma.registroCostoFijoMes.findMany({
+      where: { periodo: p },
+    });
+    let totalFijosMes = fijosRegistrados.reduce((acc, r) => acc + Number(r.monto), 0);
+    if (totalFijosMes === 0) {
+      const fijosVigentes = await prisma.costoFijo.findMany({
+        where: {
+          activo: true,
+          OR: [{ mesFin: null }, { mesFin: { gte: p } }],
+          AND: [{ OR: [{ mesInicio: null }, { mesInicio: { lte: p } }] }],
+        },
+      });
+      totalFijosMes = fijosVigentes.reduce((acc, f) => acc + Number(f.monto), 0);
+    }
+
     const prestamosCuotas = await prisma.cuotaPrestamo.aggregate({
       where: { periodo: p },
       _sum: { monto: true },
@@ -493,7 +507,7 @@ export async function getMultiMesProyeccion(periodoInicio: string, cantidadMeses
     });
     const totalGastos = Number(gastosMes._sum.monto || 0);
 
-    const egresosEstimados = totalFijosBase + totalPrestamos + totalGastos;
+    const egresosEstimados = totalFijosMes + totalPrestamos + totalGastos;
     const disponible = totalIngresos - egresosEstimados;
 
     result.push({

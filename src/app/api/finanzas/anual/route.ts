@@ -8,13 +8,7 @@ export async function GET(request: NextRequest) {
     const anio = parseInt(searchParams.get('anio') || '2026', 10);
 
     const config = await prisma.configuracionUsuario.findFirst();
-    const sueldoBase = Number(config?.sueldoBaseMensual || 6000);
-
-    const fijosActivos = await prisma.costoFijo.aggregate({
-      where: { activo: true },
-      _sum: { monto: true },
-    });
-    const totalFijosBase = Number(fijosActivos._sum.monto || 0);
+    const sueldoBase = Number(config?.sueldoBaseMensual || 8200);
 
     const resultado = [];
 
@@ -33,6 +27,22 @@ export async function GET(request: NextRequest) {
         if (esUtilidad) totalIngresos += sueldoBase * 1.5;
       }
 
+      // Costos fijos vigentes para este periodo
+      const fijosRegistrados = await prisma.registroCostoFijoMes.findMany({
+        where: { periodo },
+      });
+      let totalFijosMes = fijosRegistrados.reduce((acc, r) => acc + Number(r.monto), 0);
+      if (totalFijosMes === 0) {
+        const fijosVigentes = await prisma.costoFijo.findMany({
+          where: {
+            activo: true,
+            OR: [{ mesFin: null }, { mesFin: { gte: periodo } }],
+            AND: [{ OR: [{ mesInicio: null }, { mesInicio: { lte: periodo } }] }],
+          },
+        });
+        totalFijosMes = fijosVigentes.reduce((acc, f) => acc + Number(f.monto), 0);
+      }
+
       // Cuotas de préstamos
       const prestamosCuotas = await prisma.cuotaPrestamo.aggregate({
         where: { periodo },
@@ -47,7 +57,7 @@ export async function GET(request: NextRequest) {
       });
       const totalGastos = Number(gastosMes._sum.monto || 0);
 
-      const totalEgresos = totalFijosBase + totalPrestamos + totalGastos;
+      const totalEgresos = totalFijosMes + totalPrestamos + totalGastos;
       const disponible = totalIngresos - totalEgresos;
 
       resultado.push({
@@ -56,7 +66,7 @@ export async function GET(request: NextRequest) {
         anio,
         mesNumero: mes,
         ingresos: totalIngresos,
-        fijos: totalFijosBase,
+        fijos: totalFijosMes,
         prestamos: totalPrestamos,
         gastos: totalGastos,
         totalEgresos,
