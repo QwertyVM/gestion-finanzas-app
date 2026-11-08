@@ -77,6 +77,7 @@ export function DashboardClient() {
 
     // 2. Préstamos
     for (const p of resumen.prestamos) {
+      if (p.aplicaEsteMes === false) continue;
       list.push({
         id: `prestamo-${p.cuotaId}`,
         dbId: p.cuotaId,

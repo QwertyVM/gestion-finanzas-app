@@ -604,7 +604,9 @@ export function FijosClient() {
                         {formatMoney(p.montoCuota, moneda)}
                       </div>
                       <div className="text-[11px] text-muted-foreground font-semibold">
-                        Cuota {p.cuotaActual} de {p.cuotasTotales}
+                        {p.aplicaEsteMes === false
+                          ? (p.mensajePeriodo || `Total ${p.cuotasTotales} cuotas`)
+                          : `Cuota ${p.cuotaActual} de ${p.cuotasTotales}`}
                       </div>
                     </div>
                   </div>
@@ -629,7 +631,11 @@ export function FijosClient() {
                       <span className="text-xs text-muted-foreground block">
                         Estado en {formatPeriodoLabel(periodo)}:
                       </span>
-                      {p.estado === 'ADELANTADO' ? (
+                      {p.aplicaEsteMes === false ? (
+                        <span className="inline-flex items-center gap-1 font-semibold text-amber-500 text-xs">
+                          <Clock className="w-3.5 h-3.5" /> {p.mensajePeriodo || 'No programado este mes'}
+                        </span>
+                      ) : p.estado === 'ADELANTADO' ? (
                         <span className="inline-flex items-center gap-1 font-bold text-amber-500 text-xs">
                           <FastForward className="w-3.5 h-3.5" /> Cuota Adelantada
                         </span>
@@ -644,41 +650,47 @@ export function FijosClient() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() =>
-                          handleToggleEstadoCuota(
-                            p.cuotaId,
-                            p.estado === 'ADELANTADO' ? 'PENDIENTE' : 'ADELANTADO'
-                          )
-                        }
-                        disabled={isLoading}
-                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                          p.estado === 'ADELANTADO'
-                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                            : 'bg-secondary text-muted-foreground border-border hover:bg-secondary/80'
-                        }`}
-                      >
-                        ⚡ Adelantar
-                      </button>
+                    {p.aplicaEsteMes !== false ? (
+                      <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() =>
+                            handleToggleEstadoCuota(
+                              p.cuotaId,
+                              p.estado === 'ADELANTADO' ? 'PENDIENTE' : 'ADELANTADO'
+                            )
+                          }
+                          disabled={isLoading}
+                          className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                            p.estado === 'ADELANTADO'
+                              ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                              : 'bg-secondary text-muted-foreground border-border hover:bg-secondary/80'
+                          }`}
+                        >
+                          ⚡ Adelantar
+                        </button>
 
-                      <button
-                        onClick={() =>
-                          handleToggleEstadoCuota(
-                            p.cuotaId,
-                            p.estado === 'PAGADO' ? 'PENDIENTE' : 'PAGADO'
-                          )
-                        }
-                        disabled={isLoading}
-                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                          p.estado === 'PAGADO'
-                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                            : 'bg-secondary text-muted-foreground border-border hover:bg-secondary/80'
-                        }`}
-                      >
-                        ✅ Pagado
-                      </button>
-                    </div>
+                        <button
+                          onClick={() =>
+                            handleToggleEstadoCuota(
+                              p.cuotaId,
+                              p.estado === 'PAGADO' ? 'PENDIENTE' : 'PAGADO'
+                            )
+                          }
+                          disabled={isLoading}
+                          className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
+                            p.estado === 'PAGADO'
+                              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                              : 'bg-secondary text-muted-foreground border-border hover:bg-secondary/80'
+                          }`}
+                        >
+                          ✅ Pagado
+                        </button>
+                      </div>
+                    ) : (
+                      <span className="text-[11px] font-semibold text-muted-foreground bg-secondary px-2.5 py-1 rounded-lg border border-border">
+                        {p.periodoInicio ? `Inicia: ${formatPeriodoLabel(p.periodoInicio)}` : 'Inactivo'}
+                      </span>
+                    )}
                   </div>
                 </div>
               );

@@ -1,6 +1,7 @@
 import prisma from './prisma';
 import { EstadoPago, MetodoPago, TipoIngreso } from '@prisma/client';
 import { calcularPeriodoFacturacion, calcularCuotasPeriodos } from './billing-cycles';
+import { formatPeriodoLabel } from './utils';
 
 export interface ResumenFinanciero {
   periodo: string;
@@ -52,6 +53,10 @@ export interface ResumenFinanciero {
     diaPago: number;
     estado: EstadoPago;
     fechaPagoReal?: string | null;
+    aplicaEsteMes?: boolean;
+    periodoInicio?: string | null;
+    periodoFin?: string | null;
+    mensajePeriodo?: string | null;
   }>;
   totalPrestamos: number;
   tarjetasCredito: Array<{
@@ -135,7 +140,7 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
       where: { activo: true },
       include: {
         cuotas: {
-          where: { periodo },
+          orderBy: { numeroCuota: 'asc' },
         },
       },
       orderBy: { diaPago: 'asc' },
@@ -227,23 +232,54 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
   let totalPrestamos = 0;
 
   for (const p of prestamosDb) {
-    const cuota = p.cuotas[0];
-    if (cuota) {
-      const montoNum = Number(cuota.monto);
+    const cuotaMes = p.cuotas.find((c) => c.periodo === periodo);
+    const primeraCuota = p.cuotas[0];
+    const ultimaCuota = p.cuotas[p.cuotas.length - 1];
+
+    if (cuotaMes) {
+      const montoNum = Number(cuotaMes.monto);
       totalPrestamos += montoNum;
       prestamos.push({
         id: p.id,
-        cuotaId: cuota.id,
+        cuotaId: cuotaMes.id,
         banco: p.banco,
         concepto: p.concepto,
         montoTotal: Number(p.montoTotal),
         montoCuota: montoNum,
-        cuotaActual: cuota.numeroCuota,
+        cuotaActual: cuotaMes.numeroCuota,
         cuotasTotales: p.cuotasTotales,
         tasaInteresAnual: Number(p.tasaInteresAnual),
         diaPago: p.diaPago,
-        estado: cuota.estado,
-        fechaPagoReal: cuota.fechaPagoReal ? cuota.fechaPagoReal.toISOString() : null,
+        estado: cuotaMes.estado,
+        fechaPagoReal: cuotaMes.fechaPagoReal ? cuotaMes.fechaPagoReal.toISOString() : null,
+        aplicaEsteMes: true,
+        periodoInicio: primeraCuota?.periodo || null,
+        periodoFin: ultimaCuota?.periodo || null,
+      });
+    } else {
+      const proximaCuota = p.cuotas.find((c) => c.periodo > periodo) || ultimaCuota;
+      const esFuturo = proximaCuota && proximaCuota.periodo > periodo;
+      const mensaje = esFuturo
+        ? `Inicia en ${formatPeriodoLabel(proximaCuota.periodo)}`
+        : 'Finalizado';
+
+      prestamos.push({
+        id: p.id,
+        cuotaId: proximaCuota?.id || `preview-${p.id}`,
+        banco: p.banco,
+        concepto: p.concepto,
+        montoTotal: Number(p.montoTotal),
+        montoCuota: Number(p.montoCuota),
+        cuotaActual: proximaCuota?.numeroCuota || 1,
+        cuotasTotales: p.cuotasTotales,
+        tasaInteresAnual: Number(p.tasaInteresAnual),
+        diaPago: p.diaPago,
+        estado: EstadoPago.PENDIENTE,
+        fechaPagoReal: null,
+        aplicaEsteMes: false,
+        periodoInicio: primeraCuota?.periodo || null,
+        periodoFin: ultimaCuota?.periodo || null,
+        mensajePeriodo: mensaje,
       });
     }
   }
