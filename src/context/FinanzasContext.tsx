@@ -24,9 +24,24 @@ interface FinanzasContextType {
 const FinanzasContext = createContext<FinanzasContextType | undefined>(undefined);
 
 export function FinanzasProvider({ children }: { children: React.ReactNode }) {
-  const [periodo, setPeriodo] = useState<string>(getCurrentPeriodo());
+  const [periodo, setPeriodoState] = useState<string>(getCurrentPeriodo());
   const [resumen, setResumen] = useState<ResumenFinanciero | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Cargar periodo guardado al iniciar
+  useEffect(() => {
+    const saved = typeof window !== 'undefined' ? localStorage.getItem('finanzapp_periodo') : null;
+    if (saved && /^\d{4}-\d{2}$/.test(saved)) {
+      setPeriodoState(saved);
+    }
+  }, []);
+
+  const setPeriodo = useCallback((p: string) => {
+    setPeriodoState(p);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('finanzapp_periodo', p);
+    }
+  }, []);
 
   // Selección de items y sumatoria instantánea
   const [selectedItems, setSelectedItems] = useState<Map<string, number>>(new Map());

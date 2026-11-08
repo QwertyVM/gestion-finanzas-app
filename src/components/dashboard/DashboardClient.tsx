@@ -332,16 +332,16 @@ export function DashboardClient() {
               <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
                 Tu Dinero Libre este mes
               </span>
-              <div className="flex items-baseline gap-3">
+              <div className="flex flex-wrap items-baseline gap-2.5 sm:gap-3">
                 <span
-                  className={`text-4xl sm:text-5xl font-extrabold tracking-tight ${
+                  className={`text-3xl sm:text-5xl font-extrabold tracking-tight ${
                     disponibleEsPositivo ? 'text-slate-900 dark:text-white' : 'text-rose-600'
                   }`}
                 >
                   {formatMoney(disponibleNeto, moneda)}
                 </span>
                 <span
-                  className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                  className={`text-xs font-bold px-2.5 py-1 rounded-full shrink-0 ${
                     disponibleEsPositivo
                       ? 'bg-emerald-100/90 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60'
                       : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/60'
@@ -357,21 +357,29 @@ export function DashboardClient() {
           </div>
 
           {/* Botones de acción pasteles */}
-          <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
             <button
               onClick={() => setModalIngresoOpen(true)}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-50 hover:bg-emerald-100/90 text-emerald-900 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-200 border border-emerald-200/60 dark:border-emerald-800/40 font-bold text-xs shadow-xs transition active:scale-95"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-2xl bg-emerald-50 hover:bg-emerald-100/90 text-emerald-900 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-200 border border-emerald-200/60 dark:border-emerald-800/40 font-bold text-xs shadow-xs transition active:scale-95"
             >
-              <PlusCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>+ Registrar Ingreso</span>
+              <PlusCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+              <span>
+                <span className="hidden sm:inline">+ Registrar </span>
+                <span className="sm:hidden">+ </span>
+                Ingreso
+              </span>
             </button>
 
             <button
               onClick={() => setModalGastoOpen(true)}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100/90 text-rose-900 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 dark:text-rose-200 border border-rose-200/60 dark:border-rose-800/40 font-bold text-xs shadow-xs transition active:scale-95"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 sm:px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100/90 text-rose-900 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 dark:text-rose-200 border border-rose-200/60 dark:border-rose-800/40 font-bold text-xs shadow-xs transition active:scale-95"
             >
-              <MinusCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
-              <span>- Registrar Gasto</span>
+              <MinusCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
+              <span>
+                <span className="hidden sm:inline">- Registrar </span>
+                <span className="sm:hidden">- </span>
+                Gasto
+              </span>
             </button>
           </div>
         </div>
@@ -500,14 +508,14 @@ export function DashboardClient() {
           </div>
 
           {/* Tarjeta de Aviso Informativo del Día 10 */}
-          <div className="bg-sky-50/60 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/30 rounded-2xl p-4 text-xs space-y-1.5">
+          <div className="bg-sky-50/70 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/30 rounded-2xl p-4 text-xs space-y-1.5 shadow-xs">
             <div className="flex items-center gap-1.5 font-bold text-sky-800 dark:text-sky-300">
-              <Info className="w-3.5 h-3.5" />
+              <Info className="w-3.5 h-3.5 text-sky-600" />
               <span>Regla del Día 10</span>
             </div>
-            <p className="text-sky-900/70 dark:text-sky-300/70 text-[11px] leading-relaxed">
-              • Compras hasta el día 10 $\to$ se pagan a fin de mes.  
-              • Compras desde el día 11 $\to$ se pagan el próximo mes.
+            <p className="text-sky-900/80 dark:text-sky-300/80 text-[11px] leading-relaxed">
+              • <strong>Compras del 1 al 10</strong> → Se pagan a fin de este mes.<br />
+              • <strong>Compras del 11 a fin de mes</strong> → Se pagan con el sueldo del próximo mes.
             </p>
           </div>
         </div>
@@ -520,19 +528,19 @@ export function DashboardClient() {
               <span>Compromisos del Mes ({egresosFiltrados.length})</span>
             </h2>
 
-            {/* FILTRO PRINCIPAL DE ESTADO (Por defecto PENDIENTE) - Pasteles Suaves */}
-            <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-2xl border border-border/80 text-[11px] overflow-x-auto">
+            {/* FILTRO PRINCIPAL DE ESTADO (Por defecto PENDIENTE) - Pasteles Suaves y sin cortes */}
+            <div className="flex items-center gap-1 bg-slate-100/90 dark:bg-slate-800/80 p-1 rounded-2xl border border-border/80 text-[11px] overflow-x-auto max-w-full">
               <button
                 type="button"
                 onClick={() => setFiltroEstado('PENDIENTE')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
                   filtroEstado === 'PENDIENTE'
                     ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-200 border border-amber-200/80 dark:border-amber-800/60 shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <span>⏳ Por Pagar</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'PENDIENTE' ? 'bg-amber-200/70 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 font-extrabold' : 'bg-slate-200/60 dark:bg-slate-700'}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'PENDIENTE' ? 'bg-amber-200/80 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 font-extrabold' : 'bg-slate-200/70 dark:bg-slate-700'}`}>
                   {countPendientes}
                 </span>
               </button>
@@ -540,14 +548,14 @@ export function DashboardClient() {
               <button
                 type="button"
                 onClick={() => setFiltroEstado('ADELANTADO')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
                   filtroEstado === 'ADELANTADO'
                     ? 'bg-purple-100 text-purple-900 dark:bg-purple-950/70 dark:text-purple-200 border border-purple-200/80 dark:border-purple-800/60 shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <span>⚡ Adelantados</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'ADELANTADO' ? 'bg-purple-200/70 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 font-extrabold' : 'bg-slate-200/60 dark:bg-slate-700'}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'ADELANTADO' ? 'bg-purple-200/80 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 font-extrabold' : 'bg-slate-200/70 dark:bg-slate-700'}`}>
                   {countAdelantados}
                 </span>
               </button>
@@ -555,14 +563,14 @@ export function DashboardClient() {
               <button
                 type="button"
                 onClick={() => setFiltroEstado('PAGADO')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
                   filtroEstado === 'PAGADO'
                     ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <span>✓ Pagados</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'PAGADO' ? 'bg-emerald-200/70 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 font-extrabold' : 'bg-slate-200/60 dark:bg-slate-700'}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'PAGADO' ? 'bg-emerald-200/80 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 font-extrabold' : 'bg-slate-200/70 dark:bg-slate-700'}`}>
                   {countPagados}
                 </span>
               </button>
@@ -570,7 +578,7 @@ export function DashboardClient() {
               <button
                 type="button"
                 onClick={() => setFiltroEstado('TODOS')}
-                className={`px-2.5 py-1.5 rounded-xl font-bold transition whitespace-nowrap ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-xl font-bold transition shrink-0 ${
                   filtroEstado === 'TODOS'
                     ? 'bg-white dark:bg-slate-700 text-foreground shadow-xs border border-border/60'
                     : 'text-muted-foreground hover:text-foreground'
@@ -583,7 +591,7 @@ export function DashboardClient() {
 
           {/* Subfiltro por tipo y acción de sumatoria */}
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-1 bg-slate-100/70 dark:bg-slate-800/60 p-1 rounded-xl border border-border/60 text-[11px]">
+            <div className="flex items-center gap-1 bg-slate-100/70 dark:bg-slate-800/60 p-1 rounded-xl border border-border/60 text-[11px] overflow-x-auto max-w-full">
               {(['TODOS', 'FIJOS', 'PRESTAMOS', 'TARJETAS'] as const).map((f) => (
                 <button
                   key={f}
@@ -641,12 +649,12 @@ export function DashboardClient() {
                 <div
                   key={item.id}
                   onClick={() => setDetalleItem(item)}
-                  className={`group bg-card border rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3 transition cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm ${
+                  className={`group bg-card border rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 transition cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm ${
                     isSelected ? 'border-sky-400 bg-sky-50/20 dark:bg-sky-950/20' : 'border-border/80'
                   }`}
                 >
                   {/* Checkbox y Detalle */}
-                  <div className="flex items-center gap-3 truncate">
+                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                     <button
                       type="button"
                       onClick={(e) => {
@@ -663,9 +671,9 @@ export function DashboardClient() {
                       )}
                     </button>
 
-                    <div className="truncate space-y-0.5">
-                      <div className="font-bold text-foreground text-xs truncate group-hover:text-sky-600 dark:group-hover:text-sky-400 transition flex items-center gap-2">
-                        <span>{item.concepto}</span>
+                    <div className="min-w-0 flex-1 space-y-0.5">
+                      <div className="font-bold text-foreground text-xs truncate group-hover:text-sky-600 dark:group-hover:text-sky-400 transition flex items-center gap-1.5 sm:gap-2">
+                        <span className="truncate">{item.concepto}</span>
                         <span
                           className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider shrink-0 ${
                             item.tipo === 'FIJO'
@@ -677,12 +685,12 @@ export function DashboardClient() {
                         >
                           {item.tipo === 'FIJO' ? 'Fijo' : item.tipo === 'PRESTAMO' ? 'Préstamo' : 'Compra'}
                         </span>
-                        <ChevronRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition shrink-0" />
+                        <ChevronRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition shrink-0 hidden sm:inline" />
                       </div>
-                      <div className="text-[11px] text-muted-foreground flex items-center gap-2">
-                        <span>{item.subtexto}</span>
+                      <div className="text-[11px] text-muted-foreground flex items-center gap-2 truncate">
+                        <span className="truncate">{item.subtexto}</span>
                         {item.monedaOriginal === 'USD' && item.montoOriginal && (
-                          <span className="text-amber-700 dark:text-amber-300 font-semibold">
+                          <span className="text-amber-700 dark:text-amber-300 font-semibold shrink-0">
                             (${item.montoOriginal} USD)
                           </span>
                         )}
@@ -691,7 +699,7 @@ export function DashboardClient() {
                   </div>
 
                   {/* Monto y Botón de Estado de 1-Click */}
-                  <div className="text-right shrink-0 flex items-center gap-3">
+                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/50 shrink-0">
                     <div className="font-bold text-foreground text-sm">
                       {formatMoney(item.monto, moneda)}
                     </div>

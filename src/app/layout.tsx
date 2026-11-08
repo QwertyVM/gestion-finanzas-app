@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { FinanzasProvider } from '@/context/FinanzasContext';
@@ -8,6 +8,12 @@ import { Toaster } from 'sonner';
 export const metadata: Metadata = {
   title: 'FinanzApp - Control Financiero Personal',
   description: 'Gestión de finanzas personales, costos fijos, préstamos bancarios, facturación de tarjetas y flujo mensual.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({
@@ -20,8 +26,8 @@ export default function RootLayout({
       <body className="min-h-screen bg-background font-sans antialiased">
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          enableSystem={false}
           disableTransitionOnChange
         >
           <FinanzasProvider>

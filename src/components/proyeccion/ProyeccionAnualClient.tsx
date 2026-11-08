@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useFinanzas } from '@/context/FinanzasContext';
 import { formatMoney, formatPeriodoLabel, NOMBRES_MESES } from '@/lib/utils';
 import {
@@ -30,10 +31,13 @@ interface MesProyeccion {
 }
 
 export function ProyeccionAnualClient() {
-  const { setPeriodo, resumen } = useFinanzas();
+  const router = useRouter();
+  const { periodo, setPeriodo, resumen } = useFinanzas();
   const [datosAnio, setDatosAnio] = useState<MesProyeccion[]>([]);
   const [loading, setLoading] = useState(true);
-  const [anioSeleccionado, setAnioSeleccionado] = useState(2027);
+
+  const initialYear = periodo ? parseInt(periodo.split('-')[0], 10) : 2026;
+  const [anioSeleccionado, setAnioSeleccionado] = useState(initialYear || 2026);
 
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
 
@@ -70,14 +74,14 @@ export function ProyeccionAnualClient() {
         </div>
 
         {/* Selector de año */}
-        <div className="flex items-center gap-2 bg-secondary p-1 rounded-xl border border-border">
-          {[2026, 2027].map((yr) => (
+        <div className="flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/80 p-1 rounded-2xl border border-border/80">
+          {[2026, 2027, 2028].map((yr) => (
             <button
               key={yr}
               onClick={() => setAnioSeleccionado(yr)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                 anioSeleccionado === yr
-                  ? 'bg-sky-600 text-white shadow-sm'
+                  ? 'bg-sky-100 text-sky-900 dark:bg-sky-950/70 dark:text-sky-200 border border-sky-200/80 dark:border-sky-800/60 shadow-xs'
                   : 'text-muted-foreground hover:text-foreground'
               }`}
             >
@@ -179,16 +183,16 @@ export function ProyeccionAnualClient() {
                 </div>
 
                 {/* Botón Ir a este mes */}
-                <div className="pt-2 border-t border-border">
+                <div className="pt-2 border-t border-border/80">
                   <button
                     onClick={() => {
                       setPeriodo(m.periodo);
-                      window.location.href = '/';
+                      router.push('/');
                     }}
-                    className="w-full py-1.5 px-3 rounded-lg bg-secondary hover:bg-secondary/80 text-foreground font-semibold text-xs flex items-center justify-center gap-1.5 transition"
+                    className="w-full py-2 px-3 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-800/80 dark:hover:bg-slate-700/80 text-foreground font-bold text-xs flex items-center justify-center gap-1.5 transition active:scale-98 shadow-xs border border-border/60"
                   >
                     <span>Ver detalle en Dashboard</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowRight className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400" />
                   </button>
                 </div>
               </div>

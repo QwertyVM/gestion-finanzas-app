@@ -37,7 +37,7 @@ export function GastosClient() {
   // Estados locales
   const [modalOpen, setModalOpen] = useState(false);
   const [detalleGasto, setDetalleGasto] = useState<DetalleItemData | null>(null);
-  const [filtroEstado, setFiltroEstado] = useState<string>('TODOS');
+  const [filtroEstado, setFiltroEstado] = useState<string>('PENDIENTE');
   const [filtroMetodo, setFiltroMetodo] = useState<string>('TODOS');
   const [submitting, setSubmitting] = useState(false);
 
@@ -259,41 +259,51 @@ export function GastosClient() {
 
         <button
           onClick={() => setModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs shadow-md shadow-sky-600/20 transition active:scale-95"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100/90 text-rose-900 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 dark:text-rose-200 border border-rose-200/60 dark:border-rose-800/40 font-bold text-xs shadow-xs transition active:scale-95"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 text-rose-600 dark:text-rose-400" />
           <span>Registrar Gasto / Compra</span>
         </button>
       </div>
 
       {/* Barra de Filtros y Selección rápida */}
-      <div className="bg-card border border-border p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-sm">
+      <div className="bg-card border border-border/80 p-3 sm:p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs">
         {/* Filtros */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
           <div className="flex items-center gap-1 text-xs text-muted-foreground mr-1">
             <Filter className="w-3.5 h-3.5" />
-            <span>Estado:</span>
+            <span className="font-medium">Estado:</span>
           </div>
 
-          {(['TODOS', 'PENDIENTE', 'ADELANTADO', 'PAGADO'] as const).map((est) => (
-            <button
-              key={est}
-              onClick={() => setFiltroEstado(est)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
-                filtroEstado === est
-                  ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40'
-                  : 'bg-secondary/60 text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {est === 'TODOS'
-                ? 'Todos'
-                : est === 'PENDIENTE'
-                ? '⏳ Pendientes'
-                : est === 'ADELANTADO'
-                ? '⚡ Adelantados'
-                : '✅ Pagados'}
-            </button>
-          ))}
+          {(['PENDIENTE', 'ADELANTADO', 'PAGADO', 'TODOS'] as const).map((est) => {
+            const isSelected = filtroEstado === est;
+            let activeColor = 'bg-white dark:bg-slate-700 text-foreground border border-border/80 shadow-xs';
+            if (isSelected) {
+              if (est === 'PENDIENTE') activeColor = 'bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-200 border border-amber-200/80 shadow-xs';
+              if (est === 'ADELANTADO') activeColor = 'bg-purple-100 text-purple-900 dark:bg-purple-950/70 dark:text-purple-200 border border-purple-200/80 shadow-xs';
+              if (est === 'PAGADO') activeColor = 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-200/80 shadow-xs';
+            }
+
+            return (
+              <button
+                key={est}
+                onClick={() => setFiltroEstado(est)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                  isSelected
+                    ? activeColor
+                    : 'text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800'
+                }`}
+              >
+                {est === 'TODOS'
+                  ? 'Todos'
+                  : est === 'PENDIENTE'
+                  ? '⏳ Pendientes'
+                  : est === 'ADELANTADO'
+                  ? '⚡ Adelantados'
+                  : '✓ Pagados'}
+              </button>
+            );
+          })}
         </div>
 
         {/* Seleccionar Todos */}

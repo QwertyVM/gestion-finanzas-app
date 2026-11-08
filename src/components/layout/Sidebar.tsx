@@ -271,8 +271,8 @@ export function Sidebar() {
           </Link>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="text-[11px] font-bold text-foreground bg-secondary px-2.5 py-1 rounded-lg border border-border">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <div className="text-[11px] font-bold text-foreground bg-secondary/80 px-2 sm:px-2.5 py-1 rounded-lg border border-border capitalize truncate max-w-[105px] sm:max-w-none">
             {formatPeriodoLabel(periodo)}
           </div>
           <button
