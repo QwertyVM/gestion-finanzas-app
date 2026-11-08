@@ -372,9 +372,9 @@ export function FijosClient() {
               setNuevoFijoMesInicio(periodo);
               setModalFijoOpen(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-violet-100 hover:bg-violet-200 text-violet-900 dark:bg-violet-950/70 dark:text-violet-200 border border-violet-200/80 dark:border-violet-800/60 font-bold text-xs shadow-xs transition active:scale-95 self-start sm:self-auto"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-bold text-xs shadow-xs transition active:scale-95 self-start sm:self-auto"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 shrink-0" />
             <span>Agregar Costo Fijo</span>
           </button>
         </div>
@@ -527,9 +527,9 @@ export function FijosClient() {
               setNuevoPrestamoPeriodoInicio(periodo);
               setModalPrestamoOpen(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-sky-100 hover:bg-sky-200 text-sky-900 dark:bg-sky-950/70 dark:text-sky-200 border border-sky-200/80 dark:border-sky-800/60 font-bold text-xs shadow-xs transition active:scale-95 self-start sm:self-auto"
+            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-bold text-xs shadow-xs transition active:scale-95 self-start sm:self-auto"
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-4 h-4 shrink-0" />
             <span>Agregar Préstamo</span>
           </button>
         </div>

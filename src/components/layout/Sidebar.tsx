@@ -109,12 +109,12 @@ export function Sidebar() {
             onClick={handleLinkClick}
             className="flex items-center gap-2.5 group"
           >
-            <div className="p-2 rounded-2xl bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200/60 dark:border-sky-800/50 group-hover:scale-105 transition-transform">
+            <div className="p-2 rounded-2xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs group-hover:scale-105 transition-transform">
               <Wallet className="w-5 h-5" />
             </div>
             <div>
               <div className="font-extrabold text-base tracking-tight text-foreground flex items-center gap-1">
-                Finanz<span className="text-sky-600 dark:text-sky-400">App</span>
+                Finanz<span>App</span>
               </div>
               <p className="text-[10px] text-muted-foreground font-medium">
                 Control Personal
@@ -194,14 +194,14 @@ export function Sidebar() {
                       onClick={handleLinkClick}
                       className={`group flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all ${
                         isActive
-                          ? 'bg-sky-100/70 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 border border-sky-200/60 dark:border-sky-800/50 shadow-xs font-bold'
+                          ? 'bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white font-bold shadow-xs'
                           : 'text-muted-foreground hover:text-foreground hover:bg-slate-100/70 dark:hover:bg-slate-800/50'
                       }`}
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <Icon
                           className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
-                            isActive ? 'text-sky-700 dark:text-sky-300' : 'text-muted-foreground group-hover:text-foreground'
+                            isActive ? 'text-slate-900 dark:text-white' : 'text-muted-foreground group-hover:text-foreground'
                           }`}
                         />
                         <span className="truncate">{link.label}</span>
@@ -211,8 +211,8 @@ export function Sidebar() {
                         <span
                           className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                             isActive
-                              ? 'bg-sky-200/80 dark:bg-sky-900/60 text-sky-800 dark:text-sky-200'
-                              : 'bg-violet-100/80 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 border border-violet-200/40 dark:border-violet-800/40'
+                              ? 'bg-slate-200/90 text-slate-800 dark:bg-slate-700 dark:text-slate-200'
+                              : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400 border border-slate-200/50 dark:border-slate-700/50'
                           }`}
                         >
                           {link.badge}
@@ -262,11 +262,11 @@ export function Sidebar() {
           </button>
 
           <Link href="/" className="flex items-center gap-2">
-            <div className="p-1.5 rounded-lg bg-sky-500 text-white shadow-sm">
+            <div className="p-1.5 rounded-lg bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs">
               <Wallet className="w-4 h-4" />
             </div>
             <span className="font-extrabold text-sm tracking-tight text-foreground">
-              Finanz<span className="text-sky-500">App</span>
+              Finanz<span>App</span>
             </span>
           </Link>
         </div>

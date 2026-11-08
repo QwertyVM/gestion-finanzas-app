@@ -179,7 +179,7 @@ export function ConfiguracionClient() {
             <button
               type="submit"
               disabled={savingConfig}
-              className="w-full py-2.5 px-4 rounded-xl bg-sky-50 hover:bg-sky-100/90 text-sky-900 dark:bg-sky-950/50 dark:hover:bg-sky-900/60 dark:text-sky-200 border border-sky-200/80 dark:border-sky-800/60 font-bold text-sm shadow-xs transition active:scale-98 disabled:opacity-50"
+              className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-bold text-sm shadow-xs transition active:scale-98 disabled:opacity-50"
             >
               {savingConfig ? 'Guardando...' : 'Guardar Ajustes'}
             </button>

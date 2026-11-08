@@ -259,9 +259,9 @@ export function GastosClient() {
 
         <button
           onClick={() => setModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100/90 text-rose-900 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 dark:text-rose-200 border border-rose-200/60 dark:border-rose-800/40 font-bold text-xs shadow-xs transition active:scale-95"
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-bold text-xs shadow-xs transition active:scale-95"
         >
-          <Plus className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+          <Plus className="w-4 h-4 shrink-0" />
           <span>Registrar Gasto / Compra</span>
         </button>
       </div>
@@ -277,30 +277,31 @@ export function GastosClient() {
 
           {(['PENDIENTE', 'ADELANTADO', 'PAGADO', 'TODOS'] as const).map((est) => {
             const isSelected = filtroEstado === est;
-            let activeColor = 'bg-white dark:bg-slate-700 text-foreground border border-border/80 shadow-xs';
-            if (isSelected) {
-              if (est === 'PENDIENTE') activeColor = 'bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-200 border border-amber-200/80 shadow-xs';
-              if (est === 'ADELANTADO') activeColor = 'bg-purple-100 text-purple-900 dark:bg-purple-950/70 dark:text-purple-200 border border-purple-200/80 shadow-xs';
-              if (est === 'PAGADO') activeColor = 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-200/80 shadow-xs';
-            }
+            let dotColor = 'bg-slate-400';
+            if (est === 'PENDIENTE') dotColor = 'bg-amber-500';
+            if (est === 'ADELANTADO') dotColor = 'bg-indigo-500';
+            if (est === 'PAGADO') dotColor = 'bg-emerald-500';
 
             return (
               <button
                 key={est}
                 onClick={() => setFiltroEstado(est)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
                   isSelected
-                    ? activeColor
-                    : 'text-muted-foreground hover:text-foreground hover:bg-slate-100 dark:hover:bg-slate-800'
+                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs border border-border/60'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
                 }`}
               >
-                {est === 'TODOS'
-                  ? 'Todos'
-                  : est === 'PENDIENTE'
-                  ? '⏳ Pendientes'
-                  : est === 'ADELANTADO'
-                  ? '⚡ Adelantados'
-                  : '✓ Pagados'}
+                {est !== 'TODOS' && <span className={`w-2 h-2 rounded-full ${dotColor}`} />}
+                <span>
+                  {est === 'TODOS'
+                    ? 'Todos'
+                    : est === 'PENDIENTE'
+                    ? 'Por Pagar'
+                    : est === 'ADELANTADO'
+                    ? 'Adelantados'
+                    : 'Pagados'}
+                </span>
               </button>
             );
           })}

@@ -81,8 +81,8 @@ export function ProyeccionAnualClient() {
               onClick={() => setAnioSeleccionado(yr)}
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition ${
                 anioSeleccionado === yr
-                  ? 'bg-sky-100 text-sky-900 dark:bg-sky-950/70 dark:text-sky-200 border border-sky-200/80 dark:border-sky-800/60 shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs border border-border/60'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
               }`}
             >
               Año {yr}
