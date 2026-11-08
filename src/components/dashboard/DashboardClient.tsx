@@ -5,6 +5,7 @@ import { useFinanzas } from '@/context/FinanzasContext';
 import { formatMoney, formatPeriodoLabel } from '@/lib/utils';
 import { ModalRegistrarIngreso } from '@/components/modals/ModalRegistrarIngreso';
 import { ModalRegistrarGasto } from '@/components/modals/ModalRegistrarGasto';
+import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import {
   TrendingUp,
   TrendingDown,
@@ -41,6 +42,7 @@ export function DashboardClient() {
 
   const [modalIngresoOpen, setModalIngresoOpen] = useState(false);
   const [modalGastoOpen, setModalGastoOpen] = useState(false);
+  const [detalleItem, setDetalleItem] = useState<DetalleItemData | null>(null);
   const [filtroEgreso, setFiltroEgreso] = useState<'TODOS' | 'FIJOS' | 'PRESTAMOS' | 'TARJETAS'>('TODOS');
 
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
@@ -48,7 +50,7 @@ export function DashboardClient() {
   // Consolidar todos los egresos del mes
   const todosEgresos = useMemo(() => {
     if (!resumen) return [];
-    const list: Array<any> = [];
+    const list: Array<DetalleItemData> = [];
 
     // 1. Costos fijos
     for (const cf of resumen.costosFijos) {
@@ -61,6 +63,10 @@ export function DashboardClient() {
         monto: cf.monto,
         diaVencimiento: cf.diaVencimiento,
         estado: cf.estado,
+        fechaPagoReal: cf.fechaPagoReal,
+        mesInicio: cf.mesInicio,
+        mesFin: cf.mesFin,
+        notas: cf.notas,
         subtexto: `Vence el día ${cf.diaVencimiento}`,
       });
     }
@@ -70,14 +76,20 @@ export function DashboardClient() {
       list.push({
         id: `prestamo-${p.cuotaId}`,
         dbId: p.cuotaId,
+        prestamoId: p.id,
         tipo: 'PRESTAMO',
         concepto: `${p.banco} - ${p.concepto}`,
+        banco: p.banco,
+        nombrePrestamo: p.concepto,
         categoria: 'Préstamo Bancario',
         monto: p.montoCuota,
+        montoTotal: p.montoTotal,
+        tasaInteresAnual: p.tasaInteresAnual,
         cuotaActual: p.cuotaActual,
         cuotasTotales: p.cuotasTotales,
         diaVencimiento: p.diaPago,
         estado: p.estado,
+        fechaPagoReal: p.fechaPagoReal,
         subtexto: `Cuota ${p.cuotaActual} de ${p.cuotasTotales} (Día ${p.diaPago})`,
       });
     }
@@ -94,8 +106,20 @@ export function DashboardClient() {
           monto: g.monto,
           monedaOriginal: g.monedaOriginal,
           montoOriginal: g.montoOriginal,
+          tipoCambio: g.tipoCambio,
           fechaGasto: g.fechaGasto,
+          periodoPago: g.periodoPago || resumen.periodo,
+          cuotaActual: g.cuotaActual,
+          totalCuotas: g.totalCuotas,
+          tarjetaNombre: t.nombre,
+          tarjetaBanco: t.banco,
+          tarjetaUltimosCuatro: t.ultimosCuatro,
+          tarjetaDiaCorte: t.diaCorte,
+          tarjetaDiaPago: t.diaPago,
+          tarjetaColor: t.color,
+          notas: g.notas,
           estado: g.estado,
+          fechaPagoReal: g.fechaPagoReal,
           subtexto: `${t.nombre} · Se paga a fin de este mes`,
         });
       }
@@ -112,8 +136,13 @@ export function DashboardClient() {
         monto: g.monto,
         monedaOriginal: g.monedaOriginal,
         montoOriginal: g.montoOriginal,
+        tipoCambio: g.tipoCambio,
         fechaGasto: g.fechaGasto,
+        periodoPago: g.periodoPago || resumen.periodo,
+        metodoPago: g.metodoPago,
+        notas: g.notas,
         estado: g.estado,
+        fechaPagoReal: g.fechaPagoReal,
         subtexto: 'Efectivo / Débito',
       });
     }
@@ -167,6 +196,26 @@ export function DashboardClient() {
       toast.success(`Estado actualizado a ${nuevoEstado}`);
     } catch (e: any) {
       toast.error('Error al actualizar');
+    }
+  };
+
+  const handleCambiarEstadoModal = async (item: DetalleItemData, nuevoEstado: string) => {
+    await handleToggleEstadoItem(item, nuevoEstado);
+    setDetalleItem((prev) => (prev ? { ...prev, estado: nuevoEstado as any } : null));
+  };
+
+  const handleEliminarGastoModal = async (item: DetalleItemData) => {
+    try {
+      await fetch('/api/gastos/masivo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'eliminar', ids: [item.dbId] }),
+      });
+      toast.success('Gasto eliminado exitosamente');
+      setDetalleItem(null);
+      await refresh();
+    } catch (e: any) {
+      toast.error('Error al eliminar');
     }
   };
 
@@ -375,14 +424,14 @@ export function DashboardClient() {
           {/* Barra de seleccionar todos para sumar */}
           <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
             <span>
-              💡 Puedes marcar con el checkbox para sumar automáticamente varios gastos.
+              💡 Haz clic en cualquier egreso para ver su <strong>ficha técnica detallada</strong>. También puedes marcar el checkbox para sumar automáticamente.
             </span>
             {todosEgresos.length > 0 && (
               <button
                 onClick={() =>
                   selectAllGastos(todosEgresos.map((e) => ({ id: e.id, monto: e.monto })))
                 }
-                className="font-semibold text-sky-500 hover:text-sky-400 flex items-center gap-1"
+                className="font-semibold text-sky-500 hover:text-sky-400 flex items-center gap-1 shrink-0 ml-2"
               >
                 {todosSeleccionados ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
                 <span>{todosSeleccionados ? 'Deseleccionar' : 'Seleccionar todos'}</span>
@@ -398,16 +447,21 @@ export function DashboardClient() {
               return (
                 <div
                   key={item.id}
-                  className={`bg-card border rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3 transition ${
-                    isSelected ? 'border-sky-500 bg-sky-500/5' : 'border-border hover:border-slate-600'
+                  onClick={() => setDetalleItem(item)}
+                  className={`group bg-card border rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3 transition cursor-pointer hover:border-sky-500/50 hover:shadow-md ${
+                    isSelected ? 'border-sky-500 bg-sky-500/5' : 'border-border'
                   }`}
                 >
                   {/* Checkbox y Detalle */}
                   <div className="flex items-center gap-3 truncate">
                     <button
                       type="button"
-                      onClick={() => toggleSelectGasto(item.id, item.monto)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleSelectGasto(item.id, item.monto);
+                      }}
                       className="p-1 rounded hover:bg-secondary transition shrink-0"
+                      title={isSelected ? 'Deseleccionar' : 'Seleccionar para sumar'}
                     >
                       {isSelected ? (
                         <CheckSquare className="w-4 h-4 text-sky-500" />
@@ -417,8 +471,9 @@ export function DashboardClient() {
                     </button>
 
                     <div className="truncate">
-                      <div className="font-bold text-foreground text-xs truncate">
-                        {item.concepto}
+                      <div className="font-bold text-foreground text-xs truncate group-hover:text-sky-400 transition flex items-center gap-1.5">
+                        <span>{item.concepto}</span>
+                        <ChevronRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition shrink-0" />
                       </div>
                       <div className="text-[11px] text-muted-foreground flex items-center gap-2">
                         <span>{item.subtexto}</span>
@@ -437,7 +492,7 @@ export function DashboardClient() {
                       {formatMoney(item.monto, moneda)}
                     </div>
 
-                    <div className="flex items-center gap-1">
+                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() =>
                           handleToggleEstadoItem(
@@ -488,6 +543,13 @@ export function DashboardClient() {
       <ModalRegistrarGasto
         open={modalGastoOpen}
         onClose={() => setModalGastoOpen(false)}
+      />
+      <ModalDetalleGasto
+        item={detalleItem}
+        onClose={() => setDetalleItem(null)}
+        onCambiarEstado={handleCambiarEstadoModal}
+        onEliminarGasto={handleEliminarGastoModal}
+        monedaSimbolo={moneda}
       />
     </div>
   );

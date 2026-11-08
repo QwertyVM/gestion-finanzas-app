@@ -34,6 +34,9 @@ export interface ResumenFinanciero {
     registroId?: string;
     estado: EstadoPago;
     fechaPagoReal?: string | null;
+    mesInicio?: string | null;
+    mesFin?: string | null;
+    notas?: string | null;
   }>;
   totalCostosFijos: number;
   prestamos: Array<{
@@ -73,10 +76,12 @@ export interface ResumenFinanciero {
     montoOriginal?: number | null;
     tipoCambio: number;
     fechaGasto: string;
+    periodoPago: string;
     metodoPago: MetodoPago;
     categoria: string;
     estado: EstadoPago;
     fechaPagoReal?: string | null;
+    notas?: string | null;
   }>;
   totalGastosDirectos: number;
   totalEgresos: number;
@@ -211,6 +216,9 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
       registroId: reg?.id || undefined,
       estado: reg ? reg.estado : EstadoPago.PENDIENTE,
       fechaPagoReal: reg?.fechaPagoReal ? reg.fechaPagoReal.toISOString() : null,
+      mesInicio: cf.mesInicio,
+      mesFin: cf.mesFin,
+      notas: reg?.notas || null,
     });
   }
 
@@ -269,11 +277,13 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
         montoOriginal: g.montoOriginal ? Number(g.montoOriginal) : null,
         tipoCambio: Number(g.tipoCambio),
         fechaGasto: g.fechaGasto.toISOString(),
+        periodoPago: g.periodoPago,
         categoria: g.categoria?.nombre || 'General',
         estado: g.estado,
         cuotaActual: g.cuotaActual,
         totalCuotas: g.totalCuotas,
         fechaPagoReal: g.fechaPagoReal ? g.fechaPagoReal.toISOString() : null,
+        notas: g.notas || null,
       })),
       totalSiguientePeriodo: totalNext,
       gastosSiguientePeriodo: gastosNext.map((g) => ({
@@ -284,10 +294,12 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
         montoOriginal: g.montoOriginal ? Number(g.montoOriginal) : null,
         tipoCambio: Number(g.tipoCambio),
         fechaGasto: g.fechaGasto.toISOString(),
+        periodoPago: g.periodoPago,
         categoria: g.categoria?.nombre || 'General',
         estado: g.estado,
         cuotaActual: g.cuotaActual,
         totalCuotas: g.totalCuotas,
+        notas: g.notas || null,
       })),
     });
   }
@@ -301,10 +313,12 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     montoOriginal: g.montoOriginal ? Number(g.montoOriginal) : null,
     tipoCambio: Number(g.tipoCambio),
     fechaGasto: g.fechaGasto.toISOString(),
+    periodoPago: g.periodoPago,
     metodoPago: g.metodoPago,
     categoria: g.categoria?.nombre || 'General',
     estado: g.estado,
     fechaPagoReal: g.fechaPagoReal ? g.fechaPagoReal.toISOString() : null,
+    notas: g.notas || null,
   }));
   const totalGastosDirectos = gastosDirectos.reduce((acc, g) => acc + g.monto, 0);
 

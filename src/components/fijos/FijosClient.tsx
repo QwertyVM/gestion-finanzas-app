@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
 import { formatMoney, formatPeriodoLabel } from '@/lib/utils';
+import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import {
   Home,
   Landmark,
@@ -23,6 +24,7 @@ import { toast } from 'sonner';
 export function FijosClient() {
   const { periodo, resumen, refresh } = useFinanzas();
   const [modalFijoOpen, setModalFijoOpen] = useState(false);
+  const [detalleItem, setDetalleItem] = useState<DetalleItemData | null>(null);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
   // Form nuevo costo fijo
@@ -33,6 +35,15 @@ export function FijosClient() {
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
   const costosFijos = resumen?.costosFijos || [];
   const prestamos = resumen?.prestamos || [];
+
+  const handleCambiarEstadoModal = async (item: DetalleItemData, nuevoEstado: string) => {
+    if (item.tipo === 'FIJO') {
+      await handleToggleEstadoFijo(item.dbId, nuevoEstado);
+    } else if (item.tipo === 'PRESTAMO') {
+      await handleToggleEstadoCuota(item.dbId, nuevoEstado);
+    }
+    setDetalleItem((prev) => (prev ? { ...prev, estado: nuevoEstado as any } : null));
+  };
 
   // Alternar estado de Costo Fijo para el mes
   const handleToggleEstadoFijo = async (costoFijoId: string, nuevoEstado: string) => {
@@ -153,7 +164,24 @@ export function FijosClient() {
             return (
               <div
                 key={cf.id}
-                className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between hover:border-sky-500/30 transition"
+                onClick={() =>
+                  setDetalleItem({
+                    id: `fijo-${cf.id}`,
+                    dbId: cf.id,
+                    tipo: 'FIJO',
+                    concepto: cf.concepto,
+                    categoria: cf.categoria,
+                    monto: cf.monto,
+                    diaVencimiento: cf.diaVencimiento,
+                    estado: cf.estado,
+                    fechaPagoReal: cf.fechaPagoReal,
+                    mesInicio: cf.mesInicio,
+                    mesFin: cf.mesFin,
+                    notas: cf.notas,
+                  })
+                }
+                className="group bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between hover:border-sky-500/50 hover:shadow-md transition cursor-pointer"
+                title="Haz clic para ver características completas"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
@@ -162,7 +190,7 @@ export function FijosClient() {
                     </div>
 
                     <div className="text-right">
-                      <span className="text-lg font-bold text-foreground block">
+                      <span className="text-lg font-bold text-foreground block group-hover:text-sky-400 transition">
                         {formatMoney(cf.monto, moneda)}
                       </span>
                       <span className="text-[11px] text-muted-foreground">
@@ -172,13 +200,16 @@ export function FijosClient() {
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-foreground text-sm">{cf.concepto}</h3>
+                    <h3 className="font-bold text-foreground text-sm group-hover:text-sky-400 transition flex items-center justify-between">
+                      <span>{cf.concepto}</span>
+                      <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
+                    </h3>
                     <span className="text-[11px] text-muted-foreground">{cf.categoria}</span>
                   </div>
                 </div>
 
                 {/* Estado y Botones de 1-Click */}
-                <div className="pt-3 border-t border-border space-y-2">
+                <div className="pt-3 border-t border-border space-y-2" onClick={(e) => e.stopPropagation()}>
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Estado este mes:</span>
                     {cf.estado === 'ADELANTADO' ? (
@@ -266,21 +297,45 @@ export function FijosClient() {
               return (
                 <div
                   key={p.id}
-                  className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4"
+                  onClick={() =>
+                    setDetalleItem({
+                      id: `prestamo-${p.cuotaId}`,
+                      dbId: p.cuotaId,
+                      prestamoId: p.id,
+                      tipo: 'PRESTAMO',
+                      concepto: `${p.banco} - ${p.concepto}`,
+                      banco: p.banco,
+                      nombrePrestamo: p.concepto,
+                      categoria: 'Préstamo Bancario',
+                      monto: p.montoCuota,
+                      montoTotal: p.montoTotal,
+                      tasaInteresAnual: p.tasaInteresAnual,
+                      cuotaActual: p.cuotaActual,
+                      cuotasTotales: p.cuotasTotales,
+                      diaVencimiento: p.diaPago,
+                      estado: p.estado,
+                      fechaPagoReal: p.fechaPagoReal,
+                    })
+                  }
+                  className="group bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 hover:border-purple-500/50 hover:shadow-md transition cursor-pointer"
+                  title="Haz clic para ver características completas"
                 >
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
                       <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/30">
                         {p.banco}
                       </span>
-                      <h3 className="text-base font-bold text-foreground">{p.concepto}</h3>
+                      <h3 className="text-base font-bold text-foreground group-hover:text-purple-400 transition flex items-center gap-1.5">
+                        <span>{p.concepto}</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
+                      </h3>
                       <p className="text-xs text-muted-foreground">
                         Día de pago programado: Día {p.diaPago} de cada mes
                       </p>
                     </div>
 
                     <div className="text-right">
-                      <div className="text-xl font-extrabold text-foreground">
+                      <div className="text-xl font-extrabold text-foreground group-hover:text-purple-400 transition">
                         {formatMoney(p.montoCuota, moneda)}
                       </div>
                       <div className="text-[11px] text-muted-foreground font-semibold">
@@ -324,7 +379,7 @@ export function FijosClient() {
                       )}
                     </div>
 
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() =>
                           handleToggleEstadoCuota(
@@ -450,6 +505,14 @@ export function FijosClient() {
           </div>
         </div>
       )}
+
+      {/* MODAL DETALLE DE COMPROMISO */}
+      <ModalDetalleGasto
+        item={detalleItem}
+        onClose={() => setDetalleItem(null)}
+        onCambiarEstado={handleCambiarEstadoModal}
+        monedaSimbolo={moneda}
+      />
     </div>
   );
 }

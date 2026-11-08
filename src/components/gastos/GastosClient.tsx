@@ -4,6 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
 import { formatMoney, formatPeriodoLabel } from '@/lib/utils';
 import { calcularPeriodoFacturacion, calcularCuotasPeriodos } from '@/lib/billing-cycles';
+import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import {
   Plus,
   CreditCard,
@@ -35,9 +36,33 @@ export function GastosClient() {
 
   // Estados locales
   const [modalOpen, setModalOpen] = useState(false);
+  const [detalleGasto, setDetalleGasto] = useState<DetalleItemData | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<string>('TODOS');
   const [filtroMetodo, setFiltroMetodo] = useState<string>('TODOS');
   const [submitting, setSubmitting] = useState(false);
+
+  const adaptGastoToDetalle = (g: any): DetalleItemData => ({
+    id: g.id,
+    dbId: g.id,
+    tipo: g.metodoPago === 'TARJETA_CREDITO' ? 'TARJETA' : 'DIRECTO',
+    concepto: g.concepto,
+    categoria: g.categoria,
+    monto: g.monto,
+    monedaOriginal: g.monedaOriginal,
+    montoOriginal: g.montoOriginal,
+    tipoCambio: g.tipoCambio,
+    fechaGasto: g.fechaGasto,
+    periodoPago: g.periodoPago || periodo,
+    estado: g.estado,
+    cuotaActual: g.cuotaActual,
+    totalCuotas: g.totalCuotas,
+    tarjetaNombre: g.tarjetaNombre,
+    tarjetaColor: g.tarjetaColor,
+    tarjetaDiaCorte: 10,
+    tarjetaDiaPago: 30,
+    notas: g.notas,
+    fechaPagoReal: g.fechaPagoReal,
+  });
 
   // Formulario nuevo gasto
   const [concepto, setConcepto] = useState('');
@@ -170,6 +195,30 @@ export function GastosClient() {
     }
   };
 
+  const handleCambiarEstadoModal = async (item: DetalleItemData, nuevoEstado: string) => {
+    await handleCambiarEstadoItem(item.dbId, nuevoEstado);
+    setDetalleGasto((prev) => (prev ? { ...prev, estado: nuevoEstado as any } : null));
+  };
+
+  const handleEliminarGastoModal = async (item: DetalleItemData) => {
+    try {
+      const res = await fetch('/api/gastos/masivo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'eliminar',
+          ids: [item.dbId],
+        }),
+      });
+      if (!res.ok) throw new Error('Error al eliminar');
+      toast.success('Gasto eliminado exitosamente');
+      setDetalleGasto(null);
+      await refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al eliminar');
+    }
+  };
+
   // Seleccionar / Deseleccionar todos
   const todosSeleccionados =
     listaGastos.length > 0 &&
@@ -299,12 +348,13 @@ export function GastosClient() {
                   return (
                     <tr
                       key={gasto.id}
-                      className={`hover:bg-secondary/40 transition-colors ${
+                      onClick={() => setDetalleGasto(adaptGastoToDetalle(gasto))}
+                      className={`hover:bg-secondary/40 transition-colors cursor-pointer group ${
                         isSelected ? 'bg-sky-500/10' : ''
                       }`}
                     >
                       {/* Checkbox para sumatoria */}
-                      <td className="p-3 text-center">
+                      <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
                           onClick={() => toggleSelectGasto(gasto.id, gasto.monto)}
@@ -320,8 +370,11 @@ export function GastosClient() {
 
                       {/* Concepto */}
                       <td className="p-3">
-                        <div className="font-semibold text-foreground text-xs">
-                          {gasto.concepto}
+                        <div className="font-semibold text-foreground text-xs group-hover:text-sky-400 transition flex items-center gap-1.5">
+                          <span>{gasto.concepto}</span>
+                          <span className="text-[10px] text-sky-400 opacity-0 group-hover:opacity-100 transition hidden sm:inline">
+                            (ver detalle)
+                          </span>
                         </div>
                         <div className="text-[11px] text-muted-foreground">
                           {gasto.categoria || 'Sin categoría'}
@@ -390,7 +443,7 @@ export function GastosClient() {
                       </td>
 
                       {/* Acciones Rápidas de Estado */}
-                      <td className="p-3 text-center whitespace-nowrap">
+                      <td className="p-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() =>
@@ -474,9 +527,38 @@ export function GastosClient() {
               ) : (
                 <ul className="text-xs space-y-1.5 pt-1 divide-y divide-border/60">
                   {t.gastosSiguientePeriodo.map((g: any) => (
-                    <li key={g.id} className="pt-1.5 flex items-center justify-between">
+                    <li
+                      key={g.id}
+                      onClick={() =>
+                        setDetalleGasto({
+                          id: g.id,
+                          dbId: g.id,
+                          tipo: 'TARJETA',
+                          concepto: g.concepto,
+                          categoria: g.categoria,
+                          monto: g.monto,
+                          monedaOriginal: g.monedaOriginal,
+                          montoOriginal: g.montoOriginal,
+                          tipoCambio: g.tipoCambio,
+                          fechaGasto: g.fechaGasto,
+                          periodoPago: g.periodoPago,
+                          estado: g.estado,
+                          cuotaActual: g.cuotaActual,
+                          totalCuotas: g.totalCuotas,
+                          tarjetaNombre: t.nombre,
+                          tarjetaColor: t.color,
+                          tarjetaDiaCorte: t.diaCorte,
+                          tarjetaDiaPago: t.diaPago,
+                          notas: g.notas,
+                        })
+                      }
+                      className="pt-1.5 flex items-center justify-between cursor-pointer hover:text-sky-400 transition group"
+                      title="Haz clic para ver detalles del gasto"
+                    >
                       <div className="truncate pr-2">
-                        <span className="text-foreground font-medium">{g.concepto}</span>
+                        <span className="text-foreground group-hover:text-sky-400 font-medium transition">
+                          {g.concepto}
+                        </span>
                         <span className="text-[10px] text-muted-foreground block">
                           Comprado el {new Date(g.fechaGasto).toLocaleDateString('es-PE')}
                         </span>
@@ -728,6 +810,15 @@ export function GastosClient() {
           </div>
         </div>
       )}
+
+      {/* MODAL DETALLE DE GASTO */}
+      <ModalDetalleGasto
+        item={detalleGasto}
+        onClose={() => setDetalleGasto(null)}
+        onCambiarEstado={handleCambiarEstadoModal}
+        onEliminarGasto={handleEliminarGastoModal}
+        monedaSimbolo={moneda}
+      />
     </div>
   );
 }
