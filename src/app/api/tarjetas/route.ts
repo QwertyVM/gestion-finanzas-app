@@ -30,3 +30,36 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function DELETE(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url);
+    let id = searchParams.get('id');
+
+    if (!id) {
+      try {
+        const body = await request.json();
+        id = body.id;
+      } catch {}
+    }
+
+    if (!id) {
+      return NextResponse.json({ error: 'ID de tarjeta requerido' }, { status: 400 });
+    }
+
+    // Desvincular cualquier gasto asociado para que no falle por foreign key
+    await prisma.gasto.updateMany({
+      where: { tarjetaId: id },
+      data: { tarjetaId: null },
+    });
+
+    await prisma.tarjetaCredito.delete({
+      where: { id },
+    });
+
+    return NextResponse.json({ success: true, message: 'Tarjeta eliminada exitosamente' });
+  } catch (error: any) {
+    console.error('Error al eliminar tarjeta:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

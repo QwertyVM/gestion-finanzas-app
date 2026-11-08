@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
-import { Settings, CreditCard, DollarSign, Plus, PiggyBank, ArrowRightLeft } from 'lucide-react';
+import { Settings, CreditCard, DollarSign, Plus, PiggyBank, ArrowRightLeft, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function ConfiguracionClient() {
@@ -87,6 +87,23 @@ export function ConfiguracionClient() {
       toast.error(err.message || 'Error al crear tarjeta');
     } finally {
       setSavingTarjeta(false);
+    }
+  };
+
+  const [deletingTarjetaId, setDeletingTarjetaId] = useState<string | null>(null);
+
+  const handleEliminarTarjeta = async (id: string, nombre: string) => {
+    if (!confirm(`¿Estás seguro de eliminar la tarjeta "${nombre}"?`)) return;
+    try {
+      setDeletingTarjetaId(id);
+      const res = await fetch(`/api/tarjetas?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al eliminar la tarjeta');
+      toast.success(`Tarjeta "${nombre}" eliminada exitosamente`);
+      await refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al eliminar la tarjeta');
+    } finally {
+      setDeletingTarjetaId(null);
     }
   };
 
@@ -180,7 +197,7 @@ export function ConfiguracionClient() {
             {resumen?.tarjetasCredito?.map((t) => (
               <div
                 key={t.id}
-                className="p-3 rounded-xl bg-secondary/50 border border-border flex items-center justify-between text-xs"
+                className="p-3 rounded-xl bg-secondary/50 border border-border flex items-center justify-between text-xs group"
               >
                 <div className="flex items-center gap-2.5">
                   <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: t.color }} />
@@ -190,13 +207,25 @@ export function ConfiguracionClient() {
                   </div>
                 </div>
 
-                <div className="text-right">
-                  <span className="font-bold text-sky-400 block">
-                    Corte: Día {t.diaCorte}
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    Pago: Día {t.diaPago}
-                  </span>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <span className="font-bold text-sky-400 block">
+                      Corte: Día {t.diaCorte}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      Pago: Día {t.diaPago}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => handleEliminarTarjeta(t.id, t.nombre)}
+                    disabled={deletingTarjetaId === t.id}
+                    className="p-1.5 rounded-lg text-muted-foreground hover:text-rose-400 hover:bg-rose-500/10 transition"
+                    title="Eliminar tarjeta"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             ))}
