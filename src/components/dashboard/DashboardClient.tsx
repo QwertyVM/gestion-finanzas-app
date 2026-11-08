@@ -25,6 +25,7 @@ import {
   PiggyBank,
   Trash2,
   ChevronRight,
+  ChevronLeft,
   Info,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -32,6 +33,8 @@ import { toast } from 'sonner';
 export function DashboardClient() {
   const {
     periodo,
+    irMesAnterior,
+    irMesSiguiente,
     resumen,
     loading,
     refresh,
@@ -240,9 +243,32 @@ export function DashboardClient() {
       <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
-              Dinero Disponible en {formatPeriodoLabel(periodo)}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                Dinero Disponible
+              </span>
+              <div className="inline-flex items-center gap-1 bg-secondary/80 px-2 py-0.5 rounded-xl border border-border shadow-inner">
+                <button
+                  type="button"
+                  onClick={irMesAnterior}
+                  className="p-0.5 hover:bg-background text-muted-foreground hover:text-foreground rounded-lg transition"
+                  title="Mes anterior"
+                >
+                  <ChevronLeft className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-xs font-bold text-sky-400 px-1">
+                  {formatPeriodoLabel(periodo)}
+                </span>
+                <button
+                  type="button"
+                  onClick={irMesSiguiente}
+                  className="p-0.5 hover:bg-background text-muted-foreground hover:text-foreground rounded-lg transition"
+                  title="Mes siguiente"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
             <div className="flex items-baseline gap-3 mt-1">
               <span
                 className={`text-4xl sm:text-5xl font-extrabold tracking-tight ${
