@@ -96,17 +96,43 @@ export function ModalDetalleGasto({
   const [montoEditInput, setMontoEditInput] = useState(item ? item.monto.toString() : '');
   const [savingMonto, setSavingMonto] = useState(false);
 
+  // Conversor en edición
+  const [modoEdicion, setModoEdicion] = useState<'SOLES' | 'DOLARES'>('SOLES');
+  const [montoUsdEdit, setMontoUsdEdit] = useState('');
+  const [tcEdit, setTcEdit] = useState('4.00');
+
   React.useEffect(() => {
     if (item) {
       setMontoEditInput(item.monto.toString());
       setEditandoMonto(false);
+      const isUsd = item.monedaOriginal === 'USD' || item.concepto.includes('$');
+      setModoEdicion(isUsd ? 'DOLARES' : 'SOLES');
+      if (item.montoOriginal) {
+        setMontoUsdEdit(item.montoOriginal.toString());
+      } else {
+        const match = item.concepto.match(/\$([0-9.]+)/);
+        setMontoUsdEdit(match ? match[1] : '');
+      }
+      setTcEdit(item.tipoCambio ? item.tipoCambio.toString() : '4.00');
     }
   }, [item]);
 
   if (!item) return null;
 
   const handleGuardarMonto = async () => {
-    const val = parseFloat(montoEditInput);
+    let val: number;
+    if (modoEdicion === 'DOLARES') {
+      const usdVal = parseFloat(montoUsdEdit);
+      const tcVal = parseFloat(tcEdit) || 4.0;
+      if (isNaN(usdVal) || usdVal < 0) {
+        toast.error('Ingresa un monto en dólares válido');
+        return;
+      }
+      val = Number((usdVal * tcVal).toFixed(2));
+    } else {
+      val = parseFloat(montoEditInput);
+    }
+
     if (isNaN(val) || val < 0) {
       toast.error('Ingresa un monto válido');
       return;
@@ -263,57 +289,159 @@ export function ModalDetalleGasto({
               </div>
 
               {!editandoMonto ? (
-                <div className="text-3xl font-extrabold text-foreground tracking-tight">
-                  {formatMoney(item.monto, monedaSimbolo)}
+                <div className="space-y-1">
+                  <div className="text-3xl font-extrabold text-foreground tracking-tight">
+                    {formatMoney(item.monto, monedaSimbolo)}
+                  </div>
+                  <span className="text-[11px] text-muted-foreground block">
+                    Total a pagar / debitado de tu cuenta en soles
+                  </span>
                 </div>
               ) : (
-                <div className="space-y-2 pt-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-base font-bold text-foreground">{monedaSimbolo}</span>
-                    <input
-                      type="number"
-                      step="0.01"
-                      autoFocus
-                      value={montoEditInput}
-                      onChange={(e) => setMontoEditInput(e.target.value)}
-                      className="w-36 px-3 py-1.5 rounded-xl bg-background border border-border font-extrabold text-foreground text-lg outline-none focus:ring-2 focus:ring-sky-500"
-                    />
+                <div className="space-y-3 pt-1">
+                  {/* Selector de Modo de Edición */}
+                  <div className="flex items-center gap-1.5 p-1 bg-background rounded-xl border border-border w-fit">
                     <button
                       type="button"
-                      disabled={savingMonto}
-                      onClick={handleGuardarMonto}
-                      className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition disabled:opacity-50 inline-flex items-center gap-1 shadow-sm"
+                      onClick={() => setModoEdicion('SOLES')}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                        modoEdicion === 'SOLES'
+                          ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40 shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
                     >
-                      <Check className="w-3.5 h-3.5" />
-                      <span>{savingMonto ? '...' : 'Guardar'}</span>
+                      Monto directo en Soles (S/)
                     </button>
                     <button
                       type="button"
-                      onClick={() => setEditandoMonto(false)}
-                      className="px-2.5 py-1.5 rounded-xl text-muted-foreground hover:bg-secondary text-xs"
+                      onClick={() => setModoEdicion('DOLARES')}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
+                        modoEdicion === 'DOLARES'
+                          ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-xs'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
                     >
-                      Cancelar
+                      Calcular desde $ USD
                     </button>
                   </div>
+
+                  {modoEdicion === 'SOLES' ? (
+                    <div className="flex items-center gap-2">
+                      <span className="text-base font-bold text-foreground">{monedaSimbolo}</span>
+                      <input
+                        type="number"
+                        step="0.01"
+                        autoFocus
+                        value={montoEditInput}
+                        onChange={(e) => setMontoEditInput(e.target.value)}
+                        className="w-36 px-3 py-1.5 rounded-xl bg-background border border-border font-extrabold text-foreground text-lg outline-none focus:ring-2 focus:ring-sky-500"
+                      />
+                      <button
+                        type="button"
+                        disabled={savingMonto}
+                        onClick={handleGuardarMonto}
+                        className="px-3.5 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition disabled:opacity-50 inline-flex items-center gap-1 shadow-sm"
+                      >
+                        <Check className="w-3.5 h-3.5" />
+                        <span>{savingMonto ? '...' : 'Guardar'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditandoMonto(false)}
+                        className="px-2.5 py-1.5 rounded-xl text-muted-foreground hover:bg-secondary text-xs"
+                      >
+                        Cancelar
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="space-y-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold text-amber-500">Monto en $ USD:</span>
+                          <div className="flex items-center gap-1 bg-background px-2.5 py-1 rounded-lg border border-border">
+                            <span className="text-xs font-bold text-muted-foreground">$</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={montoUsdEdit}
+                              onChange={(e) => setMontoUsdEdit(e.target.value)}
+                              placeholder="0.00"
+                              className="w-full text-xs font-bold bg-transparent outline-none text-foreground"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-bold text-amber-500">Tipo de Cambio (S/):</span>
+                          <div className="flex items-center gap-1 bg-background px-2.5 py-1 rounded-lg border border-border">
+                            <span className="text-xs font-bold text-muted-foreground">S/</span>
+                            <input
+                              type="number"
+                              step="0.01"
+                              value={tcEdit}
+                              onChange={(e) => setTcEdit(e.target.value)}
+                              placeholder="4.00"
+                              className="w-full text-xs font-bold bg-transparent outline-none text-foreground"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-1 border-t border-amber-500/20">
+                        <div className="text-xs font-bold text-foreground">
+                          Total en soles:{' '}
+                          <span className="text-amber-500 font-extrabold text-sm">
+                            S/{' '}
+                            {(
+                              (parseFloat(montoUsdEdit) || 0) * (parseFloat(tcEdit) || 4.0)
+                            ).toFixed(2)}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            type="button"
+                            disabled={savingMonto}
+                            onClick={handleGuardarMonto}
+                            className="px-3 py-1 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs transition disabled:opacity-50 inline-flex items-center gap-1 shadow-sm"
+                          >
+                            <Check className="w-3.5 h-3.5" />
+                            <span>{savingMonto ? '...' : 'Aplicar'}</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditandoMonto(false)}
+                            className="px-2 py-1 rounded-xl text-muted-foreground hover:bg-secondary text-xs"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <p className="text-[10px] text-muted-foreground">
-                    💡 Modifica únicamente el valor de este mes (ej. si pagaste S/ 220 en vez de S/ 320). No altera otros meses ni registros de otros periodos.
+                    💡 Modifica únicamente el valor de este mes. No altera meses pasados ni el historial de pagos.
                   </p>
                 </div>
               )}
             </div>
 
-            {item.monedaOriginal === 'USD' && item.montoOriginal && (
-              <div className="p-3 rounded-xl bg-card border border-border text-xs space-y-1">
-                <div className="flex items-center gap-1.5 text-amber-400 font-semibold">
-                  <DollarSign className="w-3.5 h-3.5" />
-                  <span>Moneda Original: USD</span>
+            {(item.monedaOriginal === 'USD' || item.concepto.includes('$')) && (
+              <div className="p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30 text-xs space-y-1.5 shrink-0 self-start">
+                <div className="flex items-center gap-1.5 text-amber-500 dark:text-amber-400 font-bold">
+                  <DollarSign className="w-4 h-4" />
+                  <span>Cobrado en Dólares (USD)</span>
                 </div>
-                <div className="text-foreground font-bold">
-                  ${item.montoOriginal.toFixed(2)} USD
+                <div className="text-foreground font-extrabold text-sm">
+                  ${item.montoOriginal ? item.montoOriginal.toFixed(2) : (item.concepto.match(/\$([0-9.]+)/)?.[1] || '---')} USD
                 </div>
                 <div className="text-[10px] text-muted-foreground">
-                  Tipo de cambio: S/ {(item.tipoCambio || 4.0).toFixed(2)}
+                  Tipo de cambio: <strong>S/ {(item.tipoCambio || 4.0).toFixed(2)}</strong>
                 </div>
+                <span className="text-[9px] text-amber-600/90 dark:text-amber-400/90 block leading-tight pt-0.5">
+                  Convertido y pagado en Soles de tu presupuesto
+                </span>
               </div>
             )}
           </div>

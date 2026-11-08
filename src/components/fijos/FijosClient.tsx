@@ -38,16 +38,24 @@ export function FijosClient() {
   const [editandoCostoFijo, setEditandoCostoFijo] = useState<any | null>(null);
   const [editandoPrestamo, setEditandoPrestamo] = useState<any | null>(null);
 
+  const configTc = resumen?.config?.tipoCambioUSD || 4.00;
+
   // Form Nuevo Costo Fijo
   const [nuevoFijoConcepto, setNuevoFijoConcepto] = useState('');
+  const [nuevoFijoMoneda, setNuevoFijoMoneda] = useState<'PEN' | 'USD'>('PEN');
   const [nuevoFijoMonto, setNuevoFijoMonto] = useState('');
+  const [nuevoFijoMontoUSD, setNuevoFijoMontoUSD] = useState('');
+  const [nuevoFijoTc, setNuevoFijoTc] = useState(configTc.toString());
   const [nuevoFijoDia, setNuevoFijoDia] = useState('30');
   const [nuevoFijoMesInicio, setNuevoFijoMesInicio] = useState(periodo);
   const [nuevoFijoMesFin, setNuevoFijoMesFin] = useState('');
 
   // Form Editar Costo Fijo Base (No Retroactivo)
   const [editFijoConcepto, setEditFijoConcepto] = useState('');
+  const [editFijoMoneda, setEditFijoMoneda] = useState<'PEN' | 'USD'>('PEN');
   const [editFijoMonto, setEditFijoMonto] = useState('');
+  const [editFijoMontoUSD, setEditFijoMontoUSD] = useState('');
+  const [editFijoTc, setEditFijoTc] = useState(configTc.toString());
   const [editFijoDia, setEditFijoDia] = useState('30');
   const [editFijoMesDesde, setEditFijoMesDesde] = useState(periodo);
   const [editFijoMesFin, setEditFijoMesFin] = useState('');
@@ -55,8 +63,12 @@ export function FijosClient() {
   // Form Nuevo Préstamo
   const [nuevoPrestamoBanco, setNuevoPrestamoBanco] = useState('BCP');
   const [nuevoPrestamoConcepto, setNuevoPrestamoConcepto] = useState('');
+  const [nuevoPrestamoMoneda, setNuevoPrestamoMoneda] = useState<'PEN' | 'USD'>('PEN');
   const [nuevoPrestamoMontoTotal, setNuevoPrestamoMontoTotal] = useState('');
   const [nuevoPrestamoMontoCuota, setNuevoPrestamoMontoCuota] = useState('');
+  const [nuevoPrestamoCuotaUSD, setNuevoPrestamoCuotaUSD] = useState('');
+  const [nuevoPrestamoTotalUSD, setNuevoPrestamoTotalUSD] = useState('');
+  const [nuevoPrestamoTc, setNuevoPrestamoTc] = useState(configTc.toString());
   const [nuevoPrestamoCuotasTotales, setNuevoPrestamoCuotasTotales] = useState('24');
   const [nuevoPrestamoCuotaInicial, setNuevoPrestamoCuotaInicial] = useState('1');
   const [nuevoPrestamoDiaPago, setNuevoPrestamoDiaPago] = useState('25');
@@ -66,7 +78,10 @@ export function FijosClient() {
   // Form Editar Préstamo Base (No Retroactivo)
   const [editPrestamoBanco, setEditPrestamoBanco] = useState('');
   const [editPrestamoConcepto, setEditPrestamoConcepto] = useState('');
+  const [editPrestamoMoneda, setEditPrestamoMoneda] = useState<'PEN' | 'USD'>('PEN');
   const [editPrestamoMontoCuota, setEditPrestamoMontoCuota] = useState('');
+  const [editPrestamoCuotaUSD, setEditPrestamoCuotaUSD] = useState('');
+  const [editPrestamoTc, setEditPrestamoTc] = useState(configTc.toString());
   const [editPrestamoDiaPago, setEditPrestamoDiaPago] = useState('25');
   const [editPrestamoTea, setEditPrestamoTea] = useState('14.50');
   const [editPrestamoMesDesde, setEditPrestamoMesDesde] = useState(periodo);
@@ -83,6 +98,16 @@ export function FijosClient() {
     setEditFijoDia(cf.diaVencimiento.toString());
     setEditFijoMesDesde(periodo);
     setEditFijoMesFin(cf.mesFin || '');
+
+    const isUsd = cf.monedaOriginal === 'USD' || cf.concepto.includes('$');
+    setEditFijoMoneda(isUsd ? 'USD' : 'PEN');
+    if (cf.montoOriginal) {
+      setEditFijoMontoUSD(cf.montoOriginal.toString());
+    } else {
+      const match = cf.concepto.match(/\$([0-9.]+)/);
+      setEditFijoMontoUSD(match ? match[1] : '');
+    }
+    setEditFijoTc(cf.tipoCambio ? cf.tipoCambio.toString() : configTc.toString());
   };
 
   // Cuando se selecciona un Préstamo para editar base
@@ -94,6 +119,16 @@ export function FijosClient() {
     setEditPrestamoDiaPago(p.diaPago.toString());
     setEditPrestamoTea(p.tasaInteresAnual.toString());
     setEditPrestamoMesDesde(periodo);
+
+    const isUsd = p.monedaOriginal === 'USD' || p.concepto.includes('$');
+    setEditPrestamoMoneda(isUsd ? 'USD' : 'PEN');
+    if (p.montoOriginal) {
+      setEditPrestamoCuotaUSD(p.montoOriginal.toString());
+    } else {
+      const match = p.concepto.match(/\$([0-9.]+)/);
+      setEditPrestamoCuotaUSD(match ? match[1] : '');
+    }
+    setEditPrestamoTc(p.tipoCambio ? p.tipoCambio.toString() : configTc.toString());
   };
 
   // Alternar estado de Costo Fijo para el mes
@@ -178,7 +213,25 @@ export function FijosClient() {
   // Crear nuevo Costo Fijo
   const handleCrearCostoFijo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nuevoFijoConcepto.trim() || !nuevoFijoMonto || parseFloat(nuevoFijoMonto) <= 0) {
+    let montoFinalSoles = parseFloat(nuevoFijoMonto);
+    let conceptoFinal = nuevoFijoConcepto.trim();
+    let notasFinal: string | null = null;
+
+    if (nuevoFijoMoneda === 'USD') {
+      const usdVal = parseFloat(nuevoFijoMontoUSD);
+      const tcVal = parseFloat(nuevoFijoTc) || configTc;
+      if (isNaN(usdVal) || usdVal <= 0) {
+        toast.error('Ingresa un monto en dólares válido');
+        return;
+      }
+      montoFinalSoles = Number((usdVal * tcVal).toFixed(2));
+      notasFinal = `USD: $${usdVal} | TC: S/ ${tcVal}`;
+      if (!conceptoFinal.includes('$')) {
+        conceptoFinal = `${conceptoFinal} ($${usdVal} USD)`;
+      }
+    }
+
+    if (!conceptoFinal || isNaN(montoFinalSoles) || montoFinalSoles <= 0) {
       toast.error('Ingresa datos válidos');
       return;
     }
@@ -189,12 +242,13 @@ export function FijosClient() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          concepto: nuevoFijoConcepto.trim(),
-          monto: parseFloat(nuevoFijoMonto),
+          concepto: conceptoFinal,
+          monto: montoFinalSoles,
           diaVencimiento: parseInt(nuevoFijoDia, 10),
           periodo,
           mesInicio: nuevoFijoMesInicio || periodo,
           mesFin: nuevoFijoMesFin.trim() || null,
+          notas: notasFinal,
         }),
       });
 
@@ -203,6 +257,8 @@ export function FijosClient() {
       setModalFijoOpen(false);
       setNuevoFijoConcepto('');
       setNuevoFijoMonto('');
+      setNuevoFijoMontoUSD('');
+      setNuevoFijoMoneda('PEN');
       await refresh();
     } catch (err: any) {
       toast.error(err.message || 'Error al crear');
@@ -214,7 +270,23 @@ export function FijosClient() {
   // Guardar edición base Costo Fijo (NO RETROACTIVA)
   const handleGuardarEdicionFijo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editFijoConcepto.trim() || !editFijoMonto || parseFloat(editFijoMonto) <= 0) {
+    let montoFinalSoles = parseFloat(editFijoMonto);
+    let conceptoFinal = editFijoConcepto.trim();
+
+    if (editFijoMoneda === 'USD') {
+      const usdVal = parseFloat(editFijoMontoUSD);
+      const tcVal = parseFloat(editFijoTc) || configTc;
+      if (isNaN(usdVal) || usdVal <= 0) {
+        toast.error('Ingresa un monto en dólares válido');
+        return;
+      }
+      montoFinalSoles = Number((usdVal * tcVal).toFixed(2));
+      if (!conceptoFinal.includes('$')) {
+        conceptoFinal = `${conceptoFinal} ($${usdVal} USD)`;
+      }
+    }
+
+    if (!conceptoFinal || isNaN(montoFinalSoles) || montoFinalSoles <= 0) {
       toast.error('Ingresa datos válidos');
       return;
     }
@@ -226,8 +298,8 @@ export function FijosClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: editandoCostoFijo.id,
-          concepto: editFijoConcepto.trim(),
-          monto: parseFloat(editFijoMonto),
+          concepto: conceptoFinal,
+          monto: montoFinalSoles,
           diaVencimiento: parseInt(editFijoDia, 10),
           mesDesde: editFijoMesDesde,
           mesFin: editFijoMesFin.trim() || null,
@@ -248,25 +320,43 @@ export function FijosClient() {
   // Crear nuevo Préstamo
   const handleCrearPrestamo = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nuevoPrestamoConcepto.trim() || !nuevoPrestamoMontoCuota || parseFloat(nuevoPrestamoMontoCuota) <= 0) {
+    let cuotaSoles = parseFloat(nuevoPrestamoMontoCuota);
+    let totalSoles = nuevoPrestamoMontoTotal ? parseFloat(nuevoPrestamoMontoTotal) : 0;
+    let conceptoFinal = nuevoPrestamoConcepto.trim();
+    const cuotasTot = parseInt(nuevoPrestamoCuotasTotales, 10) || 12;
+
+    if (nuevoPrestamoMoneda === 'USD') {
+      const usdCuota = parseFloat(nuevoPrestamoCuotaUSD);
+      const tcVal = parseFloat(nuevoPrestamoTc) || configTc;
+      if (isNaN(usdCuota) || usdCuota <= 0) {
+        toast.error('Ingresa la cuota en dólares');
+        return;
+      }
+      cuotaSoles = Number((usdCuota * tcVal).toFixed(2));
+      const usdTotal = parseFloat(nuevoPrestamoTotalUSD) || (usdCuota * cuotasTot);
+      totalSoles = Number((usdTotal * tcVal).toFixed(2));
+      if (!conceptoFinal.includes('$')) {
+        conceptoFinal = `${conceptoFinal} ($${usdCuota} USD)`;
+      }
+    } else {
+      if (!totalSoles) totalSoles = cuotaSoles * cuotasTot;
+    }
+
+    if (!conceptoFinal || isNaN(cuotaSoles) || cuotaSoles <= 0) {
       toast.error('Ingresa datos válidos');
       return;
     }
 
     try {
       setLoadingAction('crear-prestamo');
-      const cuotasTot = parseInt(nuevoPrestamoCuotasTotales, 10) || 12;
-      const cuotaMonto = parseFloat(nuevoPrestamoMontoCuota);
-      const montoTotal = nuevoPrestamoMontoTotal ? parseFloat(nuevoPrestamoMontoTotal) : cuotaMonto * cuotasTot;
-
       const res = await fetch('/api/prestamos/nuevo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           banco: nuevoPrestamoBanco,
-          concepto: nuevoPrestamoConcepto.trim(),
-          montoTotal,
-          montoCuota: cuotaMonto,
+          concepto: conceptoFinal,
+          montoTotal: totalSoles,
+          montoCuota: cuotaSoles,
           cuotasTotales: cuotasTot,
           cuotaInicial: parseInt(nuevoPrestamoCuotaInicial, 10) || 1,
           diaPago: parseInt(nuevoPrestamoDiaPago, 10) || 25,
@@ -281,6 +371,8 @@ export function FijosClient() {
       setNuevoPrestamoConcepto('');
       setNuevoPrestamoMontoTotal('');
       setNuevoPrestamoMontoCuota('');
+      setNuevoPrestamoCuotaUSD('');
+      setNuevoPrestamoMoneda('PEN');
       await refresh();
     } catch (err: any) {
       toast.error(err.message || 'Error al crear préstamo');
@@ -292,6 +384,27 @@ export function FijosClient() {
   // Guardar edición base Préstamo (NO RETROACTIVA)
   const handleGuardarEdicionPrestamo = async (e: React.FormEvent) => {
     e.preventDefault();
+    let cuotaSoles = parseFloat(editPrestamoMontoCuota);
+    let conceptoFinal = editPrestamoConcepto.trim();
+
+    if (editPrestamoMoneda === 'USD') {
+      const usdCuota = parseFloat(editPrestamoCuotaUSD);
+      const tcVal = parseFloat(editPrestamoTc) || configTc;
+      if (isNaN(usdCuota) || usdCuota <= 0) {
+        toast.error('Ingresa la cuota en dólares');
+        return;
+      }
+      cuotaSoles = Number((usdCuota * tcVal).toFixed(2));
+      if (!conceptoFinal.includes('$')) {
+        conceptoFinal = `${conceptoFinal} ($${usdCuota} USD)`;
+      }
+    }
+
+    if (!conceptoFinal || isNaN(cuotaSoles) || cuotaSoles <= 0) {
+      toast.error('Ingresa datos válidos');
+      return;
+    }
+
     try {
       setLoadingAction('edit-prestamo');
       const res = await fetch('/api/prestamos', {
@@ -299,9 +412,9 @@ export function FijosClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: editandoPrestamo.id,
-          concepto: editPrestamoConcepto.trim(),
+          concepto: conceptoFinal,
           banco: editPrestamoBanco.trim(),
-          montoCuota: parseFloat(editPrestamoMontoCuota),
+          montoCuota: cuotaSoles,
           diaPago: parseInt(editPrestamoDiaPago, 10),
           tasaInteresAnual: parseFloat(editPrestamoTea),
           mesDesde: editPrestamoMesDesde,
@@ -401,6 +514,9 @@ export function FijosClient() {
                     mesInicio: cf.mesInicio,
                     mesFin: cf.mesFin,
                     notas: cf.notas,
+                    monedaOriginal: cf.monedaOriginal,
+                    montoOriginal: cf.montoOriginal,
+                    tipoCambio: cf.tipoCambio,
                   })
                 }
                 className="group bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between hover:border-sky-500/50 hover:shadow-md transition cursor-pointer"
@@ -416,9 +532,16 @@ export function FijosClient() {
                       <span className="text-lg font-bold text-foreground block group-hover:text-sky-400 transition">
                         {formatMoney(cf.monto, moneda)}
                       </span>
-                      <span className="text-[11px] text-muted-foreground">
-                        Vence: Día {cf.diaVencimiento}
-                      </span>
+                      <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                        {(cf.monedaOriginal === 'USD' || cf.concepto.includes('$')) && (
+                          <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-500/20">
+                            ${cf.montoOriginal ? cf.montoOriginal.toFixed(2) : (cf.concepto.match(/\$([0-9.]+)/)?.[1] || '')} USD
+                          </span>
+                        )}
+                        <span className="text-[11px] text-muted-foreground">
+                          Vence: Día {cf.diaVencimiento}
+                        </span>
+                      </div>
                     </div>
                   </div>
 
@@ -566,6 +689,9 @@ export function FijosClient() {
                       diaVencimiento: p.diaPago,
                       estado: p.estado,
                       fechaPagoReal: p.fechaPagoReal,
+                      monedaOriginal: p.monedaOriginal,
+                      montoOriginal: p.montoOriginal,
+                      tipoCambio: p.tipoCambio,
                     })
                   }
                   className="group bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 hover:border-purple-500/50 hover:shadow-md transition cursor-pointer"
@@ -603,10 +729,17 @@ export function FijosClient() {
                       <div className="text-xl font-extrabold text-foreground group-hover:text-purple-400 transition">
                         {formatMoney(p.montoCuota, moneda)}
                       </div>
-                      <div className="text-[11px] text-muted-foreground font-semibold">
-                        {p.aplicaEsteMes === false
-                          ? (p.mensajePeriodo || `Total ${p.cuotasTotales} cuotas`)
-                          : `Cuota ${p.cuotaActual} de ${p.cuotasTotales}`}
+                      <div className="flex items-center justify-end gap-1 mt-0.5">
+                        {(p.monedaOriginal === 'USD' || p.concepto.includes('$')) && (
+                          <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-500/20">
+                            ${p.montoOriginal ? p.montoOriginal.toFixed(2) : (p.concepto.match(/\$([0-9.]+)/)?.[1] || '')} USD
+                          </span>
+                        )}
+                        <div className="text-[11px] text-muted-foreground font-semibold">
+                          {p.aplicaEsteMes === false
+                            ? (p.mensajePeriodo || `Total ${p.cuotasTotales} cuotas`)
+                            : `Cuota ${p.cuotaActual} de ${p.cuotasTotales}`}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -731,37 +864,135 @@ export function FijosClient() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
+              {/* Selector de Moneda */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
                   <label className="font-semibold text-foreground">
-                    Monto Mensual ({moneda}):
+                    Moneda de Facturación:
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="0.00"
-                    value={nuevoFijoMonto}
-                    onChange={(e) => setNuevoFijoMonto(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground font-bold"
-                  />
+                  <span className="text-[10px] text-muted-foreground">
+                    Se paga en Soles de tu presupuesto
+                  </span>
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">
-                    Día de Vencimiento:
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    required
-                    value={nuevoFijoDia}
-                    onChange={(e) => setNuevoFijoDia(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground"
-                  />
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNuevoFijoMoneda('PEN')}
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
+                      nuevoFijoMoneda === 'PEN'
+                        ? 'bg-sky-500/20 text-sky-400 border-sky-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    S/ Soles (PEN)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNuevoFijoMoneda('USD')}
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
+                      nuevoFijoMoneda === 'USD'
+                        ? 'bg-amber-500/20 text-amber-400 border-amber-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    $ Dólares (USD)
+                  </button>
                 </div>
               </div>
+
+              {nuevoFijoMoneda === 'PEN' ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="font-semibold text-foreground">
+                      Monto Mensual (S/):
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      placeholder="0.00"
+                      value={nuevoFijoMonto}
+                      onChange={(e) => setNuevoFijoMonto(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground font-bold"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-semibold text-foreground">
+                      Día de Vencimiento:
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      required
+                      value={nuevoFijoDia}
+                      onChange={(e) => setNuevoFijoDia(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-1 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-500">Monto USD ($):</span>
+                      <div className="flex items-center gap-1 bg-background px-2.5 py-1.5 rounded-xl border border-border">
+                        <span className="text-xs font-bold text-muted-foreground">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          placeholder="3.96"
+                          value={nuevoFijoMontoUSD}
+                          onChange={(e) => setNuevoFijoMontoUSD(e.target.value)}
+                          className="w-full text-xs font-bold bg-transparent outline-none text-foreground"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-span-1 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-500">Tipo Cambio (S/):</span>
+                      <div className="flex items-center gap-1 bg-background px-2.5 py-1.5 rounded-xl border border-border">
+                        <span className="text-xs font-bold text-muted-foreground">S/</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={nuevoFijoTc}
+                          onChange={(e) => setNuevoFijoTc(e.target.value)}
+                          className="w-full text-xs font-bold bg-transparent outline-none text-foreground"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-span-1 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-500">Día Vencimiento:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        required
+                        value={nuevoFijoDia}
+                        onChange={(e) => setNuevoFijoDia(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-amber-500 text-foreground text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-amber-500/20 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Conversión automática:</span>
+                    <div className="font-extrabold text-foreground">
+                      ={' '}
+                      <span className="text-amber-500 text-sm">
+                        S/ {((parseFloat(nuevoFijoMontoUSD) || 0) * (parseFloat(nuevoFijoTc) || configTc)).toFixed(2)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-normal ml-1">
+                        al mes en soles
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -854,36 +1085,134 @@ export function FijosClient() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
+              {/* Selector de Moneda en Edición */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
                   <label className="font-semibold text-foreground">
-                    Nuevo Monto Base ({moneda}):
+                    Moneda de Facturación:
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={editFijoMonto}
-                    onChange={(e) => setEditFijoMonto(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground font-bold"
-                  />
+                  <span className="text-[10px] text-muted-foreground">
+                    Se paga en Soles
+                  </span>
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">
-                    Día de Vencimiento:
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    required
-                    value={editFijoDia}
-                    onChange={(e) => setEditFijoDia(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground"
-                  />
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditFijoMoneda('PEN')}
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
+                      editFijoMoneda === 'PEN'
+                        ? 'bg-sky-500/20 text-sky-400 border-sky-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    S/ Soles (PEN)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditFijoMoneda('USD')}
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
+                      editFijoMoneda === 'USD'
+                        ? 'bg-amber-500/20 text-amber-400 border-amber-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    $ Dólares (USD)
+                  </button>
                 </div>
               </div>
+
+              {editFijoMoneda === 'PEN' ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="font-semibold text-foreground">
+                      Nuevo Monto Base ({moneda}):
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={editFijoMonto}
+                      onChange={(e) => setEditFijoMonto(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground font-bold"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-semibold text-foreground">
+                      Día de Vencimiento:
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      required
+                      value={editFijoDia}
+                      onChange={(e) => setEditFijoDia(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-1 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-500">Monto USD ($):</span>
+                      <div className="flex items-center gap-1 bg-background px-2.5 py-1.5 rounded-xl border border-border">
+                        <span className="text-xs font-bold text-muted-foreground">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          placeholder="3.96"
+                          value={editFijoMontoUSD}
+                          onChange={(e) => setEditFijoMontoUSD(e.target.value)}
+                          className="w-full text-xs font-bold bg-transparent outline-none text-foreground"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-span-1 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-500">Tipo Cambio (S/):</span>
+                      <div className="flex items-center gap-1 bg-background px-2.5 py-1.5 rounded-xl border border-border">
+                        <span className="text-xs font-bold text-muted-foreground">S/</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editFijoTc}
+                          onChange={(e) => setEditFijoTc(e.target.value)}
+                          className="w-full text-xs font-bold bg-transparent outline-none text-foreground"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-span-1 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-500">Día Vencimiento:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        required
+                        value={editFijoDia}
+                        onChange={(e) => setEditFijoDia(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-amber-500 text-foreground text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-amber-500/20 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Nuevo valor en soles:</span>
+                    <div className="font-extrabold text-foreground">
+                      ={' '}
+                      <span className="text-amber-500 text-sm">
+                        S/ {((parseFloat(editFijoMontoUSD) || 0) * (parseFloat(editFijoTc) || configTc)).toFixed(2)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-normal ml-1">
+                        en cuotas futuras
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">
@@ -982,36 +1311,136 @@ export function FijosClient() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
+              {/* Selector de Moneda */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
                   <label className="font-semibold text-foreground">
-                    Monto Cuota Mensual ({moneda}):
+                    Moneda del Préstamo:
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="0.00"
-                    value={nuevoPrestamoMontoCuota}
-                    onChange={(e) => setNuevoPrestamoMontoCuota(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground font-bold"
-                  />
+                  <span className="text-[10px] text-muted-foreground">
+                    Se liquida en Soles
+                  </span>
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">
-                    Monto Total Financiado ({moneda}):
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    placeholder="Opcional"
-                    value={nuevoPrestamoMontoTotal}
-                    onChange={(e) => setNuevoPrestamoMontoTotal(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground"
-                  />
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNuevoPrestamoMoneda('PEN')}
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
+                      nuevoPrestamoMoneda === 'PEN'
+                        ? 'bg-purple-500/20 text-purple-400 border-purple-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    S/ Soles (PEN)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNuevoPrestamoMoneda('USD')}
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
+                      nuevoPrestamoMoneda === 'USD'
+                        ? 'bg-amber-500/20 text-amber-400 border-amber-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    $ Dólares (USD)
+                  </button>
                 </div>
               </div>
+
+              {nuevoPrestamoMoneda === 'PEN' ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="font-semibold text-foreground">
+                      Monto Cuota Mensual (S/):
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      placeholder="0.00"
+                      value={nuevoPrestamoMontoCuota}
+                      onChange={(e) => setNuevoPrestamoMontoCuota(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground font-bold"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-semibold text-foreground">
+                      Monto Total Financiado (S/):
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      placeholder="Opcional"
+                      value={nuevoPrestamoMontoTotal}
+                      onChange={(e) => setNuevoPrestamoMontoTotal(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-1 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-500">Cuota USD ($):</span>
+                      <div className="flex items-center gap-1 bg-background px-2.5 py-1.5 rounded-xl border border-border">
+                        <span className="text-xs font-bold text-muted-foreground">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          placeholder="900"
+                          value={nuevoPrestamoCuotaUSD}
+                          onChange={(e) => setNuevoPrestamoCuotaUSD(e.target.value)}
+                          className="w-full text-xs font-bold bg-transparent outline-none text-foreground"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-span-1 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-500">Total USD ($):</span>
+                      <div className="flex items-center gap-1 bg-background px-2.5 py-1.5 rounded-xl border border-border">
+                        <span className="text-xs font-bold text-muted-foreground">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          placeholder="Opcional"
+                          value={nuevoPrestamoTotalUSD}
+                          onChange={(e) => setNuevoPrestamoTotalUSD(e.target.value)}
+                          className="w-full text-xs font-bold bg-transparent outline-none text-foreground"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-span-1 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-500">Tipo Cambio (S/):</span>
+                      <div className="flex items-center gap-1 bg-background px-2.5 py-1.5 rounded-xl border border-border">
+                        <span className="text-xs font-bold text-muted-foreground">S/</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={nuevoPrestamoTc}
+                          onChange={(e) => setNuevoPrestamoTc(e.target.value)}
+                          className="w-full text-xs font-bold bg-transparent outline-none text-foreground"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-amber-500/20 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Cuota calculada en soles:</span>
+                    <div className="font-extrabold text-foreground">
+                      ={' '}
+                      <span className="text-amber-500 text-sm">
+                        S/ {((parseFloat(nuevoPrestamoCuotaUSD) || 0) * (parseFloat(nuevoPrestamoTc) || configTc)).toFixed(2)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-normal ml-1">
+                        por mes
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-3 gap-3">
                 <div className="space-y-1.5">
@@ -1166,36 +1595,134 @@ export function FijosClient() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
+              {/* Selector de Moneda en Edición */}
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
                   <label className="font-semibold text-foreground">
-                    Nueva Cuota Mensual ({moneda}):
+                    Moneda de la Cuota:
                   </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    value={editPrestamoMontoCuota}
-                    onChange={(e) => setEditPrestamoMontoCuota(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground font-bold"
-                  />
+                  <span className="text-[10px] text-muted-foreground">
+                    Se liquida en Soles
+                  </span>
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">
-                    Día de Pago:
-                  </label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    required
-                    value={editPrestamoDiaPago}
-                    onChange={(e) => setEditPrestamoDiaPago(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground"
-                  />
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditPrestamoMoneda('PEN')}
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
+                      editPrestamoMoneda === 'PEN'
+                        ? 'bg-purple-500/20 text-purple-400 border-purple-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    S/ Soles (PEN)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditPrestamoMoneda('USD')}
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
+                      editPrestamoMoneda === 'USD'
+                        ? 'bg-amber-500/20 text-amber-400 border-amber-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    $ Dólares (USD)
+                  </button>
                 </div>
               </div>
+
+              {editPrestamoMoneda === 'PEN' ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <label className="font-semibold text-foreground">
+                      Nueva Cuota Mensual (S/):
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      value={editPrestamoMontoCuota}
+                      onChange={(e) => setEditPrestamoMontoCuota(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground font-bold"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="font-semibold text-foreground">
+                      Día de Pago:
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="31"
+                      required
+                      value={editPrestamoDiaPago}
+                      onChange={(e) => setEditPrestamoDiaPago(e.target.value)}
+                      className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground"
+                    />
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-3 p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30">
+                  <div className="grid grid-cols-3 gap-2">
+                    <div className="col-span-1 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-500">Cuota USD ($):</span>
+                      <div className="flex items-center gap-1 bg-background px-2.5 py-1.5 rounded-xl border border-border">
+                        <span className="text-xs font-bold text-muted-foreground">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          required
+                          placeholder="900"
+                          value={editPrestamoCuotaUSD}
+                          onChange={(e) => setEditPrestamoCuotaUSD(e.target.value)}
+                          className="w-full text-xs font-bold bg-transparent outline-none text-foreground"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-span-1 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-500">Tipo Cambio (S/):</span>
+                      <div className="flex items-center gap-1 bg-background px-2.5 py-1.5 rounded-xl border border-border">
+                        <span className="text-xs font-bold text-muted-foreground">S/</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={editPrestamoTc}
+                          onChange={(e) => setEditPrestamoTc(e.target.value)}
+                          className="w-full text-xs font-bold bg-transparent outline-none text-foreground"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="col-span-1 space-y-1">
+                      <span className="text-[10px] font-bold text-amber-500">Día de Pago:</span>
+                      <input
+                        type="number"
+                        min="1"
+                        max="31"
+                        required
+                        value={editPrestamoDiaPago}
+                        onChange={(e) => setEditPrestamoDiaPago(e.target.value)}
+                        className="w-full px-2.5 py-1.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-amber-500 text-foreground text-xs"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-amber-500/20 flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Nueva cuota en soles:</span>
+                    <div className="font-extrabold text-foreground">
+                      ={' '}
+                      <span className="text-amber-500 text-sm">
+                        S/ {((parseFloat(editPrestamoCuotaUSD) || 0) * (parseFloat(editPrestamoTc) || configTc)).toFixed(2)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-normal ml-1">
+                        en cuotas futuras
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1.5">

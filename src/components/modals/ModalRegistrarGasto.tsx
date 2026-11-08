@@ -22,12 +22,13 @@ interface ModalRegistrarGastoProps {
 
 export function ModalRegistrarGasto({ open, onClose }: ModalRegistrarGastoProps) {
   const { refresh, resumen } = useFinanzas();
-  const tipoCambio = resumen?.config?.tipoCambioUSD || 4.00;
+  const configTc = resumen?.config?.tipoCambioUSD || 4.00;
   const tarjetas = resumen?.tarjetasCredito || [];
 
   const [concepto, setConcepto] = useState('');
   const [montoInput, setMontoInput] = useState('');
   const [moneda, setMoneda] = useState<'PEN' | 'USD'>('PEN');
+  const [tipoCambioInput, setTipoCambioInput] = useState(configTc.toString());
   const [fechaGasto, setFechaGasto] = useState(() => new Date().toISOString().split('T')[0]);
   const [metodoPago, setMetodoPago] = useState<'TARJETA_CREDITO' | 'EFECTIVO_DEBITO' | 'TRANSFERENCIA'>('TARJETA_CREDITO');
   const [tarjetaId, setTarjetaId] = useState(() => tarjetas[0]?.id || '');
@@ -36,13 +37,20 @@ export function ModalRegistrarGasto({ open, onClose }: ModalRegistrarGastoProps)
   const [submitting, setSubmitting] = useState(false);
 
   React.useEffect(() => {
+    if (resumen?.config?.tipoCambioUSD) {
+      setTipoCambioInput(resumen.config.tipoCambioUSD.toString());
+    }
+  }, [resumen?.config?.tipoCambioUSD]);
+
+  React.useEffect(() => {
     if (tarjetas.length > 0 && !tarjetaId) {
       setTarjetaId(tarjetas[0].id);
     }
   }, [tarjetas, tarjetaId]);
 
+  const tcEfectivo = parseFloat(tipoCambioInput) > 0 ? parseFloat(tipoCambioInput) : configTc;
   const montoNumero = parseFloat(montoInput) || 0;
-  const montoSoles = moneda === 'USD' ? montoNumero * tipoCambio : montoNumero;
+  const montoSoles = moneda === 'USD' ? Number((montoNumero * tcEfectivo).toFixed(2)) : montoNumero;
 
   // Previsualización de corte (Día 10)
   const preview = useMemo(() => {
@@ -80,7 +88,7 @@ export function ModalRegistrarGasto({ open, onClose }: ModalRegistrarGastoProps)
           monto: montoSoles,
           monedaOriginal: moneda,
           montoOriginal: moneda === 'USD' ? montoNumero : null,
-          tipoCambio,
+          tipoCambio: tcEfectivo,
           fechaGasto: new Date(`${fechaGasto}T12:00:00`),
           metodoPago,
           tarjetaId: metodoPago === 'TARJETA_CREDITO' ? tarjetaId : undefined,
@@ -179,12 +187,46 @@ export function ModalRegistrarGasto({ open, onClose }: ModalRegistrarGastoProps)
             </div>
           </div>
 
-          {/* Conversión si es Dólares */}
-          {moneda === 'USD' && montoNumero > 0 && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs">
-              <span className="font-bold">Conversión al T.C. fijo: </span>
-              ${montoNumero.toFixed(2)} USD × S/ {tipoCambio.toFixed(2)} ={' '}
-              <strong className="text-white text-sm">S/ {montoSoles.toFixed(2)}</strong>
+          {/* Conversión y Tipo de Cambio si es Dólares */}
+          {moneda === 'USD' && (
+            <div className="p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30 space-y-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-[11px] font-bold text-amber-500 dark:text-amber-400 block">
+                    Tipo de Cambio (T.C.)
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    Ajusta según lo que cobró tu banco
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-background px-3 py-1.5 rounded-xl border border-border">
+                  <span className="text-xs font-bold text-muted-foreground">S/</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={tipoCambioInput}
+                    onChange={(e) => setTipoCambioInput(e.target.value)}
+                    className="w-16 text-right font-bold text-foreground text-xs bg-transparent outline-none focus:ring-1 focus:ring-amber-500 rounded"
+                  />
+                </div>
+              </div>
+
+              {montoNumero > 0 && (
+                <div className="pt-2 border-t border-amber-500/20 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground font-medium">
+                    ${montoNumero.toFixed(2)} USD × S/ {tcEfectivo.toFixed(2)}
+                  </span>
+                  <div className="font-extrabold text-foreground text-sm">
+                    ={' '}
+                    <span className="text-amber-500 dark:text-amber-400">
+                      S/ {montoSoles.toFixed(2)}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-normal ml-1">
+                      (se paga en soles)
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

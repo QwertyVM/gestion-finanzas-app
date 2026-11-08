@@ -4,7 +4,7 @@ import { EstadoPago } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   try {
-    const { concepto, monto, diaVencimiento, periodo, mesInicio, mesFin, categoriaId } = await request.json();
+    const { concepto, monto, diaVencimiento, periodo, mesInicio, mesFin, categoriaId, notas } = await request.json();
     const startPeriodo = mesInicio || periodo || '2026-11';
     const montoFloat = parseFloat(monto);
 
@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
             periodo: startPeriodo,
             monto: montoFloat,
             estado: EstadoPago.PENDIENTE,
+            notas: notas || null,
           },
         },
       },

@@ -78,6 +78,9 @@ export function DashboardClient() {
         mesInicio: cf.mesInicio,
         mesFin: cf.mesFin,
         notas: cf.notas,
+        monedaOriginal: cf.monedaOriginal,
+        montoOriginal: cf.montoOriginal,
+        tipoCambio: cf.tipoCambio,
         subtexto: `Vence el día ${cf.diaVencimiento}`,
       });
     }
@@ -102,6 +105,9 @@ export function DashboardClient() {
         diaVencimiento: p.diaPago,
         estado: p.estado,
         fechaPagoReal: p.fechaPagoReal,
+        monedaOriginal: p.monedaOriginal,
+        montoOriginal: p.montoOriginal,
+        tipoCambio: p.tipoCambio,
         subtexto: `Cuota ${p.cuotaActual} de ${p.cuotasTotales} (Día ${p.diaPago})`,
       });
     }
@@ -701,8 +707,8 @@ export function DashboardClient() {
                       <div className="text-[11px] text-muted-foreground dark:text-slate-400 flex items-center gap-2 truncate">
                         <span className="truncate">{item.subtexto}</span>
                         {item.monedaOriginal === 'USD' && item.montoOriginal && (
-                          <span className="text-amber-700 dark:text-amber-400 font-semibold shrink-0">
-                            (${item.montoOriginal} USD)
+                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-500/30 shrink-0">
+                            ${item.montoOriginal.toFixed(2)} USD{item.tipoCambio ? ` · T.C. S/ ${item.tipoCambio.toFixed(2)}` : ''}
                           </span>
                         )}
                       </div>

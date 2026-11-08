@@ -13,19 +13,27 @@ interface ModalRegistrarIngresoProps {
 
 export function ModalRegistrarIngreso({ open, onClose }: ModalRegistrarIngresoProps) {
   const { periodo, refresh, resumen } = useFinanzas();
-  const tipoCambio = resumen?.config?.tipoCambioUSD || 4.00;
+  const configTc = resumen?.config?.tipoCambioUSD || 4.00;
 
   const [concepto, setConcepto] = useState('');
   const [montoInput, setMontoInput] = useState('');
   const [moneda, setMoneda] = useState<'PEN' | 'USD'>('PEN');
+  const [tipoCambioInput, setTipoCambioInput] = useState(configTc.toString());
   const [tipo, setTipo] = useState<'SUELDO' | 'GRATIFICACION' | 'UTILIDADES' | 'EXTRA'>('EXTRA');
   const [fechaEsperada, setFechaEsperada] = useState(() => `${periodo}-28`);
   const [submitting, setSubmitting] = useState(false);
 
+  React.useEffect(() => {
+    if (resumen?.config?.tipoCambioUSD) {
+      setTipoCambioInput(resumen.config.tipoCambioUSD.toString());
+    }
+  }, [resumen?.config?.tipoCambioUSD]);
+
   if (!open) return null;
 
+  const tcEfectivo = parseFloat(tipoCambioInput) > 0 ? parseFloat(tipoCambioInput) : configTc;
   const montoNumero = parseFloat(montoInput) || 0;
-  const montoSoles = moneda === 'USD' ? montoNumero * tipoCambio : montoNumero;
+  const montoSoles = moneda === 'USD' ? Number((montoNumero * tcEfectivo).toFixed(2)) : montoNumero;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,7 +54,7 @@ export function ModalRegistrarIngreso({ open, onClose }: ModalRegistrarIngresoPr
           monto: montoSoles,
           monedaOriginal: moneda,
           montoOriginal: moneda === 'USD' ? montoNumero : null,
-          tipoCambio,
+          tipoCambio: tcEfectivo,
           fechaEsperada: new Date(`${fechaEsperada}T12:00:00`),
           recibido: true,
         }),
@@ -167,12 +175,53 @@ export function ModalRegistrarIngreso({ open, onClose }: ModalRegistrarIngresoPr
             </div>
           </div>
 
-          {/* Conversión si es Dólares */}
-          {moneda === 'USD' && montoNumero > 0 && (
-            <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs">
-              <span className="font-bold">Conversión al Tipo de Cambio fijo: </span>
-              ${montoNumero.toFixed(2)} USD × S/ {tipoCambio.toFixed(2)} ={' '}
-              <strong className="text-white text-sm">S/ {montoSoles.toFixed(2)}</strong>
+          {/* Explicación y Conversión de Divisa si es Dólares */}
+          <div className="p-3 rounded-2xl bg-secondary/50 border border-border text-[11px] text-muted-foreground flex items-start gap-2">
+            <span className="font-bold text-foreground">💡 Moneda:</span>
+            <span>
+              Tu sueldo base es en <strong>Soles (S/)</strong>. Si recibes un pago o trabajo extra facturado en <strong>Dólares ($ USD)</strong>, el sistema lo convertirá al tipo de cambio que indiques para sumarlo a tu disponible en soles.
+            </span>
+          </div>
+
+          {moneda === 'USD' && (
+            <div className="p-3.5 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 space-y-2.5">
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block">
+                    Tipo de Cambio (T.C.)
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    Ajusta según la tasa a la que cambies tus dólares
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 bg-background px-3 py-1.5 rounded-xl border border-border">
+                  <span className="text-xs font-bold text-muted-foreground">S/</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={tipoCambioInput}
+                    onChange={(e) => setTipoCambioInput(e.target.value)}
+                    className="w-16 text-right font-bold text-foreground text-xs bg-transparent outline-none focus:ring-1 focus:ring-emerald-500 rounded"
+                  />
+                </div>
+              </div>
+
+              {montoNumero > 0 && (
+                <div className="pt-2 border-t border-emerald-500/20 flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground font-medium">
+                    ${montoNumero.toFixed(2)} USD × S/ {tcEfectivo.toFixed(2)}
+                  </span>
+                  <div className="font-extrabold text-foreground text-sm">
+                    ={' '}
+                    <span className="text-emerald-600 dark:text-emerald-400">
+                      S/ {montoSoles.toFixed(2)}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-normal ml-1">
+                      (sumados a tu disponible)
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -38,6 +38,9 @@ export interface ResumenFinanciero {
     mesInicio?: string | null;
     mesFin?: string | null;
     notas?: string | null;
+    monedaOriginal?: string;
+    montoOriginal?: number | null;
+    tipoCambio?: number;
   }>;
   totalCostosFijos: number;
   prestamos: Array<{
@@ -57,6 +60,9 @@ export interface ResumenFinanciero {
     periodoInicio?: string | null;
     periodoFin?: string | null;
     mensajePeriodo?: string | null;
+    monedaOriginal?: string;
+    montoOriginal?: number | null;
+    tipoCambio?: number;
   }>;
   totalPrestamos: number;
   tarjetasCredito: Array<{
@@ -212,6 +218,30 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     const montoNum = reg ? Number(reg.monto) : Number(cf.monto);
     totalCostosFijos += montoNum;
 
+    let monedaOriginal = 'PEN';
+    let montoOriginal: number | null = null;
+    let tipoCambio = Number(config.tipoCambioUSD);
+
+    if (reg?.notas && reg.notas.includes('USD: $')) {
+      const mUsd = reg.notas.match(/USD:\s*\$([0-9.]+)/);
+      const mTc = reg.notas.match(/TC:\s*S\/\s*([0-9.]+)/);
+      if (mUsd) {
+        monedaOriginal = 'USD';
+        montoOriginal = parseFloat(mUsd[1]);
+        if (mTc) tipoCambio = parseFloat(mTc[1]);
+        else if (montoOriginal > 0) tipoCambio = Number((montoNum / montoOriginal).toFixed(2));
+      }
+    } else {
+      const usdMatch = cf.concepto.match(/\$([0-9]+(?:\.[0-9]+)?)/);
+      if (usdMatch) {
+        monedaOriginal = 'USD';
+        montoOriginal = parseFloat(usdMatch[1]);
+        if (montoOriginal > 0 && montoNum > 0) {
+          tipoCambio = Number((montoNum / montoOriginal).toFixed(2));
+        }
+      }
+    }
+
     costosFijos.push({
       id: cf.id,
       concepto: cf.concepto,
@@ -224,6 +254,9 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
       mesInicio: cf.mesInicio,
       mesFin: cf.mesFin,
       notas: reg?.notas || null,
+      monedaOriginal,
+      montoOriginal,
+      tipoCambio,
     });
   }
 
@@ -235,6 +268,18 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     const cuotaMes = p.cuotas.find((c) => c.periodo === periodo);
     const primeraCuota = p.cuotas[0];
     const ultimaCuota = p.cuotas[p.cuotas.length - 1];
+
+    let pMonedaOriginal = 'PEN';
+    let pMontoOriginal: number | null = null;
+    let pTipoCambio = Number(config.tipoCambioUSD);
+    const pUsdMatch = p.concepto.match(/\$([0-9]+(?:\.[0-9]+)?)/);
+    if (pUsdMatch) {
+      pMonedaOriginal = 'USD';
+      pMontoOriginal = parseFloat(pUsdMatch[1]);
+      if (pMontoOriginal > 0 && Number(p.montoCuota) > 0) {
+        pTipoCambio = Number((Number(p.montoCuota) / pMontoOriginal).toFixed(2));
+      }
+    }
 
     if (cuotaMes) {
       const montoNum = Number(cuotaMes.monto);
@@ -255,6 +300,9 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
         aplicaEsteMes: true,
         periodoInicio: primeraCuota?.periodo || null,
         periodoFin: ultimaCuota?.periodo || null,
+        monedaOriginal: pMonedaOriginal,
+        montoOriginal: pMontoOriginal,
+        tipoCambio: pTipoCambio,
       });
     } else {
       const proximaCuota = p.cuotas.find((c) => c.periodo > periodo) || ultimaCuota;
@@ -280,6 +328,9 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
         periodoInicio: primeraCuota?.periodo || null,
         periodoFin: ultimaCuota?.periodo || null,
         mensajePeriodo: mensaje,
+        monedaOriginal: pMonedaOriginal,
+        montoOriginal: pMontoOriginal,
+        tipoCambio: pTipoCambio,
       });
     }
   }
