@@ -97,75 +97,86 @@ export interface ResumenFinanciero {
 }
 
 export async function getResumenMensual(periodo: string): Promise<ResumenFinanciero> {
-  // 1. Configuración de usuario
-  let config = await prisma.configuracionUsuario.findFirst();
-  if (!config) {
-    config = await prisma.configuracionUsuario.create({
-      data: {
-        nombre: 'Víctor',
-        monedaSimbolo: 'S/',
-        sueldoBaseMensual: 6000.00,
-        diaPagoSueldo: 30,
-        tipoCambioUSD: 4.00,
-        metaAhorroMensual: 1000.00,
+  const [sAnio, sMes] = periodo.split('-').map(Number);
+  const nextDate = new Date(sAnio, sMes, 1);
+  const siguientePeriodo = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
+
+  // CONSULTAS ULTRA-OPTIMIZADAS EN PARALELO
+  const [
+    configRaw,
+    ingresosDbRaw,
+    costosFijosBase,
+    prestamosDb,
+    tarjetasDb,
+    gastosDirectosDb,
+    gastosNextAll,
+  ] = await Promise.all([
+    prisma.configuracionUsuario.findFirst(),
+    prisma.ingresoMes.findMany({
+      where: { periodo },
+      orderBy: { fechaEsperada: 'asc' },
+    }),
+    prisma.costoFijo.findMany({
+      where: { activo: true },
+      include: {
+        categoria: true,
+        registrosMes: {
+          where: { periodo },
+        },
       },
-    });
-  }
-
-  // 2. Ingresos del periodo
-  let ingresosDb = await prisma.ingresoMes.findMany({
-    where: { periodo },
-    orderBy: { fechaEsperada: 'asc' },
-  });
-
-  // Si no hay sueldo registrado para el mes, asegurar que figure con el sueldo base
-  const tieneSueldo = ingresosDb.some((i) => i.tipo === TipoIngreso.SUELDO);
-  if (!tieneSueldo && Number(config.sueldoBaseMensual) > 0) {
-    const nuevoSueldo = await prisma.ingresoMes.create({
-      data: {
-        periodo,
-        tipo: TipoIngreso.SUELDO,
-        concepto: 'Sueldo Mensual Planilla',
-        monto: config.sueldoBaseMensual,
-        fechaEsperada: new Date(`${periodo}-28`),
+      orderBy: { diaVencimiento: 'asc' },
+    }),
+    prisma.prestamo.findMany({
+      where: { activo: true },
+      include: {
+        cuotas: {
+          where: { periodo },
+        },
       },
-    });
-    ingresosDb.push(nuevoSueldo);
-  }
-
-  // Gratificación (Julio 07 o Diciembre 12)
-  const mesNumero = parseInt(periodo.split('-')[1], 10);
-  const tieneGrati = ingresosDb.some((i) => i.tipo === TipoIngreso.GRATIFICACION);
-  if ((mesNumero === 7 || mesNumero === 12) && !tieneGrati) {
-    const montoGrati = Number(config.sueldoBaseMensual) * 1.09; // Sueldo + 9% bono de ley
-    const nuevaGrati = await prisma.ingresoMes.create({
-      data: {
-        periodo,
-        tipo: TipoIngreso.GRATIFICACION,
-        concepto: mesNumero === 7 ? 'Gratificación Julio (Fiestas Patrias)' : 'Gratificación Diciembre (Navidad)',
-        monto: montoGrati,
-        fechaEsperada: new Date(`${periodo}-15`),
+      orderBy: { diaPago: 'asc' },
+    }),
+    prisma.tarjetaCredito.findMany({
+      where: { activa: true },
+      include: {
+        gastos: {
+          where: { periodoPago: periodo },
+          include: { categoria: true },
+          orderBy: { fechaGasto: 'desc' },
+        },
       },
-    });
-    ingresosDb.push(nuevaGrati);
-  }
-
-  // Utilidades (Marzo 03)
-  const tieneUtilidades = ingresosDb.some((i) => i.tipo === TipoIngreso.UTILIDADES);
-  if (mesNumero === 3 && !tieneUtilidades) {
-    const nuevaUtilidad = await prisma.ingresoMes.create({
-      data: {
-        periodo,
-        tipo: TipoIngreso.UTILIDADES,
-        concepto: 'Utilidades Anuales',
-        monto: Number(config.sueldoBaseMensual) * 1.5,
-        fechaEsperada: new Date(`${periodo}-25`),
+      orderBy: { nombre: 'asc' },
+    }),
+    prisma.gasto.findMany({
+      where: {
+        periodoPago: periodo,
+        metodoPago: { not: MetodoPago.TARJETA_CREDITO },
       },
-    });
-    ingresosDb.push(nuevaUtilidad);
-  }
+      include: { categoria: true },
+      orderBy: { fechaGasto: 'desc' },
+    }),
+    prisma.gasto.findMany({
+      where: {
+        periodoPago: siguientePeriodo,
+      },
+      include: { categoria: true },
+      orderBy: { fechaGasto: 'desc' },
+    }),
+  ]);
 
-  const ingresos = ingresosDb.map((i) => ({
+  const config = configRaw || {
+    id: 'default',
+    nombre: 'Víctor',
+    monedaSimbolo: 'S/',
+    sueldoBaseMensual: 8200.00,
+    diaPagoSueldo: 30,
+    tipoCambioUSD: 4.00,
+    metaAhorroMensual: 1000.00,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  // 1. Ingresos
+  const ingresos = ingresosDbRaw.map((i) => ({
     id: i.id,
     periodo: i.periodo,
     tipo: i.tipo,
@@ -177,42 +188,18 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     fechaEsperada: i.fechaEsperada.toISOString(),
     recibido: i.recibido,
   }));
-
   const totalIngresos = ingresos.reduce((acc, curr) => acc + curr.monto, 0);
 
-  // 3. Costos Fijos
-  const costosFijosBase = await prisma.costoFijo.findMany({
-    where: { activo: true },
-    include: {
-      categoria: true,
-      registrosMes: {
-        where: { periodo },
-      },
-    },
-    orderBy: { diaVencimiento: 'asc' },
-  });
-
+  // 2. Costos Fijos
   const costosFijos = [];
   let totalCostosFijos = 0;
 
   for (const cf of costosFijosBase) {
-    // Si tiene mesInicio o mesFin definidos, respetar su vigencia
     if (cf.mesInicio && periodo < cf.mesInicio) continue;
     if (cf.mesFin && periodo > cf.mesFin) continue;
 
-    let reg = cf.registrosMes[0];
-    if (!reg) {
-      reg = await prisma.registroCostoFijoMes.create({
-        data: {
-          costoFijoId: cf.id,
-          periodo,
-          monto: cf.monto,
-          estado: EstadoPago.PENDIENTE,
-        },
-      });
-    }
-
-    const montoNum = Number(reg.monto);
+    const reg = cf.registrosMes[0];
+    const montoNum = reg ? Number(reg.monto) : Number(cf.monto);
     totalCostosFijos += montoNum;
 
     costosFijos.push({
@@ -221,46 +208,18 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
       monto: montoNum,
       diaVencimiento: cf.diaVencimiento,
       categoria: cf.categoria?.nombre || 'General',
-      registroId: reg.id,
-      estado: reg.estado,
-      fechaPagoReal: reg.fechaPagoReal ? reg.fechaPagoReal.toISOString() : null,
+      registroId: reg?.id || undefined,
+      estado: reg ? reg.estado : EstadoPago.PENDIENTE,
+      fechaPagoReal: reg?.fechaPagoReal ? reg.fechaPagoReal.toISOString() : null,
     });
   }
 
-  // 4. Préstamos Bancarios
-  const prestamosDb = await prisma.prestamo.findMany({
-    where: { activo: true },
-    include: {
-      cuotas: {
-        where: { periodo },
-      },
-    },
-    orderBy: { diaPago: 'asc' },
-  });
-
+  // 3. Préstamos
   const prestamos = [];
   let totalPrestamos = 0;
 
   for (const p of prestamosDb) {
-    let cuota = p.cuotas[0];
-    if (!cuota) {
-      const fechaInicio = new Date(p.fechaInicio);
-      const [pAnio, pMes] = periodo.split('-').map(Number);
-      const mesesDiferencia = (pAnio - fechaInicio.getFullYear()) * 12 + (pMes - (fechaInicio.getMonth() + 1)) + 1;
-
-      if (mesesDiferencia >= 1 && mesesDiferencia <= p.cuotasTotales) {
-        cuota = await prisma.cuotaPrestamo.create({
-          data: {
-            prestamoId: p.id,
-            numeroCuota: mesesDiferencia,
-            periodo,
-            monto: p.montoCuota,
-            estado: EstadoPago.PENDIENTE,
-          },
-        });
-      }
-    }
-
+    const cuota = p.cuotas[0];
     if (cuota) {
       const montoNum = Number(cuota.monto);
       totalPrestamos += montoNum;
@@ -281,25 +240,7 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     }
   }
 
-  // 5. Tarjetas de Crédito y Gastos en Tarjeta
-  const tarjetasDb = await prisma.tarjetaCredito.findMany({
-    where: { activa: true },
-    include: {
-      gastos: {
-        where: {
-          periodoPago: periodo,
-        },
-        include: { categoria: true },
-        orderBy: { fechaGasto: 'desc' },
-      },
-    },
-    orderBy: { nombre: 'asc' },
-  });
-
-  const [sAnio, sMes] = periodo.split('-').map(Number);
-  const nextDate = new Date(sAnio, sMes, 1);
-  const siguientePeriodo = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
-
+  // 4. Tarjetas
   const tarjetasCredito = [];
   let totalTarjetas = 0;
 
@@ -308,14 +249,7 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     const totalMes = gastosMes.reduce((acc, g) => acc + Number(g.monto), 0);
     totalTarjetas += totalMes;
 
-    const gastosNext = await prisma.gasto.findMany({
-      where: {
-        tarjetaId: t.id,
-        periodoPago: siguientePeriodo,
-      },
-      include: { categoria: true },
-      orderBy: { fechaGasto: 'desc' },
-    });
+    const gastosNext = gastosNextAll.filter((g) => g.tarjetaId === t.id);
     const totalNext = gastosNext.reduce((acc, g) => acc + Number(g.monto), 0);
 
     tarjetasCredito.push({
@@ -358,16 +292,7 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     });
   }
 
-  // 6. Gastos Directos
-  const gastosDirectosDb = await prisma.gasto.findMany({
-    where: {
-      periodoPago: periodo,
-      metodoPago: { not: MetodoPago.TARJETA_CREDITO },
-    },
-    include: { categoria: true },
-    orderBy: { fechaGasto: 'desc' },
-  });
-
+  // 5. Gastos Directos
   const gastosDirectos = gastosDirectosDb.map((g) => ({
     id: g.id,
     concepto: g.concepto,
@@ -381,10 +306,9 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     estado: g.estado,
     fechaPagoReal: g.fechaPagoReal ? g.fechaPagoReal.toISOString() : null,
   }));
-
   const totalGastosDirectos = gastosDirectos.reduce((acc, g) => acc + g.monto, 0);
 
-  // 7. Cálculos de Totales
+  // 6. Totales por Estado
   let totalPagado = 0;
   let totalAdelantado = 0;
   let totalPendiente = 0;
@@ -420,9 +344,6 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
   const metaAhorro = Number(config.metaAhorroMensual || 1000);
   const dineroDisponibleNeto = dineroDisponibleBruto - metaAhorro;
 
-  // 8. Proyección Multi-Mes
-  const proyeccionMultiMes = await getMultiMesProyeccion(periodo, 6);
-
   return {
     periodo,
     config: {
@@ -450,77 +371,8 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     dineroDisponibleBruto,
     metaAhorro,
     dineroDisponibleNeto,
-    proyeccionMultiMes,
+    proyeccionMultiMes: [],
   };
-}
-
-export async function getMultiMesProyeccion(periodoInicio: string, cantidadMeses: number = 6) {
-  const [initAnio, initMes] = periodoInicio.split('-').map(Number);
-  const result = [];
-
-  const config = await prisma.configuracionUsuario.findFirst();
-  const sueldoBase = Number(config?.sueldoBaseMensual || 8200);
-
-  for (let i = 0; i < cantidadMeses; i++) {
-    const d = new Date(initAnio, initMes - 1 + i, 1);
-    const pAnio = d.getFullYear();
-    const pMes = d.getMonth() + 1;
-    const p = `${pAnio}-${String(pMes).padStart(2, '0')}`;
-
-    const esGrati = pMes === 7 || pMes === 12;
-    const esUtilidad = pMes === 3;
-
-    const ingresosDb = await prisma.ingresoMes.findMany({ where: { periodo: p } });
-    let totalIngresos = ingresosDb.reduce((acc, curr) => acc + Number(curr.monto), 0);
-
-    if (totalIngresos === 0) {
-      totalIngresos += sueldoBase;
-      if (esGrati) totalIngresos += sueldoBase * 1.09;
-      if (esUtilidad) totalIngresos += sueldoBase * 1.5;
-    }
-
-    // Costos fijos vigentes para este periodo
-    const fijosRegistrados = await prisma.registroCostoFijoMes.findMany({
-      where: { periodo: p },
-    });
-    let totalFijosMes = fijosRegistrados.reduce((acc, r) => acc + Number(r.monto), 0);
-    if (totalFijosMes === 0) {
-      const fijosVigentes = await prisma.costoFijo.findMany({
-        where: {
-          activo: true,
-          OR: [{ mesFin: null }, { mesFin: { gte: p } }],
-          AND: [{ OR: [{ mesInicio: null }, { mesInicio: { lte: p } }] }],
-        },
-      });
-      totalFijosMes = fijosVigentes.reduce((acc, f) => acc + Number(f.monto), 0);
-    }
-
-    const prestamosCuotas = await prisma.cuotaPrestamo.aggregate({
-      where: { periodo: p },
-      _sum: { monto: true },
-    });
-    const totalPrestamos = Number(prestamosCuotas._sum.monto || 0);
-
-    const gastosMes = await prisma.gasto.aggregate({
-      where: { periodoPago: p },
-      _sum: { monto: true },
-    });
-    const totalGastos = Number(gastosMes._sum.monto || 0);
-
-    const egresosEstimados = totalFijosMes + totalPrestamos + totalGastos;
-    const disponible = totalIngresos - egresosEstimados;
-
-    result.push({
-      periodo: p,
-      ingresos: totalIngresos,
-      egresos: egresosEstimados,
-      disponible,
-      esGrati,
-      esUtilidad,
-    });
-  }
-
-  return result;
 }
 
 export async function registrarNuevoGasto(params: {
