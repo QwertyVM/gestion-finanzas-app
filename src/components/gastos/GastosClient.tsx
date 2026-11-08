@@ -219,6 +219,21 @@ export function GastosClient() {
     }
   };
 
+  const handleGuardarMontoModal = async (item: DetalleItemData, nuevoMonto: number) => {
+    try {
+      const res = await fetch('/api/gastos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.dbId, monto: nuevoMonto }),
+      });
+      if (!res.ok) throw new Error('Error al actualizar monto');
+      setDetalleGasto((prev) => (prev ? { ...prev, monto: nuevoMonto } : null));
+      await refresh();
+    } catch (err: any) {
+      toast.error('Error al actualizar monto');
+    }
+  };
+
   // Seleccionar / Deseleccionar todos
   const todosSeleccionados =
     listaGastos.length > 0 &&
@@ -816,6 +831,7 @@ export function GastosClient() {
         item={detalleGasto}
         onClose={() => setDetalleGasto(null)}
         onCambiarEstado={handleCambiarEstadoModal}
+        onGuardarMonto={handleGuardarMontoModal}
         onEliminarGasto={handleEliminarGastoModal}
         monedaSimbolo={moneda}
       />

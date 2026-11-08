@@ -51,3 +51,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const { id, monto, concepto, estado, notas } = await request.json();
+    const updateData: any = {};
+    if (monto !== undefined) updateData.monto = parseFloat(monto);
+    if (concepto !== undefined) updateData.concepto = concepto;
+    if (estado !== undefined) {
+      updateData.estado = estado;
+      updateData.fechaPagoReal = (estado === 'PAGADO' || estado === 'ADELANTADO') ? new Date() : null;
+    }
+    if (notas !== undefined) updateData.notas = notas;
+
+    const gasto = await prisma.gasto.update({
+      where: { id },
+      data: updateData,
+    });
+    return NextResponse.json({ success: true, data: gasto });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

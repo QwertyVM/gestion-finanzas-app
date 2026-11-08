@@ -25,6 +25,8 @@ import {
   Tag,
   Receipt,
   FileText,
+  Pencil,
+  Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -76,6 +78,7 @@ interface ModalDetalleGastoProps {
   item: DetalleItemData | null;
   onClose: () => void;
   onCambiarEstado?: (item: DetalleItemData, nuevoEstado: string) => Promise<void>;
+  onGuardarMonto?: (item: DetalleItemData, nuevoMonto: number) => Promise<void>;
   onEliminarGasto?: (item: DetalleItemData) => Promise<void>;
   monedaSimbolo?: string;
 }
@@ -84,12 +87,42 @@ export function ModalDetalleGasto({
   item,
   onClose,
   onCambiarEstado,
+  onGuardarMonto,
   onEliminarGasto,
   monedaSimbolo = 'S/',
 }: ModalDetalleGastoProps) {
   const [updating, setUpdating] = useState(false);
+  const [editandoMonto, setEditandoMonto] = useState(false);
+  const [montoEditInput, setMontoEditInput] = useState(item ? item.monto.toString() : '');
+  const [savingMonto, setSavingMonto] = useState(false);
+
+  React.useEffect(() => {
+    if (item) {
+      setMontoEditInput(item.monto.toString());
+      setEditandoMonto(false);
+    }
+  }, [item]);
 
   if (!item) return null;
+
+  const handleGuardarMonto = async () => {
+    const val = parseFloat(montoEditInput);
+    if (isNaN(val) || val < 0) {
+      toast.error('Ingresa un monto válido');
+      return;
+    }
+    if (!onGuardarMonto) return;
+    try {
+      setSavingMonto(true);
+      await onGuardarMonto(item, val);
+      setEditandoMonto(false);
+      toast.success(`Monto actualizado a ${monedaSimbolo} ${val.toFixed(2)}`);
+    } catch (err: any) {
+      toast.error('Error al actualizar monto');
+    } finally {
+      setSavingMonto(false);
+    }
+  };
 
   const handleEstado = async (nuevoEstado: 'PENDIENTE' | 'ADELANTADO' | 'PAGADO') => {
     if (updating || item.estado === nuevoEstado) return;
@@ -210,11 +243,63 @@ export function ModalDetalleGasto({
         <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
           {/* MONTO PRINCIPAL Y MONEDA */}
           <div className="bg-secondary/40 border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <span className="text-xs text-muted-foreground block mb-0.5">Monto Imputado al Mes</span>
-              <div className="text-3xl font-extrabold text-foreground tracking-tight">
-                {formatMoney(item.monto, monedaSimbolo)}
+            <div className="flex-1">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="text-xs text-muted-foreground block">Monto Imputado a este Mes</span>
+                {!editandoMonto && onGuardarMonto && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMontoEditInput(item.monto.toString());
+                      setEditandoMonto(true);
+                    }}
+                    className="text-[11px] text-sky-400 hover:text-sky-300 font-semibold inline-flex items-center gap-1 px-2 py-0.5 rounded-lg hover:bg-secondary transition"
+                    title="Modificar el monto pagado o a pagar este mes"
+                  >
+                    <Pencil className="w-3 h-3" />
+                    <span>Modificar monto</span>
+                  </button>
+                )}
               </div>
+
+              {!editandoMonto ? (
+                <div className="text-3xl font-extrabold text-foreground tracking-tight">
+                  {formatMoney(item.monto, monedaSimbolo)}
+                </div>
+              ) : (
+                <div className="space-y-2 pt-1">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base font-bold text-foreground">{monedaSimbolo}</span>
+                    <input
+                      type="number"
+                      step="0.01"
+                      autoFocus
+                      value={montoEditInput}
+                      onChange={(e) => setMontoEditInput(e.target.value)}
+                      className="w-36 px-3 py-1.5 rounded-xl bg-background border border-border font-extrabold text-foreground text-lg outline-none focus:ring-2 focus:ring-sky-500"
+                    />
+                    <button
+                      type="button"
+                      disabled={savingMonto}
+                      onClick={handleGuardarMonto}
+                      className="px-3 py-1.5 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs transition disabled:opacity-50 inline-flex items-center gap-1 shadow-sm"
+                    >
+                      <Check className="w-3.5 h-3.5" />
+                      <span>{savingMonto ? '...' : 'Guardar'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditandoMonto(false)}
+                      className="px-2.5 py-1.5 rounded-xl text-muted-foreground hover:bg-secondary text-xs"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground">
+                    💡 Modifica únicamente el valor de este mes (ej. si pagaste S/ 220 en vez de S/ 320). No altera otros meses ni registros de otros periodos.
+                  </p>
+                </div>
+              )}
             </div>
 
             {item.monedaOriginal === 'USD' && item.montoOriginal && (

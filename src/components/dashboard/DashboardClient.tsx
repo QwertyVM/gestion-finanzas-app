@@ -46,6 +46,7 @@ export function DashboardClient() {
   const [modalIngresoOpen, setModalIngresoOpen] = useState(false);
   const [modalGastoOpen, setModalGastoOpen] = useState(false);
   const [detalleItem, setDetalleItem] = useState<DetalleItemData | null>(null);
+  const [filtroEstado, setFiltroEstado] = useState<'PENDIENTE' | 'ADELANTADO' | 'PAGADO' | 'TODOS'>('PENDIENTE');
   const [filtroEgreso, setFiltroEgreso] = useState<'TODOS' | 'FIJOS' | 'PRESTAMOS' | 'TARJETAS'>('TODOS');
 
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
@@ -150,14 +151,32 @@ export function DashboardClient() {
       });
     }
 
-    // Filtrar
-    return list.filter((item) => {
+    return list;
+  }, [resumen]);
+
+  // Filtrado reactivo por Estado (Pendientes por defecto) y Tipo
+  const egresosFiltrados = useMemo(() => {
+    return todosEgresos.filter((item) => {
+      if (filtroEstado !== 'TODOS' && item.estado !== filtroEstado) return false;
       if (filtroEgreso === 'FIJOS') return item.tipo === 'FIJO';
       if (filtroEgreso === 'PRESTAMOS') return item.tipo === 'PRESTAMO';
       if (filtroEgreso === 'TARJETAS') return item.tipo === 'TARJETA';
       return true;
     });
-  }, [resumen, filtroEgreso]);
+  }, [todosEgresos, filtroEstado, filtroEgreso]);
+
+  const countPendientes = useMemo(
+    () => todosEgresos.filter((i) => i.estado === 'PENDIENTE').length,
+    [todosEgresos]
+  );
+  const countAdelantados = useMemo(
+    () => todosEgresos.filter((i) => i.estado === 'ADELANTADO').length,
+    [todosEgresos]
+  );
+  const countPagados = useMemo(
+    () => todosEgresos.filter((i) => i.estado === 'PAGADO').length,
+    [todosEgresos]
+  );
 
   if (loading || !resumen) {
     return (
@@ -205,6 +224,34 @@ export function DashboardClient() {
   const handleCambiarEstadoModal = async (item: DetalleItemData, nuevoEstado: string) => {
     await handleToggleEstadoItem(item, nuevoEstado);
     setDetalleItem((prev) => (prev ? { ...prev, estado: nuevoEstado as any } : null));
+  };
+
+  const handleGuardarMontoModal = async (item: DetalleItemData, nuevoMonto: number) => {
+    try {
+      if (item.tipo === 'FIJO') {
+        await fetch('/api/fijos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ costoFijoId: item.dbId, periodo, monto: nuevoMonto }),
+        });
+      } else if (item.tipo === 'PRESTAMO') {
+        await fetch('/api/prestamos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ cuotaId: item.dbId, monto: nuevoMonto }),
+        });
+      } else {
+        await fetch('/api/gastos', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: item.dbId, monto: nuevoMonto }),
+        });
+      }
+      setDetalleItem((prev) => (prev ? { ...prev, monto: nuevoMonto } : null));
+      await refresh();
+    } catch (e: any) {
+      toast.error('Error al actualizar monto');
+    }
   };
 
   const handleEliminarGastoModal = async (item: DetalleItemData) => {
@@ -417,57 +464,127 @@ export function DashboardClient() {
 
         {/* COLUMNA DERECHA: EGRESOS & COMPROMISOS (8 Columnas) */}
         <div className="lg:col-span-8 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <h2 className="text-base font-bold text-foreground flex items-center gap-2">
               <TrendingDown className="w-5 h-5 text-rose-500" />
-              <span>Egresos & Compromisos ({todosEgresos.length})</span>
+              <span>Egresos ({egresosFiltrados.length})</span>
             </h2>
 
-            {/* Filtros simples */}
-            <div className="flex items-center gap-1 bg-secondary/80 p-1 rounded-xl border border-border text-[11px]">
+            {/* FILTRO PRINCIPAL DE ESTADO (Por defecto PENDIENTE) */}
+            <div className="flex items-center gap-1 bg-secondary/80 p-1 rounded-xl border border-border text-[11px] overflow-x-auto">
+              <button
+                type="button"
+                onClick={() => setFiltroEstado('PENDIENTE')}
+                className={`px-3 py-1 rounded-lg font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+                  filtroEstado === 'PENDIENTE'
+                    ? 'bg-sky-500 text-white shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <span>⏳ Por Pagar</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'PENDIENTE' ? 'bg-white/20' : 'bg-secondary'}`}>
+                  {countPendientes}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFiltroEstado('ADELANTADO')}
+                className={`px-3 py-1 rounded-lg font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+                  filtroEstado === 'ADELANTADO'
+                    ? 'bg-amber-500 text-white shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <span>⚡ Adelantados</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'ADELANTADO' ? 'bg-white/20' : 'bg-secondary'}`}>
+                  {countAdelantados}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFiltroEstado('PAGADO')}
+                className={`px-3 py-1 rounded-lg font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+                  filtroEstado === 'PAGADO'
+                    ? 'bg-emerald-600 text-white shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                <span>✓ Pagados</span>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'PAGADO' ? 'bg-white/20' : 'bg-secondary'}`}>
+                  {countPagados}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setFiltroEstado('TODOS')}
+                className={`px-2.5 py-1 rounded-lg font-bold transition whitespace-nowrap ${
+                  filtroEstado === 'TODOS'
+                    ? 'bg-card text-foreground shadow-sm'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                Todos ({todosEgresos.length})
+              </button>
+            </div>
+          </div>
+
+          {/* Subfiltro por tipo y acción de sumatoria */}
+          <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-lg border border-border text-[11px]">
               {(['TODOS', 'FIJOS', 'PRESTAMOS', 'TARJETAS'] as const).map((f) => (
                 <button
                   key={f}
+                  type="button"
                   onClick={() => setFiltroEgreso(f)}
-                  className={`px-2.5 py-1 rounded-lg font-semibold transition ${
+                  className={`px-2 py-0.5 rounded-md font-semibold transition ${
                     filtroEgreso === f
                       ? 'bg-card text-foreground shadow-sm'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {f === 'TODOS'
-                    ? 'Todos'
-                    : f === 'FIJOS'
-                    ? 'Fijos'
-                    : f === 'PRESTAMOS'
-                    ? 'Préstamos'
-                    : 'Tarjetas'}
+                  {f === 'TODOS' ? 'Todos los tipos' : f === 'FIJOS' ? 'Fijos' : f === 'PRESTAMOS' ? 'Préstamos' : 'Tarjetas'}
                 </button>
               ))}
             </div>
-          </div>
 
-          {/* Barra de seleccionar todos para sumar */}
-          <div className="flex items-center justify-between text-xs text-muted-foreground px-1">
-            <span>
-              💡 Haz clic en cualquier egreso para ver su <strong>ficha técnica detallada</strong>. También puedes marcar el checkbox para sumar automáticamente.
-            </span>
-            {todosEgresos.length > 0 && (
+            {egresosFiltrados.length > 0 && (
               <button
                 onClick={() =>
-                  selectAllGastos(todosEgresos.map((e) => ({ id: e.id, monto: e.monto })))
+                  selectAllGastos(egresosFiltrados.map((e) => ({ id: e.id, monto: e.monto })))
                 }
-                className="font-semibold text-sky-500 hover:text-sky-400 flex items-center gap-1 shrink-0 ml-2"
+                className="font-semibold text-sky-500 hover:text-sky-400 flex items-center gap-1 shrink-0 text-[11px]"
               >
-                {todosSeleccionados ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
-                <span>{todosSeleccionados ? 'Deseleccionar' : 'Seleccionar todos'}</span>
+                <CheckSquare className="w-3.5 h-3.5" />
+                <span>Sumar lista mostrada</span>
               </button>
             )}
           </div>
 
-          {/* Lista de Egresos */}
-          <div className="space-y-2">
-            {todosEgresos.map((item) => {
+          {/* Lista de Egresos o Mensaje Vacío */}
+          {egresosFiltrados.length === 0 ? (
+            <div className="bg-card border border-border rounded-2xl p-8 text-center space-y-3">
+              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto stroke-1" />
+              <h3 className="text-sm font-bold text-foreground">
+                {filtroEstado === 'PENDIENTE'
+                  ? '¡No tienes ningún gasto pendiente para este periodo!'
+                  : 'No se encontraron egresos con los filtros seleccionados'}
+              </h3>
+              {filtroEstado === 'PENDIENTE' && countPagados > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setFiltroEstado('PAGADO')}
+                  className="text-xs text-sky-500 hover:underline font-semibold"
+                >
+                  Ver los {countPagados} egresos ya pagados →
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {egresosFiltrados.map((item) => {
               const isSelected = selectedGastoIds.includes(item.id);
 
               return (
@@ -558,6 +675,7 @@ export function DashboardClient() {
               );
             })}
           </div>
+          )}
         </div>
       </div>
 
@@ -574,6 +692,7 @@ export function DashboardClient() {
         item={detalleItem}
         onClose={() => setDetalleItem(null)}
         onCambiarEstado={handleCambiarEstadoModal}
+        onGuardarMonto={handleGuardarMontoModal}
         onEliminarGasto={handleEliminarGastoModal}
         monedaSimbolo={moneda}
       />

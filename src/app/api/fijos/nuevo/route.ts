@@ -4,17 +4,22 @@ import { EstadoPago } from '@prisma/client';
 
 export async function POST(request: NextRequest) {
   try {
-    const { concepto, monto, diaVencimiento, periodo } = await request.json();
+    const { concepto, monto, diaVencimiento, periodo, mesInicio, mesFin, categoriaId } = await request.json();
+    const startPeriodo = mesInicio || periodo || '2026-11';
+    const montoFloat = parseFloat(monto);
 
     const costoFijo = await prisma.costoFijo.create({
       data: {
         concepto,
-        monto: parseFloat(monto),
+        monto: montoFloat,
         diaVencimiento: parseInt(diaVencimiento, 10) || 30,
+        mesInicio: startPeriodo,
+        mesFin: mesFin || null,
+        categoriaId: categoriaId || null,
         registrosMes: {
           create: {
-            periodo,
-            monto: parseFloat(monto),
+            periodo: startPeriodo,
+            monto: montoFloat,
             estado: EstadoPago.PENDIENTE,
           },
         },
