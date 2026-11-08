@@ -109,15 +109,15 @@ export function Sidebar() {
             onClick={handleLinkClick}
             className="flex items-center gap-2.5 group"
           >
-            <div className="p-2 rounded-xl bg-sky-500 text-white shadow-md shadow-sky-500/20 group-hover:scale-105 transition-transform">
+            <div className="p-2 rounded-2xl bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200/60 dark:border-sky-800/50 group-hover:scale-105 transition-transform">
               <Wallet className="w-5 h-5" />
             </div>
             <div>
               <div className="font-extrabold text-base tracking-tight text-foreground flex items-center gap-1">
-                Finanz<span className="text-sky-500">App</span>
+                Finanz<span className="text-sky-600 dark:text-sky-400">App</span>
               </div>
               <p className="text-[10px] text-muted-foreground font-medium">
-                Control Financiero
+                Control Personal
               </p>
             </div>
           </Link>
@@ -192,16 +192,16 @@ export function Sidebar() {
                       key={link.href}
                       href={link.href}
                       onClick={handleLinkClick}
-                      className={`group flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold transition-all ${
+                      className={`group flex items-center justify-between px-3 py-2.5 rounded-2xl text-xs font-semibold transition-all ${
                         isActive
-                          ? 'bg-sky-500 text-white shadow-sm shadow-sky-500/25 font-bold'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-secondary/70'
+                          ? 'bg-sky-100/70 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 border border-sky-200/60 dark:border-sky-800/50 shadow-xs font-bold'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-slate-100/70 dark:hover:bg-slate-800/50'
                       }`}
                     >
                       <div className="flex items-center gap-2.5 min-w-0">
                         <Icon
                           className={`w-4 h-4 shrink-0 transition-transform group-hover:scale-110 ${
-                            isActive ? 'text-white' : 'text-muted-foreground group-hover:text-foreground'
+                            isActive ? 'text-sky-700 dark:text-sky-300' : 'text-muted-foreground group-hover:text-foreground'
                           }`}
                         />
                         <span className="truncate">{link.label}</span>
@@ -209,10 +209,10 @@ export function Sidebar() {
 
                       {link.badge && (
                         <span
-                          className={`text-[9px] px-1.5 py-0.5 rounded-full font-bold uppercase ${
+                          className={`text-[9px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
                             isActive
-                              ? 'bg-white/20 text-white'
-                              : 'bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20'
+                              ? 'bg-sky-200/80 dark:bg-sky-900/60 text-sky-800 dark:text-sky-200'
+                              : 'bg-violet-100/80 dark:bg-violet-950/50 text-violet-700 dark:text-violet-300 border border-violet-200/40 dark:border-violet-800/40'
                           }`}
                         >
                           {link.badge}

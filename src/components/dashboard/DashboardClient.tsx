@@ -51,6 +51,13 @@ export function DashboardClient() {
 
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
 
+  const mesActual = parseInt(periodo.split('-')[1], 10);
+  const esMesEspecial = mesActual === 7 || mesActual === 12 || mesActual === 3;
+  let labelEspecial = '';
+  if (mesActual === 7) labelEspecial = '🎁 Gratificación';
+  if (mesActual === 12) labelEspecial = '🎄 Gratificación';
+  if (mesActual === 3) labelEspecial = '💼 Utilidades';
+
   // Consolidar todos los egresos del mes
   const todosEgresos = useMemo(() => {
     if (!resumen) return [];
@@ -288,119 +295,161 @@ export function DashboardClient() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
       {/* 1. HERO PRINCIPAL: BALANCE Y ACCIONES DIRECTAS */}
-      <div className="bg-card border border-border rounded-3xl p-6 sm:p-8 shadow-sm space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="bg-card border border-border/80 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
           <div>
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Dinero Disponible
-              </span>
-              <div className="inline-flex items-center gap-1 bg-secondary/80 px-2 py-0.5 rounded-xl border border-border shadow-inner">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="inline-flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800/80 px-2.5 py-1 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300">
                 <button
                   type="button"
                   onClick={irMesAnterior}
-                  className="p-0.5 hover:bg-background text-muted-foreground hover:text-foreground rounded-lg transition"
+                  className="p-0.5 hover:bg-white dark:hover:bg-slate-700 rounded-md transition"
                   title="Mes anterior"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-xs font-bold text-sky-400 px-1">
+                <span className="font-bold px-1 capitalize">
                   {formatPeriodoLabel(periodo)}
                 </span>
                 <button
                   type="button"
                   onClick={irMesSiguiente}
-                  className="p-0.5 hover:bg-background text-muted-foreground hover:text-foreground rounded-lg transition"
+                  className="p-0.5 hover:bg-white dark:hover:bg-slate-700 rounded-md transition"
                   title="Mes siguiente"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
               </div>
+
+              {esMesEspecial && (
+                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100/80 text-amber-900 dark:bg-amber-950/60 dark:text-amber-200 border border-amber-200/50">
+                  <Sparkles className="w-3 h-3" /> {labelEspecial}
+                </span>
+              )}
             </div>
-            <div className="flex items-baseline gap-3 mt-1">
-              <span
-                className={`text-4xl sm:text-5xl font-extrabold tracking-tight ${
-                  disponibleEsPositivo ? 'text-foreground' : 'text-rose-500'
-                }`}
-              >
-                {formatMoney(disponibleBruto, moneda)}
+
+            <div className="space-y-0.5">
+              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
+                Tu Dinero Libre este mes
               </span>
-              <span
-                className={`text-xs font-bold px-2.5 py-1 rounded-full ${
-                  disponibleEsPositivo
-                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400'
-                    : 'bg-rose-500/15 text-rose-500'
-                }`}
-              >
-                {disponibleEsPositivo ? '✓ Saldo a favor' : '⚠ Déficit'}
-              </span>
+              <div className="flex items-baseline gap-3">
+                <span
+                  className={`text-4xl sm:text-5xl font-extrabold tracking-tight ${
+                    disponibleEsPositivo ? 'text-slate-900 dark:text-white' : 'text-rose-600'
+                  }`}
+                >
+                  {formatMoney(disponibleNeto, moneda)}
+                </span>
+                <span
+                  className={`text-xs font-bold px-2.5 py-1 rounded-full ${
+                    disponibleEsPositivo
+                      ? 'bg-emerald-100/90 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60'
+                      : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/60'
+                  }`}
+                >
+                  {disponibleEsPositivo ? '✓ Saldo Libre' : '⚠ Déficit'}
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Disponible limpio después de cubrir tus gastos y separar tu meta de ahorro.
+              </p>
             </div>
           </div>
 
-          {/* DOS BOTONES GRANDES E INEQUÍVOCOS PARA REGISTRAR */}
-          <div className="flex items-center gap-3">
+          {/* Botones de acción pasteles */}
+          <div className="flex items-center gap-2.5">
             <button
               onClick={() => setModalIngresoOpen(true)}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition active:scale-95"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-emerald-50 hover:bg-emerald-100/90 text-emerald-900 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-200 border border-emerald-200/60 dark:border-emerald-800/40 font-bold text-xs shadow-xs transition active:scale-95"
             >
-              <PlusCircle className="w-4 h-4" />
-              <span>Registrar Ingreso</span>
+              <PlusCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>+ Registrar Ingreso</span>
             </button>
 
             <button
               onClick={() => setModalGastoOpen(true)}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md shadow-rose-600/20 transition active:scale-95"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-rose-50 hover:bg-rose-100/90 text-rose-900 dark:bg-rose-950/40 dark:hover:bg-rose-900/50 dark:text-rose-200 border border-rose-200/60 dark:border-rose-800/40 font-bold text-xs shadow-xs transition active:scale-95"
             >
-              <MinusCircle className="w-4 h-4" />
-              <span>Registrar Gasto</span>
+              <MinusCircle className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+              <span>- Registrar Gasto</span>
             </button>
           </div>
         </div>
 
-        {/* Tira de Resumen & Meta de Ahorro */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-4 border-t border-border text-xs">
-          <div className="p-3 rounded-xl bg-secondary/50 border border-border">
-            <span className="text-muted-foreground text-[11px] block">📥 Total Ingresos</span>
-            <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+        {/* 3 Cajas Pasteles Suaves */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-4 border-t border-border/80">
+          <div className="p-4 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/20 border border-emerald-100/80 dark:border-emerald-900/30">
+            <div className="flex items-center justify-between text-[11px] font-bold text-emerald-800 dark:text-emerald-300 mb-1">
+              <span>📥 Total Ingresos</span>
+              <span className="text-[10px] font-medium opacity-80">{resumen.ingresos.length} fuentes</span>
+            </div>
+            <div className="text-xl font-extrabold text-emerald-900 dark:text-emerald-200">
               {formatMoney(resumen.totalIngresos, moneda)}
-            </span>
+            </div>
+            <div className="text-[10px] text-emerald-700/80 dark:text-emerald-400/70 mt-0.5">
+              Sueldo base + ingresos extras
+            </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-secondary/50 border border-border">
-            <span className="text-muted-foreground text-[11px] block">📤 Total Egresos</span>
-            <span className="font-bold text-rose-600 dark:text-rose-400 text-sm">
+          <div className="p-4 rounded-2xl bg-rose-50/70 dark:bg-rose-950/20 border border-rose-100/80 dark:border-rose-900/30">
+            <div className="flex items-center justify-between text-[11px] font-bold text-rose-800 dark:text-rose-300 mb-1">
+              <span>📤 Total Egresos</span>
+              <span className="text-[10px] font-medium opacity-80">{todosEgresos.length} obligaciones</span>
+            </div>
+            <div className="text-xl font-extrabold text-rose-900 dark:text-rose-200">
               {formatMoney(resumen.totalEgresos, moneda)}
-            </span>
+            </div>
+            <div className="text-[10px] text-rose-700/80 dark:text-rose-400/70 mt-0.5">
+              {formatMoney(resumen.totalPendiente, moneda)} por pagar
+            </div>
           </div>
 
-          <div className="p-3 rounded-xl bg-secondary/50 border border-border">
-            <span className="text-muted-foreground text-[11px] block">🎯 Meta de Ahorro</span>
-            <span className="font-bold text-sky-500 text-sm">
+          <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/20 border border-indigo-100/80 dark:border-indigo-900/30">
+            <div className="flex items-center justify-between text-[11px] font-bold text-indigo-800 dark:text-indigo-300 mb-1">
+              <span>🎯 Meta de Ahorro</span>
+              <span className="text-[10px] font-medium opacity-80">Reservado</span>
+            </div>
+            <div className="text-xl font-extrabold text-indigo-900 dark:text-indigo-200">
               {formatMoney(metaAhorro, moneda)}
-            </span>
-          </div>
-
-          <div className="p-3 rounded-xl bg-secondary/50 border border-border">
-            <span className="text-muted-foreground text-[11px] block">💎 Libre para Disfrutar</span>
-            <span className="font-extrabold text-foreground text-sm">
-              {formatMoney(disponibleNeto, moneda)}
-            </span>
+            </div>
+            <div className="text-[10px] text-indigo-700/80 dark:text-indigo-400/70 mt-0.5">
+              Fondo protegido del mes
+            </div>
           </div>
         </div>
       </div>
+
+      {/* BANNER ESPECIAL DE DICIEMBRE (GRATIFICACIÓN Y PAGO A TÍA) */}
+      {periodo.endsWith('-12') && (
+        <div className="bg-amber-50/80 dark:bg-amber-950/25 border border-amber-200/70 dark:border-amber-900/40 rounded-3xl p-5 shadow-xs flex items-start gap-4">
+          <div className="p-2.5 rounded-2xl bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 shrink-0">
+            <Sparkles className="w-5 h-5" />
+          </div>
+          <div className="space-y-1.5 text-xs">
+            <div className="font-extrabold text-sm text-amber-950 dark:text-amber-100 flex items-center gap-2">
+              <span>🎄 Plan Especial de Diciembre: Gratificación y Pago Directo a tu Tía</span>
+            </div>
+            <p className="text-amber-900/80 dark:text-amber-300/80 leading-relaxed text-[11px]">
+              • <strong>Gratificación Navideña:</strong> + S/ 10,500.00 incluidos en tus ingresos.<br />
+              • <strong>Pago Directo Tía ($900 USD):</strong> - S/ 3,060.00 proyectado para cancelarse con tu gratificación.<br />
+              • <strong>Saldo a Favor:</strong> Cubriendo el pago a tu tía y todas tus deudas, te quedan más de <strong>S/ 10,500.00 libres</strong>.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 2. DOS COLUMNAS MINIMALISTAS: INGRESOS A LA IZQUIERDA, EGRESOS A LA DERECHA */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* COLUMNA IZQUIERDA: INGRESOS (4 Columnas) */}
         <div className="lg:col-span-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-emerald-500" />
-              <span>Ingresos ({resumen.ingresos.length})</span>
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <span>Tus Ingresos ({resumen.ingresos.length})</span>
             </h2>
             <button
               onClick={() => setModalIngresoOpen(true)}
-              className="text-xs text-emerald-500 hover:text-emerald-400 font-semibold"
+              className="text-xs text-emerald-600 hover:text-emerald-500 font-bold"
             >
               + Agregar
             </button>
@@ -410,7 +459,7 @@ export function DashboardClient() {
             {resumen.ingresos.map((ing) => (
               <div
                 key={ing.id}
-                className="bg-card border border-border rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3 hover:border-emerald-500/30 transition"
+                className="bg-card border border-border/80 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3 hover:border-emerald-200 dark:hover:border-emerald-800/40 transition"
               >
                 <div className="space-y-0.5 truncate">
                   <div className="font-bold text-foreground text-xs truncate">
@@ -425,7 +474,7 @@ export function DashboardClient() {
                       ? '💼 Utilidades'
                       : 'Ingreso extra'}
                     {ing.monedaOriginal === 'USD' && ing.montoOriginal && (
-                      <span className="block text-[10px] text-emerald-400 font-medium">
+                      <span className="block text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
                         ${ing.montoOriginal} USD (T.C. S/ {ing.tipoCambio.toFixed(2)})
                       </span>
                     )}
@@ -433,7 +482,7 @@ export function DashboardClient() {
                 </div>
 
                 <div className="text-right shrink-0 flex items-center gap-2">
-                  <span className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
+                  <span className="font-bold text-emerald-700 dark:text-emerald-300 text-sm">
                     {formatMoney(ing.monto, moneda)}
                   </span>
                   {ing.tipo === 'EXTRA' && (
@@ -451,14 +500,14 @@ export function DashboardClient() {
           </div>
 
           {/* Tarjeta de Aviso Informativo del Día 10 */}
-          <div className="bg-card border border-border rounded-2xl p-4 shadow-sm space-y-2 text-xs">
-            <div className="flex items-center gap-2 font-bold text-sky-500">
-              <Info className="w-4 h-4" />
-              <span>Regla de Corte (Día 10)</span>
+          <div className="bg-sky-50/60 dark:bg-sky-950/20 border border-sky-100 dark:border-sky-900/30 rounded-2xl p-4 text-xs space-y-1.5">
+            <div className="flex items-center gap-1.5 font-bold text-sky-800 dark:text-sky-300">
+              <Info className="w-3.5 h-3.5" />
+              <span>Regla del Día 10</span>
             </div>
-            <p className="text-muted-foreground text-[11px] leading-relaxed">
-              • Compras hasta el día 10 $\to$ se pagan a fin de este mes.  
-              • Compras desde el día 11 $\to$ se pagan con el sueldo del próximo mes.
+            <p className="text-sky-900/70 dark:text-sky-300/70 text-[11px] leading-relaxed">
+              • Compras hasta el día 10 $\to$ se pagan a fin de mes.  
+              • Compras desde el día 11 $\to$ se pagan el próximo mes.
             </p>
           </div>
         </div>
@@ -466,24 +515,24 @@ export function DashboardClient() {
         {/* COLUMNA DERECHA: EGRESOS & COMPROMISOS (8 Columnas) */}
         <div className="lg:col-span-8 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 className="text-base font-bold text-foreground flex items-center gap-2">
-              <TrendingDown className="w-5 h-5 text-rose-500" />
-              <span>Egresos ({egresosFiltrados.length})</span>
+            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
+              <TrendingDown className="w-4 h-4 text-rose-600 dark:text-rose-400" />
+              <span>Compromisos del Mes ({egresosFiltrados.length})</span>
             </h2>
 
-            {/* FILTRO PRINCIPAL DE ESTADO (Por defecto PENDIENTE) */}
-            <div className="flex items-center gap-1 bg-secondary/80 p-1 rounded-xl border border-border text-[11px] overflow-x-auto">
+            {/* FILTRO PRINCIPAL DE ESTADO (Por defecto PENDIENTE) - Pasteles Suaves */}
+            <div className="flex items-center gap-1 bg-slate-100/80 dark:bg-slate-800/80 p-1 rounded-2xl border border-border/80 text-[11px] overflow-x-auto">
               <button
                 type="button"
                 onClick={() => setFiltroEstado('PENDIENTE')}
-                className={`px-3 py-1 rounded-lg font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
                   filtroEstado === 'PENDIENTE'
-                    ? 'bg-sky-500 text-white shadow-sm'
+                    ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/70 dark:text-amber-200 border border-amber-200/80 dark:border-amber-800/60 shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <span>⏳ Por Pagar</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'PENDIENTE' ? 'bg-white/20' : 'bg-secondary'}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'PENDIENTE' ? 'bg-amber-200/70 dark:bg-amber-900/60 text-amber-900 dark:text-amber-200 font-extrabold' : 'bg-slate-200/60 dark:bg-slate-700'}`}>
                   {countPendientes}
                 </span>
               </button>
@@ -491,14 +540,14 @@ export function DashboardClient() {
               <button
                 type="button"
                 onClick={() => setFiltroEstado('ADELANTADO')}
-                className={`px-3 py-1 rounded-lg font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
                   filtroEstado === 'ADELANTADO'
-                    ? 'bg-amber-500 text-white shadow-sm'
+                    ? 'bg-purple-100 text-purple-900 dark:bg-purple-950/70 dark:text-purple-200 border border-purple-200/80 dark:border-purple-800/60 shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <span>⚡ Adelantados</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'ADELANTADO' ? 'bg-white/20' : 'bg-secondary'}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'ADELANTADO' ? 'bg-purple-200/70 dark:bg-purple-900/60 text-purple-900 dark:text-purple-200 font-extrabold' : 'bg-slate-200/60 dark:bg-slate-700'}`}>
                   {countAdelantados}
                 </span>
               </button>
@@ -506,14 +555,14 @@ export function DashboardClient() {
               <button
                 type="button"
                 onClick={() => setFiltroEstado('PAGADO')}
-                className={`px-3 py-1 rounded-lg font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 whitespace-nowrap ${
                   filtroEstado === 'PAGADO'
-                    ? 'bg-emerald-600 text-white shadow-sm'
+                    ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950/70 dark:text-emerald-200 border border-emerald-200/80 dark:border-emerald-800/60 shadow-xs'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 <span>✓ Pagados</span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'PAGADO' ? 'bg-white/20' : 'bg-secondary'}`}>
+                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'PAGADO' ? 'bg-emerald-200/70 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-200 font-extrabold' : 'bg-slate-200/60 dark:bg-slate-700'}`}>
                   {countPagados}
                 </span>
               </button>
@@ -521,9 +570,9 @@ export function DashboardClient() {
               <button
                 type="button"
                 onClick={() => setFiltroEstado('TODOS')}
-                className={`px-2.5 py-1 rounded-lg font-bold transition whitespace-nowrap ${
+                className={`px-2.5 py-1.5 rounded-xl font-bold transition whitespace-nowrap ${
                   filtroEstado === 'TODOS'
-                    ? 'bg-card text-foreground shadow-sm'
+                    ? 'bg-white dark:bg-slate-700 text-foreground shadow-xs border border-border/60'
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
@@ -534,19 +583,19 @@ export function DashboardClient() {
 
           {/* Subfiltro por tipo y acción de sumatoria */}
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-1 bg-secondary/50 p-1 rounded-lg border border-border text-[11px]">
+            <div className="flex items-center gap-1 bg-slate-100/70 dark:bg-slate-800/60 p-1 rounded-xl border border-border/60 text-[11px]">
               {(['TODOS', 'FIJOS', 'PRESTAMOS', 'TARJETAS'] as const).map((f) => (
                 <button
                   key={f}
                   type="button"
                   onClick={() => setFiltroEgreso(f)}
-                  className={`px-2 py-0.5 rounded-md font-semibold transition ${
+                  className={`px-2.5 py-0.5 rounded-lg font-semibold transition ${
                     filtroEgreso === f
-                      ? 'bg-card text-foreground shadow-sm'
+                      ? 'bg-white dark:bg-slate-700 text-foreground shadow-xs'
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  {f === 'TODOS' ? 'Todos los tipos' : f === 'FIJOS' ? 'Fijos' : f === 'PRESTAMOS' ? 'Préstamos' : 'Tarjetas'}
+                  {f === 'TODOS' ? 'Todos los tipos' : f === 'FIJOS' ? '🏠 Fijos' : f === 'PRESTAMOS' ? '🏛️ Préstamos' : '💳 Tarjetas & Directos'}
                 </button>
               ))}
             </div>
@@ -556,7 +605,7 @@ export function DashboardClient() {
                 onClick={() =>
                   selectAllGastos(egresosFiltrados.map((e) => ({ id: e.id, monto: e.monto })))
                 }
-                className="font-semibold text-sky-500 hover:text-sky-400 flex items-center gap-1 shrink-0 text-[11px]"
+                className="font-semibold text-sky-600 hover:text-sky-500 dark:text-sky-400 flex items-center gap-1 shrink-0 text-[11px]"
               >
                 <CheckSquare className="w-3.5 h-3.5" />
                 <span>Sumar lista mostrada</span>
@@ -566,25 +615,25 @@ export function DashboardClient() {
 
           {/* Lista de Egresos o Mensaje Vacío */}
           {egresosFiltrados.length === 0 ? (
-            <div className="bg-card border border-border rounded-2xl p-8 text-center space-y-3">
-              <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto stroke-1" />
+            <div className="bg-card border border-border/80 rounded-3xl p-8 text-center space-y-3 shadow-xs">
+              <CheckCircle2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto stroke-1" />
               <h3 className="text-sm font-bold text-foreground">
                 {filtroEstado === 'PENDIENTE'
-                  ? '¡No tienes ningún gasto pendiente para este periodo!'
-                  : 'No se encontraron egresos con los filtros seleccionados'}
+                  ? '¡Todo limpio! No tienes compromisos pendientes para este mes.'
+                  : 'No se encontraron registros con los filtros seleccionados'}
               </h3>
               {filtroEstado === 'PENDIENTE' && countPagados > 0 && (
                 <button
                   type="button"
                   onClick={() => setFiltroEstado('PAGADO')}
-                  className="text-xs text-sky-500 hover:underline font-semibold"
+                  className="text-xs text-sky-600 hover:underline font-bold"
                 >
                   Ver los {countPagados} egresos ya pagados →
                 </button>
               )}
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-2.5">
               {egresosFiltrados.map((item) => {
               const isSelected = selectedGastoIds.includes(item.id);
 
@@ -592,8 +641,8 @@ export function DashboardClient() {
                 <div
                   key={item.id}
                   onClick={() => setDetalleItem(item)}
-                  className={`group bg-card border rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3 transition cursor-pointer hover:border-sky-500/50 hover:shadow-md ${
-                    isSelected ? 'border-sky-500 bg-sky-500/5' : 'border-border'
+                  className={`group bg-card border rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3 transition cursor-pointer hover:border-slate-300 dark:hover:border-slate-700 hover:shadow-sm ${
+                    isSelected ? 'border-sky-400 bg-sky-50/20 dark:bg-sky-950/20' : 'border-border/80'
                   }`}
                 >
                   {/* Checkbox y Detalle */}
@@ -604,25 +653,36 @@ export function DashboardClient() {
                         e.stopPropagation();
                         toggleSelectGasto(item.id, item.monto);
                       }}
-                      className="p-1 rounded hover:bg-secondary transition shrink-0"
+                      className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition shrink-0"
                       title={isSelected ? 'Deseleccionar' : 'Seleccionar para sumar'}
                     >
                       {isSelected ? (
-                        <CheckSquare className="w-4 h-4 text-sky-500" />
+                        <CheckSquare className="w-4 h-4 text-sky-600" />
                       ) : (
                         <Square className="w-4 h-4 text-muted-foreground" />
                       )}
                     </button>
 
-                    <div className="truncate">
-                      <div className="font-bold text-foreground text-xs truncate group-hover:text-sky-400 transition flex items-center gap-1.5">
+                    <div className="truncate space-y-0.5">
+                      <div className="font-bold text-foreground text-xs truncate group-hover:text-sky-600 dark:group-hover:text-sky-400 transition flex items-center gap-2">
                         <span>{item.concepto}</span>
+                        <span
+                          className={`text-[9px] px-1.5 py-0.5 rounded-md font-bold uppercase tracking-wider shrink-0 ${
+                            item.tipo === 'FIJO'
+                              ? 'bg-violet-100/80 text-violet-800 dark:bg-violet-950/60 dark:text-violet-200'
+                              : item.tipo === 'PRESTAMO'
+                              ? 'bg-sky-100/80 text-sky-800 dark:bg-sky-950/60 dark:text-sky-200'
+                              : 'bg-rose-100/80 text-rose-800 dark:bg-rose-950/60 dark:text-rose-200'
+                          }`}
+                        >
+                          {item.tipo === 'FIJO' ? 'Fijo' : item.tipo === 'PRESTAMO' ? 'Préstamo' : 'Compra'}
+                        </span>
                         <ChevronRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition shrink-0" />
                       </div>
                       <div className="text-[11px] text-muted-foreground flex items-center gap-2">
                         <span>{item.subtexto}</span>
                         {item.monedaOriginal === 'USD' && item.montoOriginal && (
-                          <span className="text-rose-400 font-medium">
+                          <span className="text-amber-700 dark:text-amber-300 font-semibold">
                             (${item.montoOriginal} USD)
                           </span>
                         )}
@@ -636,7 +696,7 @@ export function DashboardClient() {
                       {formatMoney(item.monto, moneda)}
                     </div>
 
-                    <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
                       <button
                         onClick={() =>
                           handleToggleEstadoItem(
@@ -644,14 +704,14 @@ export function DashboardClient() {
                             item.estado === 'ADELANTADO' ? 'PENDIENTE' : 'ADELANTADO'
                           )
                         }
-                        className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition ${
+                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border transition ${
                           item.estado === 'ADELANTADO'
-                            ? 'bg-amber-500/20 text-amber-500 border-amber-500/40'
-                            : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary'
+                            ? 'bg-purple-100 text-purple-900 border-purple-200 dark:bg-purple-950/70 dark:text-purple-200 dark:border-purple-800/60'
+                            : 'bg-slate-100/70 hover:bg-slate-200/80 text-muted-foreground border-border/80'
                         }`}
                         title="Alternar estado Adelantado"
                       >
-                        ⚡ Adelantado
+                        ⚡ Adelantar
                       </button>
 
                       <button
@@ -661,14 +721,14 @@ export function DashboardClient() {
                             item.estado === 'PAGADO' ? 'PENDIENTE' : 'PAGADO'
                           )
                         }
-                        className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition ${
+                        className={`px-2.5 py-1 rounded-xl text-[10px] font-bold border transition ${
                           item.estado === 'PAGADO'
-                            ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40'
-                            : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary'
+                            ? 'bg-emerald-100 text-emerald-900 border-emerald-300 dark:bg-emerald-950/80 dark:text-emerald-200 dark:border-emerald-800/70'
+                            : 'bg-emerald-50 hover:bg-emerald-100/80 text-emerald-800 border-emerald-200/70 dark:bg-emerald-950/40 dark:text-emerald-300'
                         }`}
                         title="Alternar estado Pagado"
                       >
-                        ✓ Pagado
+                        {item.estado === 'PAGADO' ? '✓ Pagado' : 'Pagar'}
                       </button>
                     </div>
                   </div>
