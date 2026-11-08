@@ -6,10 +6,36 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const anio = parseInt(searchParams.get('anio') || '2026', 10);
+    const anioPrefijo = `${anio}-`;
 
-    const config = await prisma.configuracionUsuario.findFirst();
+    const [
+      config,
+      ingresosYear,
+      costosFijosActivos,
+      registrosFijosYear,
+      cuotasYear,
+      gastosYear,
+    ] = await Promise.all([
+      prisma.configuracionUsuario.findFirst(),
+      prisma.ingresoMes.findMany({
+        where: { periodo: { startsWith: anioPrefijo } },
+      }),
+      prisma.costoFijo.findMany({
+        where: { activo: true },
+      }),
+      prisma.registroCostoFijoMes.findMany({
+        where: { periodo: { startsWith: anioPrefijo } },
+      }),
+      prisma.cuotaPrestamo.findMany({
+        where: { periodo: { startsWith: anioPrefijo } },
+      }),
+      prisma.gasto.findMany({
+        where: { periodoPago: { startsWith: anioPrefijo } },
+        select: { monto: true, periodoPago: true },
+      }),
+    ]);
+
     const sueldoBase = Number(config?.sueldoBaseMensual || 8200);
-
     const resultado = [];
 
     for (let mes = 1; mes <= 12; mes++) {
@@ -17,45 +43,34 @@ export async function GET(request: NextRequest) {
       const esGrati = mes === 7 || mes === 12;
       const esUtilidad = mes === 3;
 
-      // Ingresos
-      const ingresosDb = await prisma.ingresoMes.findMany({ where: { periodo } });
-      let totalIngresos = ingresosDb.reduce((acc, curr) => acc + Number(curr.monto), 0);
-
+      // Ingresos del mes
+      const ingresosMes = ingresosYear.filter((i) => i.periodo === periodo);
+      let totalIngresos = ingresosMes.reduce((acc, curr) => acc + Number(curr.monto), 0);
       if (totalIngresos === 0) {
         totalIngresos += sueldoBase;
         if (esGrati) totalIngresos += sueldoBase * 1.09;
         if (esUtilidad) totalIngresos += sueldoBase * 1.5;
       }
 
-      // Costos fijos vigentes para este periodo
-      const fijosRegistrados = await prisma.registroCostoFijoMes.findMany({
-        where: { periodo },
-      });
-      let totalFijosMes = fijosRegistrados.reduce((acc, r) => acc + Number(r.monto), 0);
+      // Costos fijos
+      const fijosMes = registrosFijosYear.filter((r) => r.periodo === periodo);
+      let totalFijosMes = fijosMes.reduce((acc, r) => acc + Number(r.monto), 0);
       if (totalFijosMes === 0) {
-        const fijosVigentes = await prisma.costoFijo.findMany({
-          where: {
-            activo: true,
-            OR: [{ mesFin: null }, { mesFin: { gte: periodo } }],
-            AND: [{ OR: [{ mesInicio: null }, { mesInicio: { lte: periodo } }] }],
-          },
+        const vigentes = costosFijosActivos.filter((f) => {
+          const inicioValido = !f.mesInicio || f.mesInicio <= periodo;
+          const finValido = !f.mesFin || f.mesFin >= periodo;
+          return inicioValido && finValido;
         });
-        totalFijosMes = fijosVigentes.reduce((acc, f) => acc + Number(f.monto), 0);
+        totalFijosMes = vigentes.reduce((acc, f) => acc + Number(f.monto), 0);
       }
 
       // Cuotas de préstamos
-      const prestamosCuotas = await prisma.cuotaPrestamo.aggregate({
-        where: { periodo },
-        _sum: { monto: true },
-      });
-      const totalPrestamos = Number(prestamosCuotas._sum.monto || 0);
+      const cuotasMes = cuotasYear.filter((c) => c.periodo === periodo);
+      const totalPrestamos = cuotasMes.reduce((acc, c) => acc + Number(c.monto), 0);
 
-      // Gastos imputados al periodo
-      const gastosMes = await prisma.gasto.aggregate({
-        where: { periodoPago: periodo },
-        _sum: { monto: true },
-      });
-      const totalGastos = Number(gastosMes._sum.monto || 0);
+      // Gastos
+      const gastosMes = gastosYear.filter((g) => g.periodoPago === periodo);
+      const totalGastos = gastosMes.reduce((acc, g) => acc + Number(g.monto), 0);
 
       const totalEgresos = totalFijosMes + totalPrestamos + totalGastos;
       const disponible = totalIngresos - totalEgresos;
