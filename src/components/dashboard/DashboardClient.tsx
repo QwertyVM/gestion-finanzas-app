@@ -34,6 +34,8 @@ import {
   ChevronRight,
   ChevronLeft,
   Info,
+  Table,
+  LayoutGrid,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -55,6 +57,7 @@ export function DashboardClient() {
   const [detalleItem, setDetalleItem] = useState<DetalleItemData | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<'PENDIENTE' | 'ADELANTADO' | 'PAGADO' | 'TODOS'>('PENDIENTE');
   const [filtroEgreso, setFiltroEgreso] = useState<'TODOS' | 'FIJOS' | 'PRESTAMOS_CUOTAS' | 'RECURRENTES' | 'VARIABLES'>('TODOS');
+  const [modoVista, setModoVista] = useState<'TABLA' | 'TARJETAS'>('TABLA');
 
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
 
@@ -777,17 +780,49 @@ export function DashboardClient() {
               ))}
             </div>
 
-            {egresosFiltrados.length > 0 && (
-              <button
-                onClick={() =>
-                  selectAllGastos(egresosFiltrados.map((e) => ({ id: e.id, monto: e.monto })))
-                }
-                className="font-semibold text-sky-600 hover:text-sky-500 dark:text-sky-400 flex items-center gap-1 shrink-0 text-[11px]"
-              >
-                <CheckSquare className="w-3.5 h-3.5" />
-                <span>Sumar lista mostrada</span>
-              </button>
-            )}
+            <div className="flex items-center gap-2">
+              {egresosFiltrados.length > 0 && (
+                <button
+                  onClick={() =>
+                    selectAllGastos(egresosFiltrados.map((e) => ({ id: e.id, monto: e.monto })))
+                  }
+                  className="font-semibold text-sky-600 hover:text-sky-500 dark:text-sky-400 flex items-center gap-1 shrink-0 text-[11px]"
+                >
+                  <CheckSquare className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Sumar lista</span>
+                </button>
+              )}
+
+              {/* Selector de Modo de Vista: Tabla o Tarjetas */}
+              <div className="inline-flex items-center gap-0.5 bg-slate-100/90 dark:bg-slate-800 p-0.5 rounded-xl border border-border/60 dark:border-slate-700">
+                <button
+                  type="button"
+                  onClick={() => setModoVista('TABLA')}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
+                    modoVista === 'TABLA'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                  title="Ver como Tabla"
+                >
+                  <Table className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Tabla</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModoVista('TARJETAS')}
+                  className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
+                    modoVista === 'TARJETAS'
+                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
+                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  }`}
+                  title="Ver como Tarjetas"
+                >
+                  <LayoutGrid className="w-3.5 h-3.5" />
+                  <span className="hidden sm:inline">Tarjetas</span>
+                </button>
+              </div>
+            </div>
           </div>
 
           {/* Lista de Egresos o Mensaje Vacío */}
@@ -809,7 +844,164 @@ export function DashboardClient() {
                 </button>
               )}
             </div>
+          ) : modoVista === 'TABLA' ? (
+            /* ========================================================= */
+            /* 1. VISTA TABLA (Por defecto)                              */
+            /* ========================================================= */
+            <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse">
+                  <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+                    <tr>
+                      <th className="py-3 px-2 w-10 text-center">✓</th>
+                      <th className="py-3 px-3">Compromiso / Detalle</th>
+                      <th className="py-3 px-3 text-center hidden sm:table-cell">Vence</th>
+                      <th className="py-3 px-3 text-right">Monto</th>
+                      <th className="py-3 px-3 text-center">Estado</th>
+                      <th className="py-3 px-3 text-center">Acción</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60 dark:divide-slate-800/80">
+                    {egresosFiltrados.map((item) => {
+                      const isSelected = selectedGastoIds.includes(item.id);
+                      const estilo = ESTILOS_CLASIFICACION[item.clasificacion || 'VARIABLE'];
+
+                      return (
+                        <tr
+                          key={item.id}
+                          onClick={() => setDetalleItem(item)}
+                          className={`group transition-colors cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-800/50 ${
+                            isSelected ? 'bg-sky-50/40 dark:bg-sky-950/30' : ''
+                          }`}
+                        >
+                          {/* Checkbox con barra lateral de color */}
+                          <td
+                            className={`py-3 px-2 text-center border-l-4 ${estilo.borderColor}`}
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              type="button"
+                              onClick={() => toggleSelectGasto(item.id, item.monto)}
+                              className="p-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 transition"
+                              title={isSelected ? 'Deseleccionar' : 'Seleccionar para sumar'}
+                            >
+                              {isSelected ? (
+                                <CheckSquare className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                              ) : (
+                                <Square className="w-4 h-4 text-muted-foreground dark:text-slate-500" />
+                              )}
+                            </button>
+                          </td>
+
+                          {/* Concepto y Badge de clasificación por colores */}
+                          <td className="py-3 px-3 min-w-[200px]">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="font-bold text-foreground dark:text-white text-xs group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">
+                                {item.concepto}
+                              </span>
+                              <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.2 rounded-md font-bold shrink-0 border ${estilo.badgeBg} ${estilo.badgeText} ${estilo.badgeBorder}`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${estilo.dotColor}`} />
+                                {item.clasificacion === 'PRESTAMO_CUOTA' ? (
+                                  item.tipo === 'PRESTAMO'
+                                    ? `Préstamo · Cuota ${item.cuotaActual}/${item.cuotasTotales}`
+                                    : `Cuota ${item.cuotaActual}/${item.totalCuotas}`
+                                ) : item.clasificacion === 'RECURRENTE' ? (
+                                  'Recurrente'
+                                ) : item.clasificacion === 'FIJO' ? (
+                                  'Fijo'
+                                ) : (
+                                  'Compra'
+                                )}
+                              </span>
+                            </div>
+                            <div className="text-[11px] text-muted-foreground dark:text-slate-400 mt-0.5 truncate">
+                              {item.subtexto}
+                            </div>
+                          </td>
+
+                          {/* Vencimiento / Fecha */}
+                          <td className="py-3 px-3 text-center whitespace-nowrap text-muted-foreground dark:text-slate-400 text-xs hidden sm:table-cell">
+                            {item.diaVencimiento ? `Día ${item.diaVencimiento}` : 'Fin de mes'}
+                          </td>
+
+                          {/* Monto */}
+                          <td className="py-3 px-3 text-right whitespace-nowrap">
+                            <div className="font-bold text-foreground dark:text-white text-sm">
+                              {formatMoney(item.monto, moneda)}
+                            </div>
+                            {item.monedaOriginal === 'USD' && item.montoOriginal && (
+                              <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                                ${item.montoOriginal.toFixed(2)} USD
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Estado */}
+                          <td className="py-3 px-3 text-center whitespace-nowrap">
+                            {item.estado === 'ADELANTADO' ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/40">
+                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> Adelantado
+                              </span>
+                            ) : item.estado === 'PAGADO' ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40">
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Pagado
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40">
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Pendiente
+                              </span>
+                            )}
+                          </td>
+
+                          {/* Acciones Rápidas */}
+                          <td className="py-3 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                            <div className="flex items-center justify-center gap-1">
+                              <button
+                                onClick={() =>
+                                  handleToggleEstadoItem(
+                                    item,
+                                    item.estado === 'ADELANTADO' ? 'PENDIENTE' : 'ADELANTADO'
+                                  )
+                                }
+                                className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition ${
+                                  item.estado === 'ADELANTADO'
+                                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/30 dark:text-indigo-300'
+                                    : 'text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
+                                }`}
+                                title="Alternar estado Adelantado"
+                              >
+                                Adelantar
+                              </button>
+
+                              <button
+                                onClick={() =>
+                                  handleToggleEstadoItem(
+                                    item,
+                                    item.estado === 'PAGADO' ? 'PENDIENTE' : 'PAGADO'
+                                  )
+                                }
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${
+                                  item.estado === 'PAGADO'
+                                    ? 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
+                                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-300 dark:border-emerald-500/40'
+                                }`}
+                                title="Alternar estado Pagado"
+                              >
+                                {item.estado === 'PAGADO' ? '✓ Pagado' : 'Pagar'}
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           ) : (
+            /* ========================================================= */
+            /* 2. VISTA TARJETAS                                         */
+            /* ========================================================= */
             <div className="space-y-2.5">
               {egresosFiltrados.map((item) => {
               const isSelected = selectedGastoIds.includes(item.id);
