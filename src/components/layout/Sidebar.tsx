@@ -9,6 +9,7 @@ import { useTheme } from 'next-themes';
 import {
   Wallet,
   LayoutDashboard,
+  PieChart,
   Receipt,
   Landmark,
   CalendarDays,
@@ -41,26 +42,32 @@ export function Sidebar() {
 
   const navSections = [
     {
-      title: 'GESTIÓN DIARIA',
+      title: 'ANÁLISIS & OPERACIÓN',
       links: [
         {
+          href: '/dashboard',
+          label: 'Dashboard General',
+          icon: PieChart,
+          description: 'Métricas, KPIs y gráficos ejecutivos',
+          badge: 'Gráficos',
+        },
+        {
           href: '/',
-          label: 'Finanzas (Dashboard)',
+          label: 'Finanzas del Mes',
           icon: LayoutDashboard,
-          description: 'Resumen mensual y pendientes',
+          description: 'Tablas de ingresos y compromisos',
         },
         {
           href: '/gastos',
           label: 'Gastos & Compras',
           icon: Receipt,
-          description: 'Historial y registro diario',
+          description: 'Historial diario en tabla',
         },
         {
           href: '/fijos-y-prestamos',
           label: 'Fijos y Préstamos',
           icon: Landmark,
-          description: 'Agregar y editar compromisos',
-          badge: 'Gestión',
+          description: 'Tablas de costos fijos y deudas',
         },
       ],
     },
@@ -71,13 +78,13 @@ export function Sidebar() {
           href: '/flujo-anual',
           label: 'Proyección Anual',
           icon: CalendarDays,
-          description: 'Flujo 12 meses y extras',
+          description: 'Tabla matricial de 12 meses',
         },
         {
           href: '/simulador-prestamos',
           label: 'Simulador Préstamos',
           icon: Calculator,
-          description: 'Cronogramas y cuotas',
+          description: 'Tabla y amortización de prepagos',
         },
       ],
     },
@@ -88,7 +95,7 @@ export function Sidebar() {
           href: '/configuracion',
           label: 'Ajustes',
           icon: Settings,
-          description: 'Sueldo, TC y metas',
+          description: 'Tablas de tarjetas y categorías',
         },
       ],
     },

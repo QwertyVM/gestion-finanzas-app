@@ -10,6 +10,9 @@ import {
   ChevronLeft,
   ChevronRight,
   LayoutDashboard,
+  PieChart,
+  Receipt,
+  Landmark,
   CalendarDays,
   Settings,
   Sun,
@@ -25,9 +28,12 @@ export function Navbar() {
   const { theme, setTheme } = useTheme();
 
   const navLinks = [
-    { href: '/', label: 'Finanzas', icon: LayoutDashboard },
-    { href: '/simulador-prestamos', label: 'Simulador Préstamos', icon: Calculator },
-    { href: '/flujo-anual', label: 'Proyección Anual', icon: CalendarDays },
+    { href: '/dashboard', label: 'Dashboard', icon: PieChart },
+    { href: '/', label: 'Finanzas Mes', icon: LayoutDashboard },
+    { href: '/gastos', label: 'Gastos', icon: Receipt },
+    { href: '/fijos-y-prestamos', label: 'Fijos & Préstamos', icon: Landmark },
+    { href: '/flujo-anual', label: 'Flujo Anual', icon: CalendarDays },
+    { href: '/simulador-prestamos', label: 'Simulador', icon: Calculator },
     { href: '/configuracion', label: 'Ajustes', icon: Settings },
   ];
 

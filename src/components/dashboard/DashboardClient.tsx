@@ -532,48 +532,69 @@ export function DashboardClient() {
             </button>
           </div>
 
-          <div className="space-y-2">
-            {resumen.ingresos.map((ing) => (
-              <div
-                key={ing.id}
-                className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs flex items-center justify-between gap-3 hover:border-emerald-200 dark:hover:border-emerald-800/40 transition"
-              >
-                <div className="space-y-0.5 truncate">
-                  <div className="font-bold text-foreground text-xs truncate">
-                    {ing.concepto}
-                  </div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {ing.tipo === 'SUELDO'
-                      ? 'Sueldo de planilla'
-                      : ing.tipo === 'GRATIFICACION'
-                      ? '🎁 Gratificación de ley'
-                      : ing.tipo === 'UTILIDADES'
-                      ? '💼 Utilidades'
-                      : 'Ingreso extra'}
-                    {ing.monedaOriginal === 'USD' && ing.montoOriginal && (
-                      <span className="block text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                        ${ing.montoOriginal} USD (T.C. S/ {ing.tipoCambio.toFixed(2)})
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="text-right shrink-0 flex items-center gap-2">
-                  <span className="font-bold text-emerald-700 dark:text-emerald-300 text-sm">
-                    {formatMoney(ing.monto, moneda)}
-                  </span>
-                  {ing.tipo === 'EXTRA' && (
-                    <button
-                      onClick={() => handleEliminarIngreso(ing.id)}
-                      className="text-muted-foreground hover:text-rose-500 p-1 transition"
-                      title="Eliminar ingreso"
+          {/* Tabla de Ingresos */}
+          <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+                  <tr>
+                    <th className="py-2.5 px-3">Fuente / Concepto</th>
+                    <th className="py-2.5 px-3 text-right">Monto</th>
+                    <th className="py-2.5 px-2 text-center w-8"></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 dark:divide-slate-800/80">
+                  {resumen.ingresos.map((ing) => (
+                    <tr
+                      key={ing.id}
+                      className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+                      <td className="py-2.5 px-3">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-bold text-foreground text-xs">{ing.concepto}</span>
+                          {ing.tipo !== 'SUELDO' && (
+                            <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30">
+                              {ing.tipo === 'GRATIFICACION' ? 'Grati' : ing.tipo === 'UTILIDADES' ? 'Utilidades' : 'Extra'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground mt-0.5">
+                          {ing.tipo === 'SUELDO'
+                            ? 'Sueldo mensual fijo'
+                            : ing.tipo === 'GRATIFICACION'
+                            ? 'Gratificación legal'
+                            : ing.tipo === 'UTILIDADES'
+                            ? 'Utilidades de empresa'
+                            : 'Ingreso puntual'}
+                          {ing.monedaOriginal === 'USD' && ing.montoOriginal && (
+                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block">
+                              ${ing.montoOriginal} USD (T.C. S/ {ing.tipoCambio.toFixed(2)})
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      <td className="py-2.5 px-3 text-right font-bold text-emerald-700 dark:text-emerald-300 whitespace-nowrap text-xs">
+                        {formatMoney(ing.monto, moneda)}
+                      </td>
+
+                      <td className="py-2.5 px-2 text-center whitespace-nowrap">
+                        {ing.tipo === 'EXTRA' && (
+                          <button
+                            type="button"
+                            onClick={() => handleEliminarIngreso(ing.id)}
+                            className="text-muted-foreground hover:text-rose-500 p-1 rounded transition"
+                            title="Eliminar ingreso"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* Tarjeta de Aviso Informativo del Día 10 */}

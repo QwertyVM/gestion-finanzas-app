@@ -31,6 +31,9 @@ import {
   Info,
   Calendar,
   Lock,
+  Trash2,
+  Table,
+  LayoutGrid,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -44,6 +47,9 @@ export function FijosClient() {
   const [modalPrestamoOpen, setModalPrestamoOpen] = useState(false);
   const [editandoCostoFijo, setEditandoCostoFijo] = useState<any | null>(null);
   const [editandoPrestamo, setEditandoPrestamo] = useState<any | null>(null);
+
+  const [modoVistaFijos, setModoVistaFijos] = useState<'TABLA' | 'TARJETAS'>('TABLA');
+  const [modoVistaPrestamos, setModoVistaPrestamos] = useState<'TABLA' | 'TARJETAS'>('TABLA');
 
   const configTc = resumen?.config?.tipoCambioUSD || 4.00;
 
@@ -215,6 +221,36 @@ export function FijosClient() {
       await handleToggleEstadoCuota(item.dbId, nuevoEstado);
     }
     setDetalleItem((prev) => (prev ? { ...prev, estado: nuevoEstado as any } : null));
+  };
+
+  const handleEliminarCostoFijo = async (id: string, concepto: string) => {
+    if (!confirm(`¿Eliminar definitivamente el costo fijo "${concepto}" y sus registros asociados?`)) return;
+    try {
+      setLoadingAction(`del-fijo-${id}`);
+      const res = await fetch(`/api/fijos?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al eliminar costo fijo');
+      toast.success(`Costo fijo "${concepto}" eliminado`);
+      await refresh();
+    } catch (e: any) {
+      toast.error(e.message || 'Error al eliminar');
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  const handleEliminarPrestamo = async (id: string, concepto: string) => {
+    if (!confirm(`¿Eliminar definitivamente el préstamo "${concepto}" y todas sus cuotas?`)) return;
+    try {
+      setLoadingAction(`del-prestamo-${id}`);
+      const res = await fetch(`/api/prestamos?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al eliminar préstamo');
+      toast.success(`Préstamo "${concepto}" eliminado`);
+      await refresh();
+    } catch (e: any) {
+      toast.error(e.message || 'Error al eliminar');
+    } finally {
+      setLoadingAction(null);
+    }
   };
 
   // Crear nuevo Costo Fijo
@@ -487,20 +523,206 @@ export function FijosClient() {
             </p>
           </div>
 
-          <button
-            onClick={() => {
-              setNuevoFijoMesInicio(periodo);
-              setModalFijoOpen(true);
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-bold text-xs shadow-xs transition active:scale-95 self-start sm:self-auto"
-          >
-            <Plus className="w-4 h-4 shrink-0" />
-            <span>Agregar Costo Fijo</span>
-          </button>
+          {/* Selector de Vista y Botón Agregar */}
+          <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-0.5 bg-secondary/80 p-0.5 rounded-xl border border-border">
+              <button
+                type="button"
+                onClick={() => setModoVistaFijos('TABLA')}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
+                  modoVistaFijos === 'TABLA'
+                    ? 'bg-background text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Ver como Tabla"
+              >
+                <Table className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Tabla</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setModoVistaFijos('TARJETAS')}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
+                  modoVistaFijos === 'TARJETAS'
+                    ? 'bg-background text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Ver como Tarjetas"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Tarjetas</span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                setNuevoFijoMesInicio(periodo);
+                setModalFijoOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-bold text-xs shadow-xs transition active:scale-95"
+            >
+              <Plus className="w-4 h-4 shrink-0" />
+              <span>Agregar Costo Fijo</span>
+            </button>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {costosFijos.map((cf) => {
+        {modoVistaFijos === 'TABLA' ? (
+          /* ======================================================== */
+          /* TABLA DE COSTOS FIJOS DEL MES                            */
+          /* ======================================================== */
+          <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+                  <tr>
+                    <th className="py-3 px-3">Tipo / Concepto</th>
+                    <th className="py-3 px-3">Categoría</th>
+                    <th className="py-3 px-3 text-center">Vence</th>
+                    <th className="py-3 px-3 text-right">Monto</th>
+                    <th className="py-3 px-3 text-center">Estado este mes</th>
+                    <th className="py-3 px-3 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 dark:divide-slate-800/80">
+                  {costosFijos.map((cf) => {
+                    const esRecur = esItemRecurrente(cf.concepto, cf.categoria);
+                    const clasificacion: ClasificacionEgreso = esRecur ? 'RECURRENTE' : 'FIJO';
+                    const estilo = ESTILOS_CLASIFICACION[clasificacion];
+                    const isLoading = loadingAction === `fijo-${cf.id}`;
+
+                    return (
+                      <tr
+                        key={cf.id}
+                        onClick={() =>
+                          setDetalleItem({
+                            id: `fijo-${cf.id}`,
+                            dbId: cf.id,
+                            tipo: 'FIJO',
+                            clasificacion,
+                            concepto: cf.concepto,
+                            categoria: cf.categoria,
+                            monto: cf.monto,
+                            diaVencimiento: cf.diaVencimiento,
+                            estado: cf.estado,
+                            fechaPagoReal: cf.fechaPagoReal,
+                            mesInicio: cf.mesInicio,
+                            mesFin: cf.mesFin,
+                            notas: cf.notas,
+                            monedaOriginal: cf.monedaOriginal,
+                            montoOriginal: cf.montoOriginal,
+                            tipoCambio: cf.tipoCambio,
+                          })
+                        }
+                        className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                      >
+                        <td className={`py-3 px-3 border-l-4 ${estilo.borderColor}`}>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-bold text-foreground text-xs">{cf.concepto}</span>
+                            <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.2 rounded-md font-bold shrink-0 border ${estilo.badgeBg} ${estilo.badgeText} ${estilo.badgeBorder}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full ${estilo.dotColor}`} />
+                              {estilo.badgeLabel}
+                            </span>
+                          </div>
+                          {cf.monedaOriginal === 'USD' && cf.montoOriginal && (
+                            <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">
+                              ${cf.montoOriginal.toFixed(2)} USD
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-3 text-muted-foreground whitespace-nowrap">
+                          {cf.categoria || 'General'}
+                        </td>
+
+                        <td className="py-3 px-3 text-center text-muted-foreground whitespace-nowrap">
+                          Día {cf.diaVencimiento}
+                        </td>
+
+                        <td className="py-3 px-3 text-right font-bold text-foreground whitespace-nowrap">
+                          {formatMoney(cf.monto, moneda)}
+                        </td>
+
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                          {cf.estado === 'ADELANTADO' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 dark:bg-indigo-500/20 dark:text-indigo-300">
+                              ⚡ Adelantado
+                            </span>
+                          ) : cf.estado === 'PAGADO' ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-500/20 dark:text-emerald-300">
+                              ✓ Pagado
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200/80 dark:bg-sky-500/20 dark:text-sky-300">
+                              ⏳ Pendiente
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() =>
+                                handleToggleEstadoFijo(
+                                  cf.id,
+                                  cf.estado === 'ADELANTADO' ? 'PENDIENTE' : 'ADELANTADO'
+                                )
+                              }
+                              disabled={isLoading}
+                              className="px-2 py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                              title="Alternar Adelantado"
+                            >
+                              Adelantar
+                            </button>
+
+                            <button
+                              onClick={() =>
+                                handleToggleEstadoFijo(
+                                  cf.id,
+                                  cf.estado === 'PAGADO' ? 'PENDIENTE' : 'PAGADO'
+                                )
+                              }
+                              disabled={isLoading}
+                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${
+                                cf.estado === 'PAGADO'
+                                  ? 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400'
+                                  : 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300'
+                              }`}
+                              title="Alternar Pagado"
+                            >
+                              {cf.estado === 'PAGADO' ? '✓ Pagado' : 'Pagar'}
+                            </button>
+
+                            <button
+                              onClick={() => abrirEdicionCostoFijo(cf)}
+                              className="p-1 rounded-lg text-muted-foreground hover:text-sky-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition ml-1"
+                              title="Editar costo fijo base"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              onClick={() => handleEliminarCostoFijo(cf.id, cf.concepto)}
+                              className="p-1 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                              title="Eliminar costo fijo"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        ) : (
+          /* ======================================================== */
+          /* VISTA TARJETAS                                           */
+          /* ======================================================== */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {costosFijos.map((cf) => {
             const Icon = getIconForConcepto(cf.concepto);
             const isLoading = loadingAction === `fijo-${cf.id}`;
             const esRecur = esItemRecurrente(cf.concepto, cf.categoria);
@@ -645,6 +867,7 @@ export function FijosClient() {
             );
           })}
         </div>
+        )}
       </div>
 
       {/* 2. SECCIÓN: PRÉSTAMOS BANCARIOS */}
@@ -660,22 +883,244 @@ export function FijosClient() {
             </p>
           </div>
 
-          <button
-            onClick={() => {
-              setNuevoPrestamoPeriodoInicio(periodo);
-              setModalPrestamoOpen(true);
-            }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-bold text-xs shadow-xs transition active:scale-95 self-start sm:self-auto"
-          >
-            <Plus className="w-4 h-4 shrink-0" />
-            <span>Agregar Préstamo</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-secondary/80 p-0.5 rounded-xl border border-border">
+              <button
+                type="button"
+                onClick={() => setModoVistaPrestamos('TABLA')}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
+                  modoVistaPrestamos === 'TABLA'
+                    ? 'bg-background text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Ver como Tabla"
+              >
+                <Table className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Tabla</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setModoVistaPrestamos('TARJETAS')}
+                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
+                  modoVistaPrestamos === 'TARJETAS'
+                    ? 'bg-background text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+                title="Ver como Tarjetas"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Tarjetas</span>
+              </button>
+            </div>
+
+            <button
+              onClick={() => {
+                setNuevoPrestamoPeriodoInicio(periodo);
+                setModalPrestamoOpen(true);
+              }}
+              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-bold text-xs shadow-xs transition active:scale-95"
+            >
+              <Plus className="w-4 h-4 shrink-0" />
+              <span>Agregar Préstamo</span>
+            </button>
+          </div>
         </div>
 
         {prestamos.length === 0 ? (
           <div className="p-8 text-center bg-card border border-border rounded-2xl">
             <Landmark className="w-10 h-10 text-muted-foreground mx-auto stroke-1" />
             <p className="text-sm font-semibold text-foreground mt-2">No hay préstamos activos</p>
+          </div>
+        ) : modoVistaPrestamos === 'TABLA' ? (
+          /* ======================================================== */
+          /* TABLA DE PRÉSTAMOS BANCARIOS Y CUOTAS                    */
+          /* ======================================================== */
+          <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+                  <tr>
+                    <th className="py-3 px-3">Banco / Concepto</th>
+                    <th className="py-3 px-3">Progreso Cuotas</th>
+                    <th className="py-3 px-3 text-center">Día Pago</th>
+                    <th className="py-3 px-3 text-center">TEA %</th>
+                    <th className="py-3 px-3 text-right">Cuota Mensual</th>
+                    <th className="py-3 px-3 text-right">Total Préstamo</th>
+                    <th className="py-3 px-3 text-center">Estado este mes</th>
+                    <th className="py-3 px-3 text-center">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/60 dark:divide-slate-800">
+                  {prestamos.map((p) => {
+                    const progreso = Math.round((p.cuotaActual / p.cuotasTotales) * 100);
+                    const isLoading = loadingAction === `cuota-${p.cuotaId}` || loadingAction === `del-prestamo-${p.id}`;
+
+                    return (
+                      <tr
+                        key={p.id}
+                        onClick={() =>
+                          setDetalleItem({
+                            id: `prestamo-${p.cuotaId}`,
+                            dbId: p.cuotaId,
+                            prestamoId: p.id,
+                            tipo: 'PRESTAMO',
+                            clasificacion: 'PRESTAMO_CUOTA',
+                            concepto: `${p.banco} - ${p.concepto}`,
+                            banco: p.banco,
+                            nombrePrestamo: p.concepto,
+                            categoria: 'Préstamo Bancario',
+                            monto: p.montoCuota,
+                            montoTotal: p.montoTotal,
+                            tasaInteresAnual: p.tasaInteresAnual,
+                            cuotaActual: p.cuotaActual,
+                            cuotasTotales: p.cuotasTotales,
+                            diaVencimiento: p.diaPago,
+                            estado: p.estado,
+                            fechaPagoReal: p.fechaPagoReal,
+                            monedaOriginal: p.monedaOriginal,
+                            montoOriginal: p.montoOriginal,
+                            tipoCambio: p.tipoCambio,
+                          })
+                        }
+                        className="hover:bg-purple-50/40 dark:hover:bg-purple-950/20 transition cursor-pointer"
+                      >
+                        <td className="py-3 px-3 border-l-4 border-l-purple-500 dark:border-l-purple-400">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                              {p.banco}
+                            </span>
+                            <span className="font-bold text-foreground text-xs">{p.concepto}</span>
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.2 rounded-md font-bold shrink-0 border bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-200/80 dark:border-purple-500/30">
+                              <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                              Préstamo
+                            </span>
+                          </div>
+                          {(p.monedaOriginal === 'USD' || p.concepto.includes('$')) && (
+                            <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">
+                              ${p.montoOriginal ? p.montoOriginal.toFixed(2) : (p.concepto.match(/\$([0-9.]+)/)?.[1] || '')} USD
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-3">
+                          <div className="w-32 space-y-1">
+                            <div className="flex items-center justify-between text-[10px] text-muted-foreground font-semibold">
+                              <span>
+                                {p.aplicaEsteMes === false
+                                  ? 'Fuera de rango'
+                                  : `Cta ${p.cuotaActual}/${p.cuotasTotales}`}
+                              </span>
+                              <span className="text-purple-600 dark:text-purple-400 font-bold">{progreso}%</span>
+                            </div>
+                            <div className="w-full bg-secondary rounded-full h-1.5 overflow-hidden">
+                              <div
+                                className="bg-purple-500 h-full rounded-full transition-all duration-500"
+                                style={{ width: `${progreso}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-3 text-center text-muted-foreground whitespace-nowrap">
+                          Día {p.diaPago}
+                        </td>
+
+                        <td className="py-3 px-3 text-center font-semibold text-foreground whitespace-nowrap">
+                          {p.tasaInteresAnual}%
+                        </td>
+
+                        <td className="py-3 px-3 text-right font-extrabold text-foreground whitespace-nowrap">
+                          {formatMoney(p.montoCuota, moneda)}
+                        </td>
+
+                        <td className="py-3 px-3 text-right text-muted-foreground font-semibold whitespace-nowrap">
+                          {p.montoTotal ? formatMoney(p.montoTotal, moneda) : '—'}
+                        </td>
+
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                          {p.aplicaEsteMes === false ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold bg-secondary text-muted-foreground border border-border">
+                              <Clock className="w-3 h-3" /> Fuera de periodo
+                            </span>
+                          ) : p.estado === 'PAGADO' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
+                              <CheckCircle2 className="w-3 h-3" /> Pagado
+                            </span>
+                          ) : p.estado === 'ADELANTADO' ? (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
+                              <FastForward className="w-3 h-3" /> Adelantado
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">
+                              <Clock className="w-3 h-3" /> Pendiente
+                            </span>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-1">
+                            {p.aplicaEsteMes !== false && (
+                              <>
+                                <button
+                                  onClick={() =>
+                                    handleToggleEstadoCuota(
+                                      p.cuotaId,
+                                      p.estado === 'ADELANTADO' ? 'PENDIENTE' : 'ADELANTADO'
+                                    )
+                                  }
+                                  disabled={isLoading}
+                                  className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition ${
+                                    p.estado === 'ADELANTADO'
+                                      ? 'bg-amber-500/20 text-amber-500 border-amber-500/40'
+                                      : 'bg-secondary/60 text-muted-foreground border-border hover:bg-secondary'
+                                  }`}
+                                  title="Marcar Adelantado"
+                                >
+                                  ⚡
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleToggleEstadoCuota(
+                                      p.cuotaId,
+                                      p.estado === 'PAGADO' ? 'PENDIENTE' : 'PAGADO'
+                                    )
+                                  }
+                                  disabled={isLoading}
+                                  className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition ${
+                                    p.estado === 'PAGADO'
+                                      ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40'
+                                      : 'bg-secondary/60 text-muted-foreground border-border hover:bg-secondary'
+                                  }`}
+                                  title="Marcar Pagado"
+                                >
+                                  ✅
+                                </button>
+                              </>
+                            )}
+
+                            <button
+                              onClick={() => abrirEdicionPrestamo(p)}
+                              className="p-1 rounded-lg text-muted-foreground hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition"
+                              title="Editar condiciones base"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+
+                            <button
+                              onClick={() => handleEliminarPrestamo(p.id, `${p.banco} - ${p.concepto}`)}
+                              className="p-1 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                              title="Eliminar préstamo"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -729,18 +1174,25 @@ export function FijosClient() {
                           <span>{p.concepto}</span>
                           <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
                         </h3>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            abrirEdicionPrestamo(p);
-                          }}
-                          className="text-[11px] text-purple-400 hover:text-purple-300 font-semibold inline-flex items-center gap-1 p-1 rounded hover:bg-secondary transition"
-                          title="Editar condiciones base (no retroactivo)"
-                        >
-                          <Pencil className="w-3 h-3" />
-                          <span>Editar</span>
-                        </button>
+                        <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            type="button"
+                            onClick={() => abrirEdicionPrestamo(p)}
+                            className="text-[11px] text-purple-400 hover:text-purple-300 font-semibold inline-flex items-center gap-1 p-1 rounded hover:bg-secondary transition"
+                            title="Editar condiciones base"
+                          >
+                            <Pencil className="w-3 h-3" />
+                            <span>Editar</span>
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleEliminarPrestamo(p.id, `${p.banco} - ${p.concepto}`)}
+                            className="text-[11px] text-rose-400 hover:text-rose-300 font-semibold inline-flex items-center gap-1 p-1 rounded hover:bg-rose-500/10 transition"
+                            title="Eliminar préstamo"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
                       </div>
                       <p className="text-xs text-muted-foreground">
                         Día de pago programado: Día {p.diaPago} de cada mes

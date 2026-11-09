@@ -225,6 +225,18 @@ export function GastosClient() {
     }
   };
 
+  const handleEliminarGastoDirecto = async (id: string, concepto: string) => {
+    if (!confirm(`¿Eliminar definitivamente el gasto "${concepto}"?`)) return;
+    try {
+      const res = await fetch(`/api/gastos?id=${id}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Error al eliminar gasto');
+      toast.success(`Gasto "${concepto}" eliminado`);
+      await refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al eliminar');
+    }
+  };
+
   const handleGuardarMontoModal = async (item: DetalleItemData, nuevoMonto: number) => {
     try {
       const res = await fetch('/api/gastos', {
@@ -376,6 +388,13 @@ export function GastosClient() {
                     day: '2-digit',
                     month: 'short',
                   });
+                  const esCuota = gasto.totalCuotas > 1;
+                  const esRecur = esItemRecurrente(gasto.concepto, gasto.categoria);
+                  const borderClass = esCuota
+                    ? 'border-l-4 border-l-purple-500'
+                    : esRecur
+                    ? 'border-l-4 border-l-pink-500'
+                    : 'border-l-4 border-l-slate-400 dark:border-l-slate-600';
 
                   return (
                     <tr
@@ -386,7 +405,7 @@ export function GastosClient() {
                       }`}
                     >
                       {/* Checkbox para sumatoria */}
-                      <td className="p-3 text-center" onClick={(e) => e.stopPropagation()}>
+                      <td className={`p-3 text-center ${borderClass}`} onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
                           onClick={() => toggleSelectGasto(gasto.id, gasto.monto)}
@@ -404,10 +423,16 @@ export function GastosClient() {
                       <td className="p-3">
                         <div className="font-semibold text-foreground text-xs group-hover:text-sky-400 transition flex items-center gap-1.5 flex-wrap">
                           <span>{gasto.concepto}</span>
-                          {esItemRecurrente(gasto.concepto, gasto.categoria) && (
+                          {esRecur && (
                             <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.2 rounded font-bold bg-pink-50 dark:bg-pink-500/15 text-pink-700 dark:text-pink-300 border border-pink-200/80 dark:border-pink-500/30">
                               <span className="w-1 h-1 rounded-full bg-pink-500" />
                               Recurrente
+                            </span>
+                          )}
+                          {esCuota && (
+                            <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.2 rounded font-bold bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-500/30">
+                              <span className="w-1 h-1 rounded-full bg-purple-500" />
+                              Cuota
                             </span>
                           )}
                           <span className="text-[10px] text-sky-400 opacity-0 group-hover:opacity-100 transition hidden sm:inline">
@@ -450,7 +475,7 @@ export function GastosClient() {
                       {/* Cuota */}
                       <td className="p-3 whitespace-nowrap">
                         {gasto.totalCuotas > 1 ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-500 border border-purple-500/30">
                             Cuota {gasto.cuotaActual}/{gasto.totalCuotas}
                           </span>
                         ) : (
@@ -480,7 +505,7 @@ export function GastosClient() {
                         )}
                       </td>
 
-                      {/* Acciones Rápidas de Estado */}
+                      {/* Acciones Rápidas de Estado y Eliminación */}
                       <td className="p-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-1">
                           <button
@@ -516,6 +541,14 @@ export function GastosClient() {
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                           </button>
+
+                          <button
+                            onClick={() => handleEliminarGastoDirecto(gasto.id, gasto.concepto)}
+                            className="p-1 rounded-lg text-xs text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                            title="Eliminar gasto"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -528,8 +561,8 @@ export function GastosClient() {
       )}
 
       {/* SECCIÓN INFORMATIVA: GASTOS POSTERIORES AL DÍA 10 (A PAGAR EL PRÓXIMO MES) */}
-      <div className="bg-card border border-border rounded-2xl p-6 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
+      <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="flex items-center gap-2.5">
             <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-xl">
               <Calendar className="w-5 h-5" />
@@ -539,77 +572,130 @@ export function GastosClient() {
                 Consumos de Tarjeta que vencen el PRÓXIMO MES
               </h2>
               <p className="text-xs text-muted-foreground">
-                Compras realizadas después del día 10 que ya consumiste y se descontarán del sueldo del siguiente mes.
+                Compras realizadas después del corte (día 10) que se debitarán en la facturación del mes entrante.
               </p>
             </div>
           </div>
-        </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {tarjetas.map((t) => (
-            <div
-              key={t.id}
-              className="p-4 rounded-xl bg-secondary/30 border border-border space-y-2"
-            >
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-sm text-foreground">{t.nombre}</span>
-                <span className="font-extrabold text-sm text-indigo-400">
+          <div className="flex items-center gap-2 flex-wrap">
+            {tarjetas.map((t) => (
+              <div
+                key={t.id}
+                className="px-3 py-1.5 rounded-xl bg-secondary/50 border border-border flex items-center gap-2 text-xs"
+              >
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
+                <span className="font-semibold text-foreground">{t.nombre}:</span>
+                <span className="font-bold text-indigo-500 dark:text-indigo-400">
                   {formatMoney(t.totalSiguientePeriodo, moneda)}
                 </span>
               </div>
+            ))}
+          </div>
+        </div>
 
-              {t.gastosSiguientePeriodo.length === 0 ? (
-                <p className="text-xs text-muted-foreground italic">
-                  No hay consumos registrados posteriores al corte del día {t.diaCorte}.
-                </p>
-              ) : (
-                <ul className="text-xs space-y-1.5 pt-1 divide-y divide-border/60">
-                  {t.gastosSiguientePeriodo.map((g: any) => (
-                    <li
-                      key={g.id}
-                      onClick={() =>
-                        setDetalleGasto({
-                          id: g.id,
-                          dbId: g.id,
-                          tipo: 'TARJETA',
-                          concepto: g.concepto,
-                          categoria: g.categoria,
-                          monto: g.monto,
-                          monedaOriginal: g.monedaOriginal,
-                          montoOriginal: g.montoOriginal,
-                          tipoCambio: g.tipoCambio,
-                          fechaGasto: g.fechaGasto,
-                          periodoPago: g.periodoPago,
-                          estado: g.estado,
-                          cuotaActual: g.cuotaActual,
-                          totalCuotas: g.totalCuotas,
-                          tarjetaNombre: t.nombre,
-                          tarjetaColor: t.color,
-                          tarjetaDiaCorte: t.diaCorte,
-                          tarjetaDiaPago: t.diaPago,
-                          notas: g.notas,
-                        })
-                      }
-                      className="pt-1.5 flex items-center justify-between cursor-pointer hover:text-sky-400 transition group"
-                      title="Haz clic para ver detalles del gasto"
-                    >
-                      <div className="truncate pr-2">
-                        <span className="text-foreground group-hover:text-sky-400 font-medium transition">
+        {/* Tabla de Consumos Próximo Mes */}
+        <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+                <tr>
+                  <th className="py-3 px-3.5">Tarjeta Emisora</th>
+                  <th className="py-3 px-3">Concepto / Detalle</th>
+                  <th className="py-3 px-3">Categoría</th>
+                  <th className="py-3 px-3 text-center">Fecha Compra</th>
+                  <th className="py-3 px-3 text-center">Cuota</th>
+                  <th className="py-3 px-3 text-right">Monto</th>
+                  <th className="py-3 px-3 text-center">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/60 dark:divide-slate-800">
+                {tarjetas.some((t) => t.gastosSiguientePeriodo && t.gastosSiguientePeriodo.length > 0) ? (
+                  tarjetas.flatMap((t) =>
+                    (t.gastosSiguientePeriodo || []).map((g: any) => (
+                      <tr
+                        key={g.id}
+                        onClick={() =>
+                          setDetalleGasto({
+                            id: g.id,
+                            dbId: g.id,
+                            tipo: 'TARJETA',
+                            concepto: g.concepto,
+                            categoria: g.categoria,
+                            monto: g.monto,
+                            monedaOriginal: g.monedaOriginal,
+                            montoOriginal: g.montoOriginal,
+                            tipoCambio: g.tipoCambio,
+                            fechaGasto: g.fechaGasto,
+                            periodoPago: g.periodoPago,
+                            estado: g.estado,
+                            cuotaActual: g.cuotaActual,
+                            totalCuotas: g.totalCuotas,
+                            tarjetaNombre: t.nombre,
+                            tarjetaColor: t.color,
+                            tarjetaDiaCorte: t.diaCorte,
+                            tarjetaDiaPago: t.diaPago,
+                            notas: g.notas,
+                          })
+                        }
+                        className="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition cursor-pointer"
+                      >
+                        <td className="py-3 px-3.5 border-l-4" style={{ borderLeftColor: t.color }}>
+                          <div className="flex items-center gap-1.5 font-bold text-foreground">
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
+                            <span>{t.nombre}</span>
+                          </div>
+                        </td>
+
+                        <td className="py-3 px-3 font-semibold text-foreground">
                           {g.concepto}
-                        </span>
-                        <span className="text-[10px] text-muted-foreground block">
-                          Comprado el {new Date(g.fechaGasto).toLocaleDateString('es-PE')}
-                        </span>
-                      </div>
-                      <span className="font-semibold text-foreground whitespace-nowrap">
-                        {formatMoney(g.monto, moneda)}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-          ))}
+                        </td>
+
+                        <td className="py-3 px-3 text-muted-foreground">
+                          {g.categoria || 'Sin categoría'}
+                        </td>
+
+                        <td className="py-3 px-3 text-center text-muted-foreground whitespace-nowrap">
+                          {new Date(g.fechaGasto).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}
+                        </td>
+
+                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                          {g.totalCuotas > 1 ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-500 border border-purple-500/30">
+                              Cuota {g.cuotaActual}/{g.totalCuotas}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-[11px]">1 cuota</span>
+                          )}
+                        </td>
+
+                        <td className="py-3 px-3 text-right font-extrabold text-foreground whitespace-nowrap">
+                          {formatMoney(g.monto, moneda)}
+                        </td>
+
+                        <td className="py-3 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() => handleEliminarGastoDirecto(g.id, g.concepto)}
+                              className="p-1 rounded-lg text-xs text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                              title="Eliminar consumo"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )
+                ) : (
+                  <tr>
+                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
+                      No hay compras registradas con facturación diferida al siguiente mes.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 

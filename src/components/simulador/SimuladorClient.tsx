@@ -259,6 +259,111 @@ export function SimuladorClient() {
                   </div>
                 </div>
               </div>
+
+              {/* TABLA COMPARATIVA DE ESCENARIOS */}
+              <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs">
+                <div className="p-4 border-b border-border/80 dark:border-slate-800 flex items-center justify-between">
+                  <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-purple-500" />
+                    <span>Tabla Comparativa de Escenarios de Prepago</span>
+                  </h3>
+                  <span className="text-[11px] font-semibold text-muted-foreground">
+                    Prepago: {formatMoney(resultado.montoPrepagar, moneda)}
+                  </span>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs border-collapse">
+                    <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+                      <tr>
+                        <th className="py-3 px-3.5">Métrica / Concepto</th>
+                        <th className="py-3 px-3 text-center">Escenario Actual</th>
+                        <th className="py-3 px-3 text-center bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 font-bold">
+                          Opción A: Reducir Plazo
+                        </th>
+                        <th className="py-3 px-3 text-center bg-sky-500/5 text-sky-600 dark:text-sky-400 font-bold">
+                          Opción B: Reducir Cuota
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/60 dark:divide-slate-800">
+                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                        <td className="py-3 px-3.5 font-bold text-foreground">Cuota Mensual</td>
+                        <td className="py-3 px-3 text-center font-extrabold text-foreground">
+                          {formatMoney(resultado.cuotaActual, moneda)}
+                        </td>
+                        <td className="py-3 px-3 text-center font-extrabold text-foreground bg-emerald-500/5">
+                          {formatMoney(resultado.cuotaActual, moneda)}
+                        </td>
+                        <td className="py-3 px-3 text-center font-extrabold text-sky-600 dark:text-sky-400 bg-sky-500/5">
+                          {formatMoney(resultado.opcionCuota.nuevaCuotaMensual, moneda)}
+                        </td>
+                      </tr>
+
+                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                        <td className="py-3 px-3.5 font-bold text-foreground">Cuotas Restantes</td>
+                        <td className="py-3 px-3 text-center font-semibold text-foreground">
+                          {resultado.cuotasRestantes} cuotas
+                        </td>
+                        <td className="py-3 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5">
+                          {resultado.opcionPlazo.nuevasCuotasRestantes} cuotas
+                        </td>
+                        <td className="py-3 px-3 text-center font-semibold text-foreground bg-sky-500/5">
+                          {resultado.cuotasRestantes} cuotas
+                        </td>
+                      </tr>
+
+                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                        <td className="py-3 px-3.5 font-bold text-foreground">Tiempo Ahorrado</td>
+                        <td className="py-3 px-3 text-center text-muted-foreground">0 meses</td>
+                        <td className="py-3 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5">
+                          {resultado.opcionPlazo.mesesAhorrados} meses antes
+                        </td>
+                        <td className="py-3 px-3 text-center text-muted-foreground bg-sky-500/5">
+                          0 meses
+                        </td>
+                      </tr>
+
+                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                        <td className="py-3 px-3.5 font-bold text-foreground">Alivio Mensual en Flujo</td>
+                        <td className="py-3 px-3 text-center text-muted-foreground">—</td>
+                        <td className="py-3 px-3 text-center text-muted-foreground bg-emerald-500/5">
+                          {formatMoney(0, moneda)}
+                        </td>
+                        <td className="py-3 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-sky-500/5">
+                          + {formatMoney(resultado.opcionCuota.ahorroMensual, moneda)} / mes
+                        </td>
+                      </tr>
+
+                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                        <td className="py-3 px-3.5 font-bold text-foreground">Intereses Ahorrados (Aprox.)</td>
+                        <td className="py-3 px-3 text-center text-muted-foreground">—</td>
+                        <td className="py-3 px-3 text-center font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 text-sm">
+                          ~ {formatMoney(resultado.opcionPlazo.interesAhorradoAproximado, moneda)}
+                        </td>
+                        <td className="py-3 px-3 text-center font-extrabold text-sky-600 dark:text-sky-400 bg-sky-500/5">
+                          ~ {formatMoney(resultado.opcionCuota.interesAhorradoAproximado, moneda)}
+                        </td>
+                      </tr>
+
+                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
+                        <td className="py-3 px-3.5 font-bold text-foreground">Enfoque Financiero</td>
+                        <td className="py-3 px-3 text-center text-muted-foreground">Continuar amortización</td>
+                        <td className="py-3 px-3 text-center bg-emerald-500/5">
+                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
+                            Máximo ahorro total
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-center bg-sky-500/5">
+                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-bold bg-sky-500/15 text-sky-600 dark:text-sky-400">
+                            Mayor liquidez mensual
+                          </span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           )}
         </div>

@@ -31,6 +31,30 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { id, nombre, banco, ultimosCuatro, diaCorte, diaPago, color } = body;
+    if (!id) {
+      return NextResponse.json({ error: 'ID es requerido' }, { status: 400 });
+    }
+    const tarjeta = await prisma.tarjetaCredito.update({
+      where: { id },
+      data: {
+        ...(nombre && { nombre }),
+        ...(banco && { banco }),
+        ...(ultimosCuatro !== undefined && { ultimosCuatro }),
+        ...(diaCorte !== undefined && { diaCorte: parseInt(diaCorte, 10) }),
+        ...(diaPago !== undefined && { diaPago: parseInt(diaPago, 10) }),
+        ...(color && { color }),
+      },
+    });
+    return NextResponse.json({ success: true, data: tarjeta });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
