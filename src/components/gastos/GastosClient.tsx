@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
-import { formatMoney, formatPeriodoLabel } from '@/lib/utils';
+import { formatMoney, formatPeriodoLabel, esItemRecurrente, obtenerClasificacionEgreso } from '@/lib/utils';
 import { calcularPeriodoFacturacion, calcularCuotasPeriodos } from '@/lib/billing-cycles';
 import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import {
@@ -45,6 +45,12 @@ export function GastosClient() {
     id: g.id,
     dbId: g.id,
     tipo: g.metodoPago === 'TARJETA_CREDITO' ? 'TARJETA' : 'DIRECTO',
+    clasificacion: obtenerClasificacionEgreso({
+      tipo: g.metodoPago === 'TARJETA_CREDITO' ? 'TARJETA' : 'DIRECTO',
+      concepto: g.concepto,
+      categoria: g.categoria,
+      totalCuotas: g.totalCuotas,
+    }),
     concepto: g.concepto,
     categoria: g.categoria,
     monto: g.monto,
@@ -396,8 +402,14 @@ export function GastosClient() {
 
                       {/* Concepto */}
                       <td className="p-3">
-                        <div className="font-semibold text-foreground text-xs group-hover:text-sky-400 transition flex items-center gap-1.5">
+                        <div className="font-semibold text-foreground text-xs group-hover:text-sky-400 transition flex items-center gap-1.5 flex-wrap">
                           <span>{gasto.concepto}</span>
+                          {esItemRecurrente(gasto.concepto, gasto.categoria) && (
+                            <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.2 rounded font-bold bg-pink-50 dark:bg-pink-500/15 text-pink-700 dark:text-pink-300 border border-pink-200/80 dark:border-pink-500/30">
+                              <span className="w-1 h-1 rounded-full bg-pink-500" />
+                              Recurrente
+                            </span>
+                          )}
                           <span className="text-[10px] text-sky-400 opacity-0 group-hover:opacity-100 transition hidden sm:inline">
                             (ver detalle)
                           </span>

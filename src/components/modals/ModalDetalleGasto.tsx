@@ -1,12 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { formatMoney, formatPeriodoLabel } from '@/lib/utils';
+import {
+  formatMoney,
+  formatPeriodoLabel,
+  ClasificacionEgreso,
+  obtenerClasificacionEgreso,
+  ESTILOS_CLASIFICACION,
+} from '@/lib/utils';
 import {
   CreditCard,
   Landmark,
   Home,
   Banknote,
+  Repeat,
   Sparkles,
   Clock,
   FastForward,
@@ -34,6 +41,7 @@ export interface DetalleItemData {
   id: string;
   dbId: string;
   tipo: 'TARJETA' | 'DIRECTO' | 'FIJO' | 'PRESTAMO';
+  clasificacion?: ClasificacionEgreso;
   concepto: string;
   categoria?: string;
   monto: number; // En Soles
@@ -203,32 +211,44 @@ export function ModalDetalleGasto({
   const diaCorte = item.tarjetaDiaCorte || 10;
   const esAntesDeCorte = diaConsumo !== null ? diaConsumo <= diaCorte : true;
 
-  // Icono según tipo
+  // Clasificación y estilos de color
+  const clasificacionEfectiva: ClasificacionEgreso = item.clasificacion || obtenerClasificacionEgreso(item);
+  const estilo = ESTILOS_CLASIFICACION[clasificacionEfectiva];
+
+  // Icono según tipo y clasificación
   const renderIconoTipo = () => {
-    switch (item.tipo) {
-      case 'TARJETA':
-        return <CreditCard className="w-5 h-5 text-indigo-400" />;
-      case 'PRESTAMO':
-        return <Landmark className="w-5 h-5 text-amber-400" />;
+    switch (clasificacionEfectiva) {
+      case 'PRESTAMO_CUOTA':
+        return <Landmark className="w-5 h-5 text-purple-500 dark:text-purple-400" />;
+      case 'RECURRENTE':
+        return <Repeat className="w-5 h-5 text-pink-500 dark:text-pink-400" />;
       case 'FIJO':
-        return <Home className="w-5 h-5 text-sky-400" />;
-      case 'DIRECTO':
+        return <Home className="w-5 h-5 text-sky-500 dark:text-sky-400" />;
+      case 'VARIABLE':
       default:
-        return <Banknote className="w-5 h-5 text-emerald-400" />;
+        return item.tipo === 'TARJETA' ? (
+          <CreditCard className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+        ) : (
+          <Banknote className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+        );
     }
   };
 
   const tipoLabel = () => {
-    switch (item.tipo) {
-      case 'TARJETA':
-        return 'Gasto con Tarjeta de Crédito';
-      case 'PRESTAMO':
-        return 'Compromiso de Préstamo Bancario';
+    switch (clasificacionEfectiva) {
+      case 'PRESTAMO_CUOTA':
+        return item.tipo === 'PRESTAMO'
+          ? 'Compromiso de Préstamo Bancario'
+          : `Compra diferida en ${cuotasTot} cuotas`;
+      case 'RECURRENTE':
+        return 'Suscripción / Costo Recurrente';
       case 'FIJO':
-        return 'Costo Fijo Mensual';
-      case 'DIRECTO':
+        return 'Costo Fijo Mensual Esencial';
+      case 'VARIABLE':
       default:
-        return 'Gasto en Efectivo / Débito';
+        return item.tipo === 'TARJETA'
+          ? 'Gasto puntual con Tarjeta de Crédito'
+          : 'Gasto en Efectivo / Débito';
     }
   };
 
@@ -242,15 +262,21 @@ export function ModalDetalleGasto({
         onClick={(e) => e.stopPropagation()}
       >
         {/* CABECERA */}
-        <div className="p-6 border-b border-border bg-secondary/30 flex items-center justify-between">
+        <div className={`p-6 border-b border-border bg-secondary/30 flex items-center justify-between border-l-4 ${estilo.borderColor}`}>
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-secondary border border-border">
               {renderIconoTipo()}
             </div>
             <div>
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
-                {tipoLabel()}
-              </span>
+              <div className="flex items-center gap-2 mb-0.5">
+                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+                  {tipoLabel()}
+                </span>
+                <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.2 rounded-md font-bold border ${estilo.badgeBg} ${estilo.badgeText} ${estilo.badgeBorder}`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${estilo.dotColor}`} />
+                  {estilo.badgeLabel}
+                </span>
+              </div>
               <h2 className="text-base font-extrabold text-foreground truncate max-w-[280px] sm:max-w-[340px]">
                 {item.concepto}
               </h2>

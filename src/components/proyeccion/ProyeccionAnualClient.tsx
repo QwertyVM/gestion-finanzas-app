@@ -159,24 +159,28 @@ export function ProyeccionAnualClient() {
                   </div>
 
                   <div className="flex items-center justify-between text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <TrendingDown className="w-3.5 h-3.5 text-rose-500" /> Gastos Fijos:
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-sky-500" /> Costos Fijos:
                     </span>
-                    <span className="font-medium text-foreground">
+                    <span className="font-semibold text-foreground">
                       {formatMoney(m.fijos, moneda)}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between text-muted-foreground">
-                    <span>Préstamos & Deudas:</span>
-                    <span className="font-medium text-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-purple-500" /> Préstamos & Cuotas:
+                    </span>
+                    <span className="font-semibold text-foreground">
                       {formatMoney(m.prestamos, moneda)}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between text-muted-foreground">
-                    <span>Tarjetas & Otros:</span>
-                    <span className="font-medium text-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-slate-400" /> Tarjetas & Variables:
+                    </span>
+                    <span className="font-semibold text-foreground">
                       {formatMoney(m.gastos, moneda)}
                     </span>
                   </div>

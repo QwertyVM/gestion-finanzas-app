@@ -2,11 +2,18 @@
 
 import React, { useState } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
-import { formatMoney, formatPeriodoLabel } from '@/lib/utils';
+import {
+  formatMoney,
+  formatPeriodoLabel,
+  ClasificacionEgreso,
+  ESTILOS_CLASIFICACION,
+  esItemRecurrente,
+} from '@/lib/utils';
 import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import {
   Home,
   Landmark,
+  Repeat,
   Plus,
   CheckCircle2,
   Clock,
@@ -496,6 +503,9 @@ export function FijosClient() {
           {costosFijos.map((cf) => {
             const Icon = getIconForConcepto(cf.concepto);
             const isLoading = loadingAction === `fijo-${cf.id}`;
+            const esRecur = esItemRecurrente(cf.concepto, cf.categoria);
+            const clasificacion: ClasificacionEgreso = esRecur ? 'RECURRENTE' : 'FIJO';
+            const estilo = ESTILOS_CLASIFICACION[clasificacion];
 
             return (
               <div
@@ -505,6 +515,7 @@ export function FijosClient() {
                     id: `fijo-${cf.id}`,
                     dbId: cf.id,
                     tipo: 'FIJO',
+                    clasificacion,
                     concepto: cf.concepto,
                     categoria: cf.categoria,
                     monto: cf.monto,
@@ -519,12 +530,12 @@ export function FijosClient() {
                     tipoCambio: cf.tipoCambio,
                   })
                 }
-                className="group bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between hover:border-sky-500/50 hover:shadow-md transition cursor-pointer"
+                className={`group bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between border-l-4 ${estilo.borderColor} ${estilo.bgCardHover} hover:shadow-md transition cursor-pointer`}
                 title="Haz clic para ver características completas"
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
-                    <div className="p-2.5 rounded-xl bg-sky-500/10 text-sky-500">
+                    <div className={`p-2.5 rounded-xl ${esRecur ? 'bg-pink-500/10 text-pink-500' : 'bg-sky-500/10 text-sky-500'}`}>
                       <Icon className="w-5 h-5" />
                     </div>
 
@@ -547,8 +558,12 @@ export function FijosClient() {
 
                   <div>
                     <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-foreground text-sm group-hover:text-sky-400 transition flex items-center gap-1">
+                      <h3 className="font-bold text-foreground text-sm group-hover:text-sky-400 transition flex items-center gap-1.5 flex-wrap">
                         <span>{cf.concepto}</span>
+                        <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.2 rounded-md font-bold shrink-0 border ${estilo.badgeBg} ${estilo.badgeText} ${estilo.badgeBorder}`}>
+                          <span className={`w-1.5 h-1.5 rounded-full ${estilo.dotColor}`} />
+                          {estilo.badgeLabel}
+                        </span>
                         <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
                       </h3>
                       {/* Botón Editar Base No Retroactivo */}
@@ -677,6 +692,7 @@ export function FijosClient() {
                       dbId: p.cuotaId,
                       prestamoId: p.id,
                       tipo: 'PRESTAMO',
+                      clasificacion: 'PRESTAMO_CUOTA',
                       concepto: `${p.banco} - ${p.concepto}`,
                       banco: p.banco,
                       nombrePrestamo: p.concepto,
@@ -694,14 +710,20 @@ export function FijosClient() {
                       tipoCambio: p.tipoCambio,
                     })
                   }
-                  className="group bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 hover:border-purple-500/50 hover:shadow-md transition cursor-pointer"
+                  className="group bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 border-l-4 border-l-purple-500 dark:border-l-purple-400 hover:border-purple-300 dark:hover:border-purple-700 hover:shadow-md transition cursor-pointer"
                   title="Haz clic para ver características completas"
                 >
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
-                      <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/30">
-                        {p.banco}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-purple-500/15 text-purple-400 border border-purple-500/30">
+                          {p.banco}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-bold shrink-0 border bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-200/80 dark:border-purple-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
+                          Préstamo / Cuota
+                        </span>
+                      </div>
                       <div className="flex items-center justify-between gap-3">
                         <h3 className="text-base font-bold text-foreground group-hover:text-purple-400 transition flex items-center gap-1.5">
                           <span>{p.concepto}</span>
