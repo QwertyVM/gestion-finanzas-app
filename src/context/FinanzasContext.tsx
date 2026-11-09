@@ -46,7 +46,7 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
   // Selección de items y sumatoria instantánea
   const [selectedItems, setSelectedItems] = useState<Map<string, number>>(new Map());
 
-  const fetchResumen = useCallback(async () => {
+  const fetchResumen = useCallback(async (intentos: number = 2) => {
     try {
       setLoading(true);
       const res = await fetch(`/api/finanzas?periodo=${periodo}`);
@@ -54,7 +54,11 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
       const data: ResumenFinanciero = await res.json();
       setResumen(data);
     } catch (err: any) {
-      console.error(err);
+      if (intentos > 1) {
+        await new Promise((r) => setTimeout(r, 600));
+        return fetchResumen(intentos - 1);
+      }
+      console.error('Error al cargar resumen financiero:', err);
       toast.error('No se pudo cargar la información del periodo');
     } finally {
       setLoading(false);
