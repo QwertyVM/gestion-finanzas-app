@@ -12,6 +12,7 @@ import {
 import { ModalRegistrarIngreso } from '@/components/modals/ModalRegistrarIngreso';
 import { ModalRegistrarGasto } from '@/components/modals/ModalRegistrarGasto';
 import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDetalleGasto';
+import { DashboardSkeleton } from '@/components/common/Skeleton';
 import {
   TrendingUp,
   TrendingDown,
@@ -48,6 +49,26 @@ export function DashboardClient() {
   const [filtroEstado, setFiltroEstado] = useState<'PENDIENTE' | 'ADELANTADO' | 'PAGADO' | 'TODOS'>('PENDIENTE');
   const [filtroEgreso, setFiltroEgreso] = useState<'TODOS' | 'FIJOS' | 'PRESTAMOS_CUOTAS' | 'VARIABLES'>('TODOS');
   const [modoVista, setModoVista] = useState<'TABLA' | 'TARJETAS'>('TABLA');
+
+  React.useEffect(() => {
+    try {
+      const saved = localStorage.getItem('finanzapp_modoVista_dashboard');
+      if (saved === 'TABLA' || saved === 'TARJETAS') {
+        setModoVista(saved);
+      }
+    } catch {
+      // ignore
+    }
+  }, []);
+
+  const cambiarModoVista = (modo: 'TABLA' | 'TARJETAS') => {
+    setModoVista(modo);
+    try {
+      localStorage.setItem('finanzapp_modoVista_dashboard', modo);
+    } catch {
+      // ignore
+    }
+  };
 
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
 
@@ -213,12 +234,7 @@ export function DashboardClient() {
   );
 
   if (loading || !resumen) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
-        <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-muted-foreground">Cargando finanzas...</p>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const disponibleNeto = resumen.dineroDisponibleNeto;
@@ -459,9 +475,9 @@ export function DashboardClient() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                   <tr>
-                    <th className="py-2.5 px-3 font-medium">Concepto</th>
-                    <th className="py-2.5 px-3 text-right font-medium">Monto</th>
-                    <th className="py-2.5 px-2 w-8"></th>
+                    <th scope="col" className="py-2.5 px-3 font-medium">Concepto</th>
+                    <th scope="col" className="py-2.5 px-3 text-right font-medium">Monto</th>
+                    <th scope="col" className="py-2.5 px-2 w-8"></th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">
@@ -599,21 +615,23 @@ export function DashboardClient() {
               <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md">
                 <button
                   type="button"
-                  onClick={() => setModoVista('TABLA')}
+                  onClick={() => cambiarModoVista('TABLA')}
                   className={`p-1 rounded transition ${
                     modoVista === 'TABLA' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground'
                   }`}
                   title="Vista Tabla"
+                  aria-label="Ver como tabla"
                 >
                   <Table className="w-3.5 h-3.5" />
                 </button>
                 <button
                   type="button"
-                  onClick={() => setModoVista('TARJETAS')}
+                  onClick={() => cambiarModoVista('TARJETAS')}
                   className={`p-1 rounded transition ${
                     modoVista === 'TARJETAS' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground'
                   }`}
                   title="Vista Tarjetas"
+                  aria-label="Ver como tarjetas"
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
                 </button>
@@ -638,12 +656,12 @@ export function DashboardClient() {
                 <table className="w-full text-left text-xs border-collapse">
                   <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                     <tr>
-                      <th className="py-2.5 px-2 w-8 text-center"></th>
-                      <th className="py-2.5 px-3 font-medium">Concepto</th>
-                      <th className="py-2.5 px-3 text-center font-medium hidden sm:table-cell">Vence</th>
-                      <th className="py-2.5 px-3 text-right font-medium">Monto</th>
-                      <th className="py-2.5 px-3 text-center font-medium">Estado</th>
-                      <th className="py-2.5 px-3 text-center font-medium">Acción</th>
+                      <th scope="col" className="py-2.5 px-2 w-8 text-center"></th>
+                      <th scope="col" className="py-2.5 px-3 font-medium">Concepto</th>
+                      <th scope="col" className="py-2.5 px-3 text-center font-medium hidden sm:table-cell">Vence</th>
+                      <th scope="col" className="py-2.5 px-3 text-right font-medium">Monto</th>
+                      <th scope="col" className="py-2.5 px-3 text-center font-medium">Estado</th>
+                      <th scope="col" className="py-2.5 px-3 text-center font-medium">Acción</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border/40">

@@ -5,6 +5,7 @@ import { useFinanzas } from '@/context/FinanzasContext';
 import { formatMoney, formatPeriodoLabel, esItemRecurrente, obtenerClasificacionEgreso } from '@/lib/utils';
 import { calcularPeriodoFacturacion, calcularCuotasPeriodos } from '@/lib/billing-cycles';
 import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDetalleGasto';
+import { TableSkeleton } from '@/components/common/Skeleton';
 import {
   Plus,
   Banknote,
@@ -15,6 +16,7 @@ import {
   CheckSquare,
   Square,
   Sparkles,
+  Search,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -23,6 +25,7 @@ export function GastosClient() {
   const {
     periodo,
     resumen,
+    loading,
     refresh,
     selectedGastoIds,
     toggleSelectGasto,
@@ -34,6 +37,7 @@ export function GastosClient() {
   const [detalleGasto, setDetalleGasto] = useState<DetalleItemData | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<string>('PENDIENTE');
   const [filtroMetodo, setFiltroMetodo] = useState<string>('TODOS');
+  const [busqueda, setBusqueda] = useState<string>('');
   const [submitting, setSubmitting] = useState(false);
 
   const adaptGastoToDetalle = (g: any): DetalleItemData => ({
@@ -126,9 +130,16 @@ export function GastosClient() {
     return todos.filter((item) => {
       if (filtroEstado !== 'TODOS' && item.estado !== filtroEstado) return false;
       if (filtroMetodo !== 'TODOS' && item.metodoPago !== filtroMetodo) return false;
+      if (busqueda.trim()) {
+        const term = busqueda.toLowerCase().trim();
+        const matchConcepto = item.concepto?.toLowerCase().includes(term);
+        const matchCategoria = item.categoria?.toLowerCase().includes(term);
+        const matchTarjeta = item.tarjetaNombre?.toLowerCase().includes(term);
+        if (!matchConcepto && !matchCategoria && !matchTarjeta) return false;
+      }
       return true;
     });
-  }, [resumen, filtroEstado, filtroMetodo]);
+  }, [resumen, filtroEstado, filtroMetodo, busqueda]);
 
   const handleSubmitGasto = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -244,6 +255,10 @@ export function GastosClient() {
     selectAllGastos(listaGastos.map((g) => ({ id: g.id, monto: g.monto })));
   };
 
+  if (loading && !resumen) {
+    return <TableSkeleton rows={8} />;
+  }
+
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Encabezado y Acción */}
@@ -266,37 +281,60 @@ export function GastosClient() {
         </button>
       </div>
 
-      {/* Barra de Filtros */}
-      <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-        <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg">
-          {(['PENDIENTE', 'ADELANTADO', 'PAGADO', 'TODOS'] as const).map((est) => {
-            const isSelected = filtroEstado === est;
-            return (
+      {/* Barra de Filtros y Búsqueda */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg">
+            {(['PENDIENTE', 'ADELANTADO', 'PAGADO', 'TODOS'] as const).map((est) => {
+              const isSelected = filtroEstado === est;
+              return (
+                <button
+                  key={est}
+                  onClick={() => setFiltroEstado(est)}
+                  className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
+                    isSelected
+                      ? 'bg-card text-foreground shadow-xs'
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {est === 'TODOS'
+                    ? 'Todos'
+                    : est === 'PENDIENTE'
+                    ? 'Por Pagar'
+                    : est === 'ADELANTADO'
+                    ? 'Adelantados'
+                    : 'Pagados'}
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="relative min-w-[200px] max-w-xs">
+            <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Buscar concepto o tarjeta..."
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="w-full pl-8 pr-7 py-1 rounded-md bg-muted/40 border border-border/70 text-xs focus:border-foreground outline-none text-foreground placeholder:text-muted-foreground transition"
+            />
+            {busqueda && (
               <button
-                key={est}
-                onClick={() => setFiltroEstado(est)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
-                  isSelected
-                    ? 'bg-card text-foreground shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
+                type="button"
+                onClick={() => setBusqueda('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                aria-label="Limpiar búsqueda"
               >
-                {est === 'TODOS'
-                  ? 'Todos'
-                  : est === 'PENDIENTE'
-                  ? 'Por Pagar'
-                  : est === 'ADELANTADO'
-                  ? 'Adelantados'
-                  : 'Pagados'}
+                <X className="w-3 h-3" />
               </button>
-            );
-          })}
+            )}
+          </div>
         </div>
 
         {listaGastos.length > 0 && (
           <button
             onClick={handleToggleSelectAll}
-            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition font-medium"
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition font-medium self-end sm:self-auto"
           >
             {todosSeleccionados ? (
               <>
@@ -317,7 +355,9 @@ export function GastosClient() {
       {listaGastos.length === 0 ? (
         <div className="bg-card border border-border/80 rounded-xl p-10 text-center space-y-2">
           <p className="text-xs text-muted-foreground">
-            No hay gastos registrados para {formatPeriodoLabel(periodo)}.
+            {busqueda.trim()
+              ? `No se encontraron gastos que coincidan con "${busqueda}".`
+              : `No hay gastos registrados para ${formatPeriodoLabel(periodo)}.`}
           </p>
         </div>
       ) : (
@@ -326,14 +366,14 @@ export function GastosClient() {
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                 <tr>
-                  <th className="py-2.5 px-2 w-8 text-center"></th>
-                  <th className="py-2.5 px-3 font-medium">Concepto</th>
-                  <th className="py-2.5 px-3 font-medium">Método</th>
-                  <th className="py-2.5 px-3 font-medium">Fecha</th>
-                  <th className="py-2.5 px-3 font-medium">Cuota</th>
-                  <th className="py-2.5 px-3 text-right font-medium">Monto</th>
-                  <th className="py-2.5 px-3 text-center font-medium">Estado</th>
-                  <th className="py-2.5 px-3 text-center font-medium">Acción</th>
+                  <th scope="col" className="py-2.5 px-2 w-8 text-center"><span className="sr-only">Seleccionar</span></th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Concepto</th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Método</th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Fecha</th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Cuota</th>
+                  <th scope="col" className="py-2.5 px-3 text-right font-medium">Monto</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Estado</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Acción</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
@@ -360,6 +400,7 @@ export function GastosClient() {
                           type="button"
                           onClick={() => toggleSelectGasto(gasto.id, gasto.monto)}
                           className="text-muted-foreground hover:text-foreground transition p-0.5"
+                          aria-label={isSelected ? `Deseleccionar ${gasto.concepto}` : `Seleccionar ${gasto.concepto}`}
                         >
                           {isSelected ? (
                             <CheckSquare className="w-3.5 h-3.5 text-foreground" />
@@ -454,6 +495,7 @@ export function GastosClient() {
                             }
                             className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition"
                             title="Alternar Adelantado"
+                            aria-label={`Alternar estado adelantado para ${gasto.concepto}`}
                           >
                             <FastForward className="w-3.5 h-3.5" />
                           </button>
@@ -467,6 +509,7 @@ export function GastosClient() {
                             }
                             className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition"
                             title="Alternar Pagado"
+                            aria-label={`Alternar estado pagado para ${gasto.concepto}`}
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
                           </button>
@@ -475,6 +518,7 @@ export function GastosClient() {
                             onClick={() => handleEliminarGastoDirecto(gasto.id, gasto.concepto)}
                             className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-rose-500 transition"
                             title="Eliminar gasto"
+                            aria-label={`Eliminar gasto ${gasto.concepto}`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -522,13 +566,13 @@ export function GastosClient() {
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                 <tr>
-                  <th className="py-2.5 px-3 font-medium">Tarjeta</th>
-                  <th className="py-2.5 px-3 font-medium">Concepto</th>
-                  <th className="py-2.5 px-3 font-medium">Categoría</th>
-                  <th className="py-2.5 px-3 text-center font-medium">Fecha</th>
-                  <th className="py-2.5 px-3 text-center font-medium">Cuota</th>
-                  <th className="py-2.5 px-3 text-right font-medium">Monto</th>
-                  <th className="py-2.5 px-3 text-center font-medium"></th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Tarjeta</th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Concepto</th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Categoría</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Fecha</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Cuota</th>
+                  <th scope="col" className="py-2.5 px-3 text-right font-medium">Monto</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium"><span className="sr-only">Acciones</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
@@ -585,6 +629,7 @@ export function GastosClient() {
                             onClick={() => handleEliminarGastoDirecto(g.id, g.concepto)}
                             className="p-1 rounded text-muted-foreground hover:text-rose-500 transition"
                             title="Eliminar"
+                            aria-label={`Eliminar ${g.concepto}`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

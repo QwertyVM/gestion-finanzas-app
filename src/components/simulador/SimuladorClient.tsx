@@ -247,10 +247,10 @@ export function SimuladorClient() {
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                       <tr>
-                        <th className="py-2.5 px-3 font-medium">Concepto</th>
-                        <th className="py-2.5 px-3 text-center font-medium">Actual</th>
-                        <th className="py-2.5 px-3 text-center font-medium">Opción A (Plazo)</th>
-                        <th className="py-2.5 px-3 text-center font-medium">Opción B (Cuota)</th>
+                        <th scope="col" className="py-2.5 px-3 font-medium">Concepto</th>
+                        <th scope="col" className="py-2.5 px-3 text-center font-medium">Actual</th>
+                        <th scope="col" className="py-2.5 px-3 text-center font-medium">Opción A (Plazo)</th>
+                        <th scope="col" className="py-2.5 px-3 text-center font-medium">Opción B (Cuota)</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/40 font-mono">

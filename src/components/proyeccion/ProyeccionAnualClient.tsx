@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFinanzas } from '@/context/FinanzasContext';
 import { formatMoney } from '@/lib/utils';
+import { Skeleton } from '@/components/common/Skeleton';
 import {
   ArrowRight,
   Table,
@@ -31,6 +32,18 @@ export function ProyeccionAnualClient() {
   const [datosAnio, setDatosAnio] = useState<MesProyeccion[]>([]);
   const [loading, setLoading] = useState(true);
   const [modoVista, setModoVista] = useState<'TABLA' | 'TARJETAS'>('TABLA');
+
+  useEffect(() => {
+    const saved = localStorage.getItem('finanzapp_modoVista_proyeccion');
+    if (saved === 'TABLA' || saved === 'TARJETAS') {
+      setModoVista(saved);
+    }
+  }, []);
+
+  const handleCambiarModoVista = (modo: 'TABLA' | 'TARJETAS') => {
+    setModoVista(modo);
+    localStorage.setItem('finanzapp_modoVista_proyeccion', modo);
+  };
 
   const initialYear = periodo ? parseInt(periodo.split('-')[0], 10) : 2026;
   const [anioSeleccionado, setAnioSeleccionado] = useState(initialYear || 2026);
@@ -80,21 +93,23 @@ export function ProyeccionAnualClient() {
           <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg">
             <button
               type="button"
-              onClick={() => setModoVista('TABLA')}
+              onClick={() => handleCambiarModoVista('TABLA')}
               className={`p-1 rounded transition ${
                 modoVista === 'TABLA' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground'
               }`}
               title="Ver como Tabla"
+              aria-label="Ver proyección anual como tabla"
             >
               <Table className="w-3.5 h-3.5" />
             </button>
             <button
               type="button"
-              onClick={() => setModoVista('TARJETAS')}
+              onClick={() => handleCambiarModoVista('TARJETAS')}
               className={`p-1 rounded transition ${
                 modoVista === 'TARJETAS' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground'
               }`}
               title="Ver como Tarjetas"
+              aria-label="Ver proyección anual como tarjetas"
             >
               <LayoutGrid className="w-3.5 h-3.5" />
             </button>
@@ -119,8 +134,25 @@ export function ProyeccionAnualClient() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center p-12">
-          <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+        <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs p-4 space-y-3">
+          <div className="flex justify-between pb-3 border-b border-border/60">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-20" />
+          </div>
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="flex justify-between items-center py-2.5">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+          ))}
         </div>
       ) : modoVista === 'TABLA' ? (
         <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
@@ -128,15 +160,15 @@ export function ProyeccionAnualClient() {
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                 <tr>
-                  <th className="py-2.5 px-3 font-medium">Mes</th>
-                  <th className="py-2.5 px-3 text-right font-medium">Ingresos</th>
-                  <th className="py-2.5 px-3 text-right font-medium">Fijos</th>
-                  <th className="py-2.5 px-3 text-right font-medium">Préstamos</th>
-                  <th className="py-2.5 px-3 text-right font-medium">Tarjetas & Var</th>
-                  <th className="py-2.5 px-3 text-right font-medium">Egresos</th>
-                  <th className="py-2.5 px-3 text-right font-medium">Disponible</th>
-                  <th className="py-2.5 px-3 text-center font-medium">% Ahorro</th>
-                  <th className="py-2.5 px-3 text-center font-medium"></th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Mes</th>
+                  <th scope="col" className="py-2.5 px-3 text-right font-medium">Ingresos</th>
+                  <th scope="col" className="py-2.5 px-3 text-right font-medium">Fijos</th>
+                  <th scope="col" className="py-2.5 px-3 text-right font-medium">Préstamos</th>
+                  <th scope="col" className="py-2.5 px-3 text-right font-medium">Tarjetas & Var</th>
+                  <th scope="col" className="py-2.5 px-3 text-right font-medium">Egresos</th>
+                  <th scope="col" className="py-2.5 px-3 text-right font-medium">Disponible</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium">% Ahorro</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium"><span className="sr-only">Acciones</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
 import {
   formatMoney,
@@ -10,6 +10,7 @@ import {
   esItemRecurrente,
 } from '@/lib/utils';
 import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDetalleGasto';
+import { TableSkeleton } from '@/components/common/Skeleton';
 import {
   Home,
   Landmark,
@@ -38,7 +39,7 @@ import {
 import { toast } from 'sonner';
 
 export function FijosClient() {
-  const { periodo, irMesAnterior, irMesSiguiente, resumen, refresh } = useFinanzas();
+  const { periodo, irMesAnterior, irMesSiguiente, resumen, loading, refresh } = useFinanzas();
   const [detalleItem, setDetalleItem] = useState<DetalleItemData | null>(null);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
@@ -50,6 +51,27 @@ export function FijosClient() {
 
   const [modoVistaFijos, setModoVistaFijos] = useState<'TABLA' | 'TARJETAS'>('TABLA');
   const [modoVistaPrestamos, setModoVistaPrestamos] = useState<'TABLA' | 'TARJETAS'>('TABLA');
+
+  useEffect(() => {
+    const savedFijos = localStorage.getItem('finanzapp_modoVista_fijos');
+    if (savedFijos === 'TABLA' || savedFijos === 'TARJETAS') {
+      setModoVistaFijos(savedFijos);
+    }
+    const savedPrestamos = localStorage.getItem('finanzapp_modoVista_prestamos');
+    if (savedPrestamos === 'TABLA' || savedPrestamos === 'TARJETAS') {
+      setModoVistaPrestamos(savedPrestamos);
+    }
+  }, []);
+
+  const handleCambiarModoVistaFijos = (modo: 'TABLA' | 'TARJETAS') => {
+    setModoVistaFijos(modo);
+    localStorage.setItem('finanzapp_modoVista_fijos', modo);
+  };
+
+  const handleCambiarModoVistaPrestamos = (modo: 'TABLA' | 'TARJETAS') => {
+    setModoVistaPrestamos(modo);
+    localStorage.setItem('finanzapp_modoVista_prestamos', modo);
+  };
 
   const configTc = resumen?.config?.tipoCambioUSD || 4.00;
 
@@ -484,6 +506,10 @@ export function FijosClient() {
     return ShieldCheck;
   };
 
+  if (loading && !resumen) {
+    return <TableSkeleton rows={8} />;
+  }
+
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
       {/* 1. SECCIÓN: COSTOS FIJOS DEL MES */}
@@ -501,6 +527,7 @@ export function FijosClient() {
                   onClick={irMesAnterior}
                   className="p-1 hover:text-foreground text-muted-foreground rounded transition"
                   title="Mes anterior"
+                  aria-label="Mes anterior"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
@@ -512,6 +539,7 @@ export function FijosClient() {
                   onClick={irMesSiguiente}
                   className="p-1 hover:text-foreground text-muted-foreground rounded transition"
                   title="Mes siguiente"
+                  aria-label="Mes siguiente"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
@@ -527,25 +555,27 @@ export function FijosClient() {
             <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg">
               <button
                 type="button"
-                onClick={() => setModoVistaFijos('TABLA')}
+                onClick={() => handleCambiarModoVistaFijos('TABLA')}
                 className={`p-1 rounded transition ${
                   modoVistaFijos === 'TABLA'
                     ? 'bg-card text-foreground shadow-xs'
                     : 'text-muted-foreground'
                 }`}
                 title="Ver como Tabla"
+                aria-label="Ver costos fijos como tabla"
               >
                 <Table className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
-                onClick={() => setModoVistaFijos('TARJETAS')}
+                onClick={() => handleCambiarModoVistaFijos('TARJETAS')}
                 className={`p-1 rounded transition ${
                   modoVistaFijos === 'TARJETAS'
                     ? 'bg-card text-foreground shadow-xs'
                     : 'text-muted-foreground'
                 }`}
                 title="Ver como Tarjetas"
+                aria-label="Ver costos fijos como tarjetas"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
@@ -573,12 +603,12 @@ export function FijosClient() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                   <tr>
-                    <th className="py-2.5 px-3 font-medium">Concepto</th>
-                    <th className="py-2.5 px-3 font-medium">Categoría</th>
-                    <th className="py-2.5 px-3 text-center font-medium">Vence</th>
-                    <th className="py-2.5 px-3 text-right font-medium">Monto</th>
-                    <th className="py-2.5 px-3 text-center font-medium">Estado</th>
-                    <th className="py-2.5 px-3 text-center font-medium">Acciones</th>
+                    <th scope="col" className="py-2.5 px-3 font-medium">Concepto</th>
+                    <th scope="col" className="py-2.5 px-3 font-medium">Categoría</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-medium">Vence</th>
+                    <th scope="col" className="py-2.5 px-3 text-right font-medium">Monto</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-medium">Estado</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-medium">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">
@@ -887,25 +917,27 @@ export function FijosClient() {
             <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg">
               <button
                 type="button"
-                onClick={() => setModoVistaPrestamos('TABLA')}
+                onClick={() => handleCambiarModoVistaPrestamos('TABLA')}
                 className={`p-1 rounded transition ${
                   modoVistaPrestamos === 'TABLA'
                     ? 'bg-card text-foreground shadow-xs'
                     : 'text-muted-foreground'
                 }`}
                 title="Ver como Tabla"
+                aria-label="Ver préstamos como tabla"
               >
                 <Table className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
-                onClick={() => setModoVistaPrestamos('TARJETAS')}
+                onClick={() => handleCambiarModoVistaPrestamos('TARJETAS')}
                 className={`p-1 rounded transition ${
                   modoVistaPrestamos === 'TARJETAS'
                     ? 'bg-card text-foreground shadow-xs'
                     : 'text-muted-foreground'
                 }`}
                 title="Ver como Tarjetas"
+                aria-label="Ver préstamos como tarjetas"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
               </button>
@@ -937,14 +969,14 @@ export function FijosClient() {
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                   <tr>
-                    <th className="py-2.5 px-3 font-medium">Concepto</th>
-                    <th className="py-2.5 px-3 font-medium">Progreso</th>
-                    <th className="py-2.5 px-3 text-center font-medium">Día Pago</th>
-                    <th className="py-2.5 px-3 text-center font-medium">TEA %</th>
-                    <th className="py-2.5 px-3 text-right font-medium">Cuota Mensual</th>
-                    <th className="py-2.5 px-3 text-right font-medium">Total</th>
-                    <th className="py-2.5 px-3 text-center font-medium">Estado</th>
-                    <th className="py-2.5 px-3 text-center font-medium">Acciones</th>
+                    <th scope="col" className="py-2.5 px-3 font-medium">Concepto</th>
+                    <th scope="col" className="py-2.5 px-3 font-medium">Progreso</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-medium">Día Pago</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-medium">TEA %</th>
+                    <th scope="col" className="py-2.5 px-3 text-right font-medium">Cuota Mensual</th>
+                    <th scope="col" className="py-2.5 px-3 text-right font-medium">Total</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-medium">Estado</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-medium">Acciones</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">

@@ -329,13 +329,13 @@ export function ConfiguracionClient() {
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                 <tr>
-                  <th className="py-2.5 px-3 font-medium">Tarjeta</th>
-                  <th className="py-2.5 px-3 font-medium">Banco</th>
-                  <th className="py-2.5 px-3 text-center font-medium">Dígitos</th>
-                  <th className="py-2.5 px-3 text-center font-medium">Día Corte</th>
-                  <th className="py-2.5 px-3 text-center font-medium">Día Pago</th>
-                  <th className="py-2.5 px-3 text-center font-medium">Color</th>
-                  <th className="py-2.5 px-3 text-center font-medium"></th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Tarjeta</th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Banco</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Dígitos</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Día Corte</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Día Pago</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Color</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium"><span className="sr-only">Acciones</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
@@ -514,10 +514,10 @@ export function ConfiguracionClient() {
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                 <tr>
-                  <th className="py-2.5 px-3 font-medium">Categoría</th>
-                  <th className="py-2.5 px-3 font-medium">Tipo</th>
-                  <th className="py-2.5 px-3 text-center font-medium">Color</th>
-                  <th className="py-2.5 px-3 text-center font-medium"></th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Categoría</th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Tipo</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Color</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium"><span className="sr-only">Acciones</span></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">

@@ -15,6 +15,7 @@ import {
   PieChart as PieChartIcon,
   BarChart3,
 } from 'lucide-react';
+import { ExecutiveDashboardSkeleton } from '@/components/common/Skeleton';
 import {
   ResponsiveContainer,
   PieChart,
@@ -134,12 +135,7 @@ export function ExecutiveDashboardClient() {
   }, [prestamosActivos]);
 
   if (loading || !resumen) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
-        <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-muted-foreground">Cargando métricas...</p>
-      </div>
-    );
+    return <ExecutiveDashboardSkeleton />;
   }
 
   const sueldoBase = resumen.config?.sueldoBaseMensual || 6000;
@@ -382,12 +378,12 @@ export function ExecutiveDashboardClient() {
             <table className="w-full text-left text-xs border-collapse">
               <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                 <tr>
-                  <th className="py-2.5 px-3 font-medium">Banco / Concepto</th>
-                  <th className="py-2.5 px-3 font-medium">Progreso</th>
-                  <th className="py-2.5 px-3 text-center font-medium">Día Pago</th>
-                  <th className="py-2.5 px-3 text-right font-medium">Cuota Mensual</th>
-                  <th className="py-2.5 px-3 text-right font-medium">Saldo Restante</th>
-                  <th className="py-2.5 px-3 text-center font-medium">Estado</th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Banco / Concepto</th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Progreso</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Día Pago</th>
+                  <th scope="col" className="py-2.5 px-3 text-right font-medium">Cuota Mensual</th>
+                  <th scope="col" className="py-2.5 px-3 text-right font-medium">Saldo Restante</th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Estado</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
