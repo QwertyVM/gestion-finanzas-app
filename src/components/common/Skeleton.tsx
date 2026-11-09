@@ -39,31 +39,51 @@ export function DashboardSkeleton() {
         </div>
       </div>
 
-      {/* Columns Skeleton */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-        <div className="lg:col-span-4 space-y-3">
-          <div className="flex justify-between items-center">
-            <Skeleton className="h-4 w-28" />
+      {/* Ingresos Section Skeleton */}
+      <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-4 w-36" />
+          <Skeleton className="h-8 w-28 rounded-lg" />
+        </div>
+        <div className="bg-card border border-border/80 rounded-xl p-4 space-y-3">
+          <div className="flex justify-between pb-3 border-b border-border/60">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-20" />
             <Skeleton className="h-4 w-16" />
           </div>
-          <div className="bg-card border border-border/80 rounded-xl p-3 space-y-2.5">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
+          <div className="flex justify-between py-2">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-16" />
           </div>
         </div>
+      </div>
 
-        <div className="lg:col-span-8 space-y-3">
-          <div className="flex justify-between items-center">
-            <Skeleton className="h-4 w-36" />
-            <Skeleton className="h-7 w-48" />
+      {/* Egresos Section Skeleton */}
+      <div className="space-y-3">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-4 w-44" />
+          <Skeleton className="h-8 w-32 rounded-lg" />
+        </div>
+        <div className="bg-card border border-border/80 rounded-xl p-4 space-y-3">
+          <div className="flex justify-between pb-3 border-b border-border/60">
+            <Skeleton className="h-4 w-28" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-16" />
           </div>
-          <div className="bg-card border border-border/80 rounded-xl p-3 space-y-2.5">
-            <Skeleton className="h-11 w-full" />
-            <Skeleton className="h-11 w-full" />
-            <Skeleton className="h-11 w-full" />
-            <Skeleton className="h-11 w-full" />
-          </div>
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex justify-between py-2">
+              <Skeleton className="h-4 w-1/3" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-16" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-16" />
+            </div>
+          ))}
         </div>
       </div>
     </div>

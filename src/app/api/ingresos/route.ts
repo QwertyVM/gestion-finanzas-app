@@ -43,6 +43,25 @@ export async function POST(request: NextRequest) {
   }
 }
 
+export async function PATCH(request: NextRequest) {
+  try {
+    const { id, recibido } = await request.json();
+    if (!id) return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+
+    const updated = await prisma.ingresoMes.update({
+      where: { id },
+      data: {
+        recibido: !!recibido,
+        fechaRecibido: recibido ? new Date() : null,
+      },
+    });
+
+    return NextResponse.json({ success: true, data: updated });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
