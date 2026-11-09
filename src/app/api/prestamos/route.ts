@@ -32,16 +32,18 @@ export async function POST(request: NextRequest) {
 // Solo actualiza cuotas futuras PENDIENTES, lo pagado no se toca.
 export async function PUT(request: NextRequest) {
   try {
-    const { id, concepto, banco, montoCuota, diaPago, tasaInteresAnual, mesDesde, activo } = await request.json();
+    const { id, concepto, banco, montoTotal, montoCuota, diaPago, tasaInteresAnual, mesDesde, activo } = await request.json();
 
     const cuotaMontoNum = montoCuota !== undefined ? parseFloat(montoCuota) : undefined;
+    const montoTotalNum = montoTotal !== undefined ? parseFloat(montoTotal) : undefined;
 
     await prisma.prestamo.update({
       where: { id },
       data: {
         ...(concepto && { concepto }),
         ...(banco && { banco }),
-        ...(cuotaMontoNum !== undefined && { montoCuota: cuotaMontoNum }),
+        ...(montoTotalNum !== undefined && !isNaN(montoTotalNum) && { montoTotal: montoTotalNum }),
+        ...(cuotaMontoNum !== undefined && !isNaN(cuotaMontoNum) && { montoCuota: cuotaMontoNum }),
         ...(diaPago !== undefined && { diaPago: parseInt(diaPago, 10) }),
         ...(tasaInteresAnual !== undefined && { tasaInteresAnual: parseFloat(tasaInteresAnual) }),
         ...(activo !== undefined && { activo }),

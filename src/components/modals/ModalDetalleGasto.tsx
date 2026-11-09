@@ -104,6 +104,9 @@ export function ModalDetalleGasto({
   const [editandoMonto, setEditandoMonto] = useState(false);
   const [montoEditInput, setMontoEditInput] = useState(item ? item.monto.toString() : '');
   const [savingMonto, setSavingMonto] = useState(false);
+  const [editandoMontoTotal, setEditandoMontoTotal] = useState(false);
+  const [nuevoMontoTotal, setNuevoMontoTotal] = useState(item?.montoTotal ? item.montoTotal.toString() : '');
+  const [savingMontoTotal, setSavingMontoTotal] = useState(false);
 
   // Conversor en edición
   const [modoEdicion, setModoEdicion] = useState<'SOLES' | 'DOLARES'>('SOLES');
@@ -123,10 +126,40 @@ export function ModalDetalleGasto({
         setMontoUsdEdit(match ? match[1] : '');
       }
       setTcEdit(item.tipoCambio ? item.tipoCambio.toString() : '4.00');
+      setNuevoMontoTotal(item.montoTotal ? item.montoTotal.toString() : '');
+      setEditandoMontoTotal(false);
     }
   }, [item]);
 
   if (!item) return null;
+
+  const handleGuardarMontoTotal = async () => {
+    const val = parseFloat(nuevoMontoTotal);
+    if (isNaN(val) || val <= 0) {
+      toast.error('Ingresa un monto válido');
+      return;
+    }
+    if (!item?.prestamoId) return;
+    try {
+      setSavingMontoTotal(true);
+      const res = await fetch('/api/prestamos', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: item.prestamoId,
+          montoTotal: val,
+        }),
+      });
+      if (!res.ok) throw new Error('Error al actualizar monto total');
+      item.montoTotal = val;
+      setEditandoMontoTotal(false);
+      toast.success(`Monto total actualizado a ${monedaSimbolo} ${val.toLocaleString('es-PE', { minimumFractionDigits: 2 })}`);
+    } catch (err: any) {
+      toast.error('Error al actualizar monto total');
+    } finally {
+      setSavingMontoTotal(false);
+    }
+  };
 
   const handleGuardarMonto = async () => {
     let val: number;
@@ -625,10 +658,55 @@ export function ModalDetalleGasto({
                   <span className="font-bold text-foreground">{cuotasRestantes} cuotas por pagar</span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-secondary/40 border border-border">
-                  <span className="text-[10px] text-muted-foreground block">Monto total estimado</span>
-                  <span className="font-bold text-foreground">
-                    {formatMoney(item.montoTotal || item.monto * cuotasTot, monedaSimbolo)}
-                  </span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground block">Monto total del crédito</span>
+                    {item.tipo === 'PRESTAMO' && item.prestamoId && !editandoMontoTotal && (
+                      <button
+                        type="button"
+                        onClick={() => setEditandoMontoTotal(true)}
+                        className="text-muted-foreground hover:text-foreground p-0.5 rounded transition"
+                        title="Modificar monto total"
+                        aria-label="Modificar monto total"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                  {editandoMontoTotal ? (
+                    <div className="flex items-center gap-1 mt-1">
+                      <input
+                        type="number"
+                        step="0.01"
+                        value={nuevoMontoTotal}
+                        onChange={(e) => setNuevoMontoTotal(e.target.value)}
+                        className="w-full px-2 py-0.5 rounded bg-background border border-border text-xs font-mono font-bold text-foreground outline-none"
+                        autoFocus
+                      />
+                      <button
+                        type="button"
+                        onClick={handleGuardarMontoTotal}
+                        disabled={savingMontoTotal}
+                        className="p-1 rounded bg-foreground text-background hover:opacity-90 transition"
+                        title="Guardar"
+                        aria-label="Guardar monto total"
+                      >
+                        <Check className="w-3 h-3" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setEditandoMontoTotal(false)}
+                        className="p-1 rounded text-muted-foreground hover:text-foreground transition"
+                        title="Cancelar"
+                        aria-label="Cancelar edición"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="font-bold text-foreground font-mono block mt-0.5">
+                      {formatMoney(item.montoTotal || item.monto * cuotasTot, monedaSimbolo)}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>

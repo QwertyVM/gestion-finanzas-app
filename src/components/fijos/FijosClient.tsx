@@ -113,6 +113,7 @@ export function FijosClient() {
   // Form Editar Préstamo Base (No Retroactivo)
   const [editPrestamoBanco, setEditPrestamoBanco] = useState('');
   const [editPrestamoConcepto, setEditPrestamoConcepto] = useState('');
+  const [editPrestamoMontoTotal, setEditPrestamoMontoTotal] = useState('');
   const [editPrestamoMoneda, setEditPrestamoMoneda] = useState<'PEN' | 'USD'>('PEN');
   const [editPrestamoMontoCuota, setEditPrestamoMontoCuota] = useState('');
   const [editPrestamoCuotaUSD, setEditPrestamoCuotaUSD] = useState('');
@@ -150,6 +151,7 @@ export function FijosClient() {
     setEditandoPrestamo(p);
     setEditPrestamoBanco(p.banco);
     setEditPrestamoConcepto(p.concepto);
+    setEditPrestamoMontoTotal(p.montoTotal ? p.montoTotal.toString() : '');
     setEditPrestamoMontoCuota(p.montoCuota.toString());
     setEditPrestamoDiaPago(p.diaPago.toString());
     setEditPrestamoTea(p.tasaInteresAnual.toString());
@@ -479,6 +481,7 @@ export function FijosClient() {
           id: editandoPrestamo.id,
           concepto: conceptoFinal,
           banco: editPrestamoBanco.trim(),
+          montoTotal: editPrestamoMontoTotal ? parseFloat(editPrestamoMontoTotal) : undefined,
           montoCuota: cuotaSoles,
           diaPago: parseInt(editPrestamoDiaPago, 10),
           tasaInteresAnual: parseFloat(editPrestamoTea),
@@ -2097,6 +2100,20 @@ export function FijosClient() {
                     className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="font-semibold text-foreground">
+                  Monto Total del Préstamo (S/):
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={editPrestamoMontoTotal}
+                  onChange={(e) => setEditPrestamoMontoTotal(e.target.value)}
+                  placeholder="ej. 55000"
+                  className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground font-mono font-medium"
+                />
               </div>
 
               {/* Selector de Moneda en Edición */}
