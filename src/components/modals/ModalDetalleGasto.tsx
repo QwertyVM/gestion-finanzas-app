@@ -7,6 +7,7 @@ import {
   ClasificacionEgreso,
   obtenerClasificacionEgreso,
   ESTILOS_CLASIFICACION,
+  esItemRecurrente,
 } from '@/lib/utils';
 import {
   CreditCard,
@@ -220,8 +221,6 @@ export function ModalDetalleGasto({
     switch (clasificacionEfectiva) {
       case 'PRESTAMO_CUOTA':
         return <Landmark className="w-5 h-5 text-purple-500 dark:text-purple-400" />;
-      case 'RECURRENTE':
-        return <Repeat className="w-5 h-5 text-pink-500 dark:text-pink-400" />;
       case 'FIJO':
         return <Home className="w-5 h-5 text-sky-500 dark:text-sky-400" />;
       case 'VARIABLE':
@@ -240,10 +239,10 @@ export function ModalDetalleGasto({
         return item.tipo === 'PRESTAMO'
           ? 'Compromiso de Préstamo Bancario'
           : `Compra diferida en ${cuotasTot} cuotas`;
-      case 'RECURRENTE':
-        return 'Suscripción / Costo Recurrente';
       case 'FIJO':
-        return 'Costo Fijo Mensual Esencial';
+        return esItemRecurrente(item.concepto, item.categoria)
+          ? 'Costo Fijo / Suscripción Mensual'
+          : 'Costo Fijo Mensual';
       case 'VARIABLE':
       default:
         return item.tipo === 'TARJETA'
@@ -254,50 +253,49 @@ export function ModalDetalleGasto({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
-        className="bg-card border border-border w-full max-w-lg rounded-3xl shadow-2xl overflow-hidden space-y-0 animate-in zoom-in-95 duration-200 text-card-foreground"
+        className="bg-card border border-border w-full max-w-lg rounded-xl shadow-xl overflow-hidden space-y-0 animate-in zoom-in-95 duration-150 text-card-foreground"
         onClick={(e) => e.stopPropagation()}
       >
         {/* CABECERA */}
-        <div className={`p-6 border-b border-border bg-secondary/30 flex items-center justify-between border-l-4 ${estilo.borderColor}`}>
+        <div className="p-5 border-b border-border/60 bg-muted/30 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-secondary border border-border">
+            <div className="p-2 rounded-lg bg-muted border border-border">
               {renderIconoTipo()}
             </div>
             <div>
-              <div className="flex items-center gap-2 mb-0.5">
-                <span className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider block">
+              <div className="flex items-center gap-1.5 mb-0.5">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
                   {tipoLabel()}
                 </span>
-                <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.2 rounded-md font-bold border ${estilo.badgeBg} ${estilo.badgeText} ${estilo.badgeBorder}`}>
-                  <span className={`w-1.5 h-1.5 rounded-full ${estilo.dotColor}`} />
+                <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-muted text-muted-foreground">
                   {estilo.badgeLabel}
                 </span>
               </div>
-              <h2 className="text-base font-extrabold text-foreground truncate max-w-[280px] sm:max-w-[340px]">
+              <h2 className="text-sm font-semibold text-foreground truncate max-w-[280px] sm:max-w-[340px]">
                 {item.concepto}
               </h2>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition"
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground transition"
             title="Cerrar detalle"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* CONTENIDO PRINCIPAL */}
-        <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+        <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
           {/* MONTO PRINCIPAL Y MONEDA */}
-          <div className="bg-secondary/40 border border-border rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="bg-muted/30 border border-border/60 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="text-xs text-muted-foreground block">Monto Imputado a este Mes</span>
+                <span className="text-xs text-muted-foreground block">Monto este mes</span>
                 {!editandoMonto && onGuardarMonto && (
                   <button
                     type="button"
@@ -305,22 +303,22 @@ export function ModalDetalleGasto({
                       setMontoEditInput(item.monto.toString());
                       setEditandoMonto(true);
                     }}
-                    className="text-[11px] text-sky-400 hover:text-sky-300 font-semibold inline-flex items-center gap-1 px-2 py-0.5 rounded-lg hover:bg-secondary transition"
-                    title="Modificar el monto pagado o a pagar este mes"
+                    className="text-xs text-muted-foreground hover:text-foreground font-medium inline-flex items-center gap-1 transition"
+                    title="Modificar monto"
                   >
                     <Pencil className="w-3 h-3" />
-                    <span>Modificar monto</span>
+                    <span>Modificar</span>
                   </button>
                 )}
               </div>
 
               {!editandoMonto ? (
-                <div className="space-y-1">
-                  <div className="text-3xl font-extrabold text-foreground tracking-tight">
+                <div className="space-y-0.5">
+                  <div className="text-2xl font-semibold font-mono text-foreground tracking-tight">
                     {formatMoney(item.monto, monedaSimbolo)}
                   </div>
                   <span className="text-[11px] text-muted-foreground block">
-                    Total a pagar / debitado de tu cuenta en soles
+                    Total a pagar en soles
                   </span>
                 </div>
               ) : (

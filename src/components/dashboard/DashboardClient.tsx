@@ -15,27 +15,17 @@ import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDet
 import {
   TrendingUp,
   TrendingDown,
-  PlusCircle,
-  MinusCircle,
+  Plus,
+  Minus,
   Sparkles,
-  Home,
-  Landmark,
-  CreditCard,
-  Banknote,
-  Repeat,
-  Clock,
-  FastForward,
-  CheckCircle2,
-  Calendar,
-  Square,
-  CheckSquare,
-  PiggyBank,
-  Trash2,
   ChevronRight,
   ChevronLeft,
-  Info,
   Table,
   LayoutGrid,
+  CheckSquare,
+  Square,
+  CheckCircle2,
+  Trash2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -56,7 +46,7 @@ export function DashboardClient() {
   const [modalGastoOpen, setModalGastoOpen] = useState(false);
   const [detalleItem, setDetalleItem] = useState<DetalleItemData | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<'PENDIENTE' | 'ADELANTADO' | 'PAGADO' | 'TODOS'>('PENDIENTE');
-  const [filtroEgreso, setFiltroEgreso] = useState<'TODOS' | 'FIJOS' | 'PRESTAMOS_CUOTAS' | 'RECURRENTES' | 'VARIABLES'>('TODOS');
+  const [filtroEgreso, setFiltroEgreso] = useState<'TODOS' | 'FIJOS' | 'PRESTAMOS_CUOTAS' | 'VARIABLES'>('TODOS');
   const [modoVista, setModoVista] = useState<'TABLA' | 'TARJETAS'>('TABLA');
 
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
@@ -64,26 +54,22 @@ export function DashboardClient() {
   const mesActual = parseInt(periodo.split('-')[1], 10);
   const esMesEspecial = mesActual === 7 || mesActual === 12 || mesActual === 3;
   let labelEspecial = '';
-  if (mesActual === 7) labelEspecial = '🎁 Gratificación';
-  if (mesActual === 12) labelEspecial = '🎄 Gratificación';
-  if (mesActual === 3) labelEspecial = '💼 Utilidades';
+  if (mesActual === 7) labelEspecial = 'Gratificación';
+  if (mesActual === 12) labelEspecial = 'Gratificación';
+  if (mesActual === 3) labelEspecial = 'Utilidades';
 
-  // Consolidar todos los egresos del mes categorizados
+  // Consolidar todos los egresos del mes
   const todosEgresos = useMemo(() => {
     if (!resumen) return [];
     const list: Array<DetalleItemData & { clasificacion: ClasificacionEgreso }> = [];
 
-    // 1. Costos fijos (Diferenciando fijos esenciales de suscripciones/recurrentes)
+    // 1. Costos fijos (incluye fijos esenciales y suscripciones)
     for (const cf of resumen.costosFijos) {
-      const clasificacion: ClasificacionEgreso = esItemRecurrente(cf.concepto, cf.categoria)
-        ? 'RECURRENTE'
-        : 'FIJO';
-
       list.push({
         id: `fijo-${cf.id}`,
         dbId: cf.id,
         tipo: 'FIJO',
-        clasificacion,
+        clasificacion: 'FIJO',
         concepto: cf.concepto,
         categoria: cf.categoria,
         monto: cf.monto,
@@ -96,9 +82,9 @@ export function DashboardClient() {
         monedaOriginal: cf.monedaOriginal,
         montoOriginal: cf.montoOriginal,
         tipoCambio: cf.tipoCambio,
-        subtexto: clasificacion === 'RECURRENTE'
-          ? `Suscripción mensual · Vence el día ${cf.diaVencimiento}`
-          : `Costo fijo esencial · Vence el día ${cf.diaVencimiento}`,
+        subtexto: esItemRecurrente(cf.concepto, cf.categoria)
+          ? `Suscripción · Día ${cf.diaVencimiento}`
+          : `Costo fijo · Día ${cf.diaVencimiento}`,
       });
     }
 
@@ -126,11 +112,11 @@ export function DashboardClient() {
         monedaOriginal: p.monedaOriginal,
         montoOriginal: p.montoOriginal,
         tipoCambio: p.tipoCambio,
-        subtexto: `Préstamo · Cuota ${p.cuotaActual} de ${p.cuotasTotales} (Día ${p.diaPago})`,
+        subtexto: `Cuota ${p.cuotaActual}/${p.cuotasTotales} · Día ${p.diaPago}`,
       });
     }
 
-    // 3. Tarjetas (compras imputadas a este mes por corte del día 10)
+    // 3. Tarjetas
     for (const t of resumen.tarjetasCredito) {
       for (const g of t.gastosPeriodo) {
         const esCuota = (g.totalCuotas || 1) > 1;
@@ -138,7 +124,7 @@ export function DashboardClient() {
         const clasificacion: ClasificacionEgreso = esCuota
           ? 'PRESTAMO_CUOTA'
           : esRecur
-            ? 'RECURRENTE'
+            ? 'FIJO'
             : 'VARIABLE';
 
         list.push({
@@ -166,16 +152,16 @@ export function DashboardClient() {
           estado: g.estado,
           fechaPagoReal: g.fechaPagoReal,
           subtexto: esCuota
-            ? `${t.nombre} · Cuota ${g.cuotaActual} de ${g.totalCuotas} (Corte día 10)`
-            : `${t.nombre} · Se paga a fin de este mes`,
+            ? `${t.nombre} · Cuota ${g.cuotaActual}/${g.totalCuotas}`
+            : `${t.nombre} · Fin de mes`,
         });
       }
     }
 
-    // 4. Gastos directos (efectivo/débito)
+    // 4. Gastos directos
     for (const g of resumen.gastosDirectos) {
       const esRecur = esItemRecurrente(g.concepto, g.categoria);
-      const clasificacion: ClasificacionEgreso = esRecur ? 'RECURRENTE' : 'VARIABLE';
+      const clasificacion: ClasificacionEgreso = esRecur ? 'FIJO' : 'VARIABLE';
 
       list.push({
         id: g.id,
@@ -201,37 +187,18 @@ export function DashboardClient() {
     return list;
   }, [resumen]);
 
-  // Filtrado reactivo por Estado (Pendientes por defecto) y Clasificación
+  // Filtrado reactivo por Estado y Clasificación
   const egresosFiltrados = useMemo(() => {
     return todosEgresos.filter((item) => {
       if (filtroEstado !== 'TODOS' && item.estado !== filtroEstado) return false;
       if (filtroEgreso === 'FIJOS') return item.clasificacion === 'FIJO';
       if (filtroEgreso === 'PRESTAMOS_CUOTAS') return item.clasificacion === 'PRESTAMO_CUOTA';
-      if (filtroEgreso === 'RECURRENTES') return item.clasificacion === 'RECURRENTE';
       if (filtroEgreso === 'VARIABLES') return item.clasificacion === 'VARIABLE';
       return true;
     });
   }, [todosEgresos, filtroEstado, filtroEgreso]);
 
-  // Métricas y sumas consolidadas por clasificación
-  const metricasClasificacion = useMemo(() => {
-    const res = {
-      FIJO: { total: 0, count: 0, pendientes: 0 },
-      PRESTAMO_CUOTA: { total: 0, count: 0, pendientes: 0 },
-      RECURRENTE: { total: 0, count: 0, pendientes: 0 },
-      VARIABLE: { total: 0, count: 0, pendientes: 0 },
-    };
-    for (const item of todosEgresos) {
-      const c = item.clasificacion || 'VARIABLE';
-      res[c].total += item.monto;
-      res[c].count += 1;
-      if (item.estado === 'PENDIENTE') {
-        res[c].pendientes += 1;
-      }
-    }
-    return res;
-  }, [todosEgresos]);
-
+  // Conteo rápido de estados
   const countPendientes = useMemo(
     () => todosEgresos.filter((i) => i.estado === 'PENDIENTE').length,
     [todosEgresos]
@@ -247,19 +214,18 @@ export function DashboardClient() {
 
   if (loading || !resumen) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3">
-        <div className="w-8 h-8 border-4 border-sky-500 border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-muted-foreground">Cargando tus finanzas...</p>
+      <div className="flex flex-col items-center justify-center min-h-[40vh] gap-3">
+        <div className="w-6 h-6 border-2 border-foreground border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-muted-foreground">Cargando finanzas...</p>
       </div>
     );
   }
 
-  const disponibleBruto = resumen.dineroDisponibleBruto;
   const disponibleNeto = resumen.dineroDisponibleNeto;
   const metaAhorro = resumen.metaAhorro;
-  const disponibleEsPositivo = disponibleBruto >= 0;
+  const disponibleEsPositivo = disponibleNeto >= 0;
 
-  // Alternar estado de egreso
+  // Cambiar estado de un ítem
   const handleToggleEstadoItem = async (item: any, nuevoEstado: string) => {
     try {
       if (item.tipo === 'FIJO') {
@@ -282,7 +248,7 @@ export function DashboardClient() {
         });
       }
       await refresh();
-      toast.success(`Estado actualizado a ${nuevoEstado}`);
+      toast.success(`Estado actualizado a ${nuevoEstado.toLowerCase()}`);
     } catch (e: any) {
       toast.error('Error al actualizar');
     }
@@ -328,7 +294,7 @@ export function DashboardClient() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'eliminar', ids: [item.dbId] }),
       });
-      toast.success('Gasto eliminado exitosamente');
+      toast.success('Gasto eliminado');
       setDetalleItem(null);
       await refresh();
     } catch (e: any) {
@@ -347,33 +313,32 @@ export function DashboardClient() {
     }
   };
 
-  const todosSeleccionados =
-    todosEgresos.length > 0 &&
-    todosEgresos.every((item) => selectedGastoIds.includes(item.id));
-
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in duration-300">
-      {/* 1. HERO PRINCIPAL: BALANCE Y ACCIONES DIRECTAS */}
-      <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xs space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+    <div className="space-y-6 animate-in fade-in duration-200">
+      {/* 1. HERO CARD: DINERO LIBRE & METRICAS */}
+      <div className="bg-card border border-border/80 rounded-xl p-5 sm:p-6 shadow-xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border/60">
           <div>
-            <div className="flex items-center gap-2 mb-2">
-              <div className="inline-flex items-center gap-1.5 bg-slate-100/90 dark:bg-slate-800 px-2.5 py-1 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-300 border border-transparent dark:border-slate-700">
+            <div className="flex items-center gap-2 mb-1.5">
+              <span className="text-xs font-medium text-muted-foreground">
+                Periodo
+              </span>
+              <div className="inline-flex items-center gap-1 bg-muted/60 px-2 py-0.5 rounded-md text-xs font-medium">
                 <button
                   type="button"
                   onClick={irMesAnterior}
-                  className="p-0.5 hover:bg-white dark:hover:bg-slate-700 rounded-md transition"
+                  className="hover:text-foreground text-muted-foreground transition"
                   title="Mes anterior"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-                <span className="font-bold px-1 capitalize">
+                <span className="capitalize px-1 text-foreground">
                   {formatPeriodoLabel(periodo)}
                 </span>
                 <button
                   type="button"
                   onClick={irMesSiguiente}
-                  className="p-0.5 hover:bg-white dark:hover:bg-slate-700 rounded-md transition"
+                  className="hover:text-foreground text-muted-foreground transition"
                   title="Mes siguiente"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -381,200 +346,140 @@ export function DashboardClient() {
               </div>
 
               {esMesEspecial && (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold bg-amber-100/80 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-200/50 dark:border-amber-500/30">
-                  <Sparkles className="w-3 h-3" /> {labelEspecial}
+                <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
+                  · {labelEspecial}
                 </span>
               )}
             </div>
 
-            <div className="space-y-0.5">
-              <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
-                Tu Dinero Libre este mes
+            <div className="flex items-baseline gap-3">
+              <span className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground font-mono">
+                {formatMoney(disponibleNeto, moneda)}
               </span>
-              <div className="flex flex-wrap items-baseline gap-2.5 sm:gap-3">
-                <span
-                  className={`text-3xl sm:text-5xl font-extrabold tracking-tight ${
-                    disponibleEsPositivo ? 'text-slate-900 dark:text-white' : 'text-rose-600'
-                  }`}
-                >
-                  {formatMoney(disponibleNeto, moneda)}
-                </span>
-                <span
-                  className={`text-xs font-semibold px-3 py-1 rounded-full shrink-0 flex items-center gap-1.5 ${
-                    disponibleEsPositivo
-                      ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200/60'
-                      : 'bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200/60'
-                  }`}
-                >
-                  <span className={`w-2 h-2 rounded-full ${disponibleEsPositivo ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                  {disponibleEsPositivo ? 'Saldo Libre' : 'Déficit'}
-                </span>
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                Disponible limpio después de cubrir tus gastos y separar tu meta de ahorro.
-              </p>
+              <span
+                className={`text-xs px-2 py-0.5 rounded-full font-medium ${
+                  disponibleEsPositivo
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                    : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+                }`}
+              >
+                {disponibleEsPositivo ? 'Saldo libre' : 'Déficit'}
+              </span>
             </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Dinero disponible tras cubrir compromisos y descontar ahorro.
+            </p>
           </div>
 
-          {/* Botones de acción minimalistas y elegantes */}
-          <div className="flex items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+          {/* Botones de Acción */}
+          <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               onClick={() => setModalIngresoOpen(true)}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:hover:bg-slate-100 dark:text-slate-900 font-bold text-xs shadow-xs transition active:scale-95"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-98"
             >
-              <PlusCircle className="w-4 h-4 shrink-0" />
-              <span>
-                <span className="hidden sm:inline">+ Registrar </span>
-                <span className="sm:hidden">+ </span>
-                Ingreso
-              </span>
+              <Plus className="w-3.5 h-3.5" />
+              <span>Ingreso</span>
             </button>
 
             <button
               onClick={() => setModalGastoOpen(true)}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-2xl bg-white hover:bg-slate-50 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 font-bold text-xs shadow-xs transition active:scale-95"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-background hover:bg-muted text-foreground border border-border font-medium text-xs transition active:scale-98"
             >
-              <MinusCircle className="w-4 h-4 text-slate-400 shrink-0" />
-              <span>
-                <span className="hidden sm:inline">- Registrar </span>
-                <span className="sm:hidden">- </span>
-                Gasto
-              </span>
+              <Minus className="w-3.5 h-3.5 text-muted-foreground" />
+              <span>Gasto</span>
             </button>
           </div>
         </div>
 
-        {/* 3 Cajas Métricas Armoniosas y Limpias */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5 pt-4 border-t border-border/80 dark:border-slate-800">
-          <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-900/90 border border-slate-200/60 dark:border-slate-800">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 shadow-xs" />
-                Total Ingresos
-              </span>
-              <span className="text-[10px] text-muted-foreground dark:text-slate-400">{resumen.ingresos.length} fuentes</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">
+        {/* 3 Métricas en fila */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
+          <div className="p-3 rounded-lg bg-muted/40 border border-border/40">
+            <span className="text-xs text-muted-foreground block">Total Ingresos</span>
+            <span className="text-lg font-semibold text-foreground font-mono mt-0.5 block">
               {formatMoney(resumen.totalIngresos, moneda)}
-            </div>
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-              Sueldo base + ingresos extras
-            </div>
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              {resumen.ingresos.length} {resumen.ingresos.length === 1 ? 'fuente' : 'fuentes'}
+            </span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-900/90 border border-slate-200/60 dark:border-slate-800">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-rose-500 shadow-xs" />
-                Total Egresos
-              </span>
-              <span className="text-[10px] text-muted-foreground dark:text-slate-400">{todosEgresos.length} obligaciones</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">
+          <div className="p-3 rounded-lg bg-muted/40 border border-border/40">
+            <span className="text-xs text-muted-foreground block">Total Egresos</span>
+            <span className="text-lg font-semibold text-foreground font-mono mt-0.5 block">
               {formatMoney(resumen.totalEgresos, moneda)}
-            </div>
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-              {formatMoney(resumen.totalPendiente, moneda)} por pagar
-            </div>
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              {formatMoney(resumen.totalPendiente, moneda)} pendientes
+            </span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-slate-50/70 dark:bg-slate-900/90 border border-slate-200/60 dark:border-slate-800">
-            <div className="flex items-center justify-between text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-1">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-indigo-500 shadow-xs" />
-                Meta de Ahorro
-              </span>
-              <span className="text-[10px] text-muted-foreground dark:text-slate-400">Reservado</span>
-            </div>
-            <div className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white">
+          <div className="p-3 rounded-lg bg-muted/40 border border-border/40">
+            <span className="text-xs text-muted-foreground block">Meta de Ahorro</span>
+            <span className="text-lg font-semibold text-foreground font-mono mt-0.5 block">
               {formatMoney(metaAhorro, moneda)}
-            </div>
-            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-              Fondo protegido del mes
-            </div>
+            </span>
+            <span className="text-[11px] text-muted-foreground">
+              Fondo protegido
+            </span>
           </div>
         </div>
       </div>
 
-      {/* BANNER ESPECIAL DE DICIEMBRE (GRATIFICACIÓN Y PAGO A TÍA) */}
+      {/* BANNER DICIEMBRE */}
       {periodo.endsWith('-12') && (
-        <div className="bg-amber-50/80 dark:bg-amber-950/25 border border-amber-200/70 dark:border-amber-900/40 rounded-3xl p-5 shadow-xs flex items-start gap-4">
-          <div className="p-2.5 rounded-2xl bg-amber-100 dark:bg-amber-900/50 text-amber-800 dark:text-amber-200 shrink-0">
-            <Sparkles className="w-5 h-5" />
+        <div className="bg-muted/50 border border-border rounded-xl p-4 text-xs space-y-1">
+          <div className="font-semibold text-foreground flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+            <span>Plan Especial Diciembre</span>
           </div>
-          <div className="space-y-1.5 text-xs">
-            <div className="font-extrabold text-sm text-amber-950 dark:text-amber-100 flex items-center gap-2">
-              <span>🎄 Plan Especial de Diciembre: Gratificación y Pago Directo a tu Tía</span>
-            </div>
-            <p className="text-amber-900/80 dark:text-amber-300/80 leading-relaxed text-[11px]">
-              • <strong>Gratificación Navideña:</strong> + S/ 10,500.00 incluidos en tus ingresos.<br />
-              • <strong>Pago Directo Tía ($900 USD):</strong> - S/ 3,060.00 proyectado para cancelarse con tu gratificación.<br />
-              • <strong>Saldo a Favor:</strong> Cubriendo el pago a tu tía y todas tus deudas, te quedan más de <strong>S/ 10,500.00 libres</strong>.
-            </p>
-          </div>
+          <p className="text-muted-foreground leading-relaxed">
+            Gratificación incluida (+S/ 10,500). Pago Tía cancelable con gratificación (-S/ 3,060).
+          </p>
         </div>
       )}
 
-      {/* 2. DOS COLUMNAS MINIMALISTAS: INGRESOS A LA IZQUIERDA, EGRESOS A LA DERECHA */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      {/* 2. DOS COLUMNAS: INGRESOS & EGRESOS */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         {/* COLUMNA IZQUIERDA: INGRESOS (4 Columnas) */}
-        <div className="lg:col-span-4 space-y-4">
+        <div className="lg:col-span-4 space-y-3">
           <div className="flex items-center justify-between">
-            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-              <span>Tus Ingresos ({resumen.ingresos.length})</span>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Ingresos ({resumen.ingresos.length})
             </h2>
             <button
               onClick={() => setModalIngresoOpen(true)}
-              className="text-xs text-emerald-600 hover:text-emerald-500 font-bold"
+              className="text-xs font-medium text-foreground hover:underline"
             >
               + Agregar
             </button>
           </div>
 
-          {/* Tabla de Ingresos */}
-          <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs">
+          <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+                <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                   <tr>
-                    <th className="py-2.5 px-3">Fuente / Concepto</th>
-                    <th className="py-2.5 px-3 text-right">Monto</th>
-                    <th className="py-2.5 px-2 text-center w-8"></th>
+                    <th className="py-2.5 px-3 font-medium">Concepto</th>
+                    <th className="py-2.5 px-3 text-right font-medium">Monto</th>
+                    <th className="py-2.5 px-2 w-8"></th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/60 dark:divide-slate-800/80">
+                <tbody className="divide-y divide-border/40">
                   {resumen.ingresos.map((ing) => (
-                    <tr
-                      key={ing.id}
-                      className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition"
-                    >
+                    <tr key={ing.id} className="hover:bg-muted/30 transition">
                       <td className="py-2.5 px-3">
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <span className="font-bold text-foreground text-xs">{ing.concepto}</span>
-                          {ing.tipo !== 'SUELDO' && (
-                            <span className="text-[9px] px-1.5 py-0.2 rounded font-bold bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-500/30">
-                              {ing.tipo === 'GRATIFICACION' ? 'Grati' : ing.tipo === 'UTILIDADES' ? 'Utilidades' : 'Extra'}
-                            </span>
-                          )}
-                        </div>
-                        <div className="text-[11px] text-muted-foreground mt-0.5">
-                          {ing.tipo === 'SUELDO'
-                            ? 'Sueldo mensual fijo'
-                            : ing.tipo === 'GRATIFICACION'
-                            ? 'Gratificación legal'
-                            : ing.tipo === 'UTILIDADES'
-                            ? 'Utilidades de empresa'
-                            : 'Ingreso puntual'}
+                        <div className="font-medium text-foreground text-xs">{ing.concepto}</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {ing.tipo === 'SUELDO' ? 'Sueldo mensual' : ing.tipo === 'GRATIFICACION' ? 'Gratificación' : ing.tipo === 'UTILIDADES' ? 'Utilidades' : 'Extra'}
                           {ing.monedaOriginal === 'USD' && ing.montoOriginal && (
-                            <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold block">
-                              ${ing.montoOriginal} USD (T.C. S/ {ing.tipoCambio.toFixed(2)})
+                            <span className="ml-1 text-muted-foreground">
+                              (${ing.montoOriginal} USD)
                             </span>
                           )}
                         </div>
                       </td>
 
-                      <td className="py-2.5 px-3 text-right font-bold text-emerald-700 dark:text-emerald-300 whitespace-nowrap text-xs">
+                      <td className="py-2.5 px-3 text-right font-mono font-medium text-foreground whitespace-nowrap text-xs">
                         {formatMoney(ing.monto, moneda)}
                       </td>
 
@@ -596,91 +501,57 @@ export function DashboardClient() {
               </table>
             </div>
           </div>
-
-          {/* Tarjeta de Aviso Informativo del Día 10 */}
-          <div className="bg-slate-50/70 dark:bg-slate-900/90 border border-slate-200/60 dark:border-slate-800 rounded-2xl p-4 text-xs space-y-1.5 shadow-xs">
-            <div className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-200">
-              <Info className="w-3.5 h-3.5 text-slate-500 shrink-0" />
-              <span>Regla del Día 10</span>
-            </div>
-            <p className="text-slate-600 dark:text-slate-400 text-[11px] leading-relaxed">
-              • <strong>Compras del 1 al 10</strong> → Se pagan a fin de este mes.<br />
-              • <strong>Compras del 11 a fin de mes</strong> → Se pagan con el sueldo del próximo mes.
-            </p>
-          </div>
         </div>
 
         {/* COLUMNA DERECHA: EGRESOS & COMPROMISOS (8 Columnas) */}
-        <div className="lg:col-span-8 space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <TrendingDown className="w-4 h-4 text-slate-700 dark:text-slate-300" />
-              <span>Compromisos del Mes ({egresosFiltrados.length})</span>
+        <div className="lg:col-span-8 space-y-3">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Compromisos del Mes ({egresosFiltrados.length})
             </h2>
 
-            {/* FILTRO PRINCIPAL DE ESTADO (Por defecto PENDIENTE) - Armónico y Elegante */}
-            <div className="flex items-center gap-1 bg-slate-100/90 dark:bg-slate-900 p-1 rounded-2xl border border-border/80 dark:border-slate-800 text-[11px] overflow-x-auto max-w-full">
+            {/* Selector de Estado Minimalista */}
+            <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg text-xs overflow-x-auto">
               <button
                 type="button"
                 onClick={() => setFiltroEstado('PENDIENTE')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
                   filtroEstado === 'PENDIENTE'
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-border/60 dark:border-slate-700'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-amber-500" />
-                  Por Pagar
-                </span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'PENDIENTE' ? 'bg-amber-100 text-amber-900 dark:bg-amber-500/20 dark:text-amber-300 dark:border dark:border-amber-500/40 font-extrabold' : 'bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                  {countPendientes}
-                </span>
+                Por pagar ({countPendientes})
               </button>
-
               <button
                 type="button"
                 onClick={() => setFiltroEstado('ADELANTADO')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
                   filtroEstado === 'ADELANTADO'
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-border/60 dark:border-slate-700'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                  Adelantados
-                </span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'ADELANTADO' ? 'bg-indigo-100 text-indigo-900 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border dark:border-indigo-500/40 font-extrabold' : 'bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                  {countAdelantados}
-                </span>
+                Adelantados ({countAdelantados})
               </button>
-
               <button
                 type="button"
                 onClick={() => setFiltroEstado('PAGADO')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 shrink-0 ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
                   filtroEstado === 'PAGADO'
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-border/60 dark:border-slate-700'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                <span className="flex items-center gap-1.5">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                  Pagados
-                </span>
-                <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${filtroEstado === 'PAGADO' ? 'bg-emerald-100 text-emerald-900 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border dark:border-emerald-500/40 font-extrabold' : 'bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300'}`}>
-                  {countPagados}
-                </span>
+                Pagados ({countPagados})
               </button>
-
               <button
                 type="button"
                 onClick={() => setFiltroEstado('TODOS')}
-                className={`px-3 py-1.5 rounded-xl font-bold transition shrink-0 ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
                   filtroEstado === 'TODOS'
-                    ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs border border-border/60 dark:border-slate-700'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 Todos ({todosEgresos.length})
@@ -688,115 +559,26 @@ export function DashboardClient() {
             </div>
           </div>
 
-          {/* Mini-resumen interactivo por clasificación del mes */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-            <button
-              type="button"
-              onClick={() => setFiltroEgreso((prev) => (prev === 'FIJOS' ? 'TODOS' : 'FIJOS'))}
-              className={`p-2.5 rounded-2xl border text-left transition ${
-                filtroEgreso === 'FIJOS'
-                  ? 'bg-sky-50 dark:bg-sky-950/40 border-sky-300 dark:border-sky-600 shadow-xs ring-1 ring-sky-400/50'
-                  : 'bg-card dark:bg-slate-900 border-border/70 dark:border-slate-800 hover:border-sky-300 dark:hover:border-sky-700'
-              }`}
-            >
-              <div className="flex items-center justify-between text-[11px] mb-1">
-                <span className="flex items-center gap-1.5 font-bold text-sky-700 dark:text-sky-300">
-                  <span className="w-2 h-2 rounded-full bg-sky-500 shadow-xs" />
-                  Fijos
-                </span>
-                <span className="text-[10px] text-muted-foreground font-semibold">{metricasClasificacion.FIJO.count}</span>
-              </div>
-              <div className="font-extrabold text-slate-900 dark:text-white text-sm">
-                {formatMoney(metricasClasificacion.FIJO.total, moneda)}
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFiltroEgreso((prev) => (prev === 'PRESTAMOS_CUOTAS' ? 'TODOS' : 'PRESTAMOS_CUOTAS'))}
-              className={`p-2.5 rounded-2xl border text-left transition ${
-                filtroEgreso === 'PRESTAMOS_CUOTAS'
-                  ? 'bg-purple-50 dark:bg-purple-950/40 border-purple-300 dark:border-purple-600 shadow-xs ring-1 ring-purple-400/50'
-                  : 'bg-card dark:bg-slate-900 border-border/70 dark:border-slate-800 hover:border-purple-300 dark:hover:border-purple-700'
-              }`}
-            >
-              <div className="flex items-center justify-between text-[11px] mb-1">
-                <span className="flex items-center gap-1.5 font-bold text-purple-700 dark:text-purple-300">
-                  <span className="w-2 h-2 rounded-full bg-purple-500 shadow-xs" />
-                  Préstamos / Cuotas
-                </span>
-                <span className="text-[10px] text-muted-foreground font-semibold">{metricasClasificacion.PRESTAMO_CUOTA.count}</span>
-              </div>
-              <div className="font-extrabold text-slate-900 dark:text-white text-sm">
-                {formatMoney(metricasClasificacion.PRESTAMO_CUOTA.total, moneda)}
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFiltroEgreso((prev) => (prev === 'RECURRENTES' ? 'TODOS' : 'RECURRENTES'))}
-              className={`p-2.5 rounded-2xl border text-left transition ${
-                filtroEgreso === 'RECURRENTES'
-                  ? 'bg-pink-50 dark:bg-pink-950/40 border-pink-300 dark:border-pink-600 shadow-xs ring-1 ring-pink-400/50'
-                  : 'bg-card dark:bg-slate-900 border-border/70 dark:border-slate-800 hover:border-pink-300 dark:hover:border-pink-700'
-              }`}
-            >
-              <div className="flex items-center justify-between text-[11px] mb-1">
-                <span className="flex items-center gap-1.5 font-bold text-pink-700 dark:text-pink-300">
-                  <span className="w-2 h-2 rounded-full bg-pink-500 shadow-xs" />
-                  Recurrentes
-                </span>
-                <span className="text-[10px] text-muted-foreground font-semibold">{metricasClasificacion.RECURRENTE.count}</span>
-              </div>
-              <div className="font-extrabold text-slate-900 dark:text-white text-sm">
-                {formatMoney(metricasClasificacion.RECURRENTE.total, moneda)}
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setFiltroEgreso((prev) => (prev === 'VARIABLES' ? 'TODOS' : 'VARIABLES'))}
-              className={`p-2.5 rounded-2xl border text-left transition ${
-                filtroEgreso === 'VARIABLES'
-                  ? 'bg-slate-100 dark:bg-slate-800 border-slate-300 dark:border-slate-600 shadow-xs ring-1 ring-slate-400/50'
-                  : 'bg-card dark:bg-slate-900 border-border/70 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-              }`}
-            >
-              <div className="flex items-center justify-between text-[11px] mb-1">
-                <span className="flex items-center gap-1.5 font-bold text-slate-700 dark:text-slate-300">
-                  <span className="w-2 h-2 rounded-full bg-slate-400 shadow-xs" />
-                  Variables
-                </span>
-                <span className="text-[10px] text-muted-foreground font-semibold">{metricasClasificacion.VARIABLE.count}</span>
-              </div>
-              <div className="font-extrabold text-slate-900 dark:text-white text-sm">
-                {formatMoney(metricasClasificacion.VARIABLE.total, moneda)}
-              </div>
-            </button>
-          </div>
-
-          {/* Subfiltro por tipo y acción de sumatoria */}
+          {/* Subfiltro de Clasificación + Controles de vista */}
           <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-            <div className="flex items-center gap-1 bg-slate-100/70 dark:bg-slate-900 p-1 rounded-xl border border-border/60 dark:border-slate-800 text-[11px] overflow-x-auto max-w-full">
+            <div className="flex items-center gap-1 text-[11px] overflow-x-auto">
               {[
                 { key: 'TODOS', label: 'Todos' },
-                { key: 'FIJOS', label: 'Fijos', dot: 'bg-sky-500' },
-                { key: 'PRESTAMOS_CUOTAS', label: 'Préstamos & Cuotas', dot: 'bg-purple-500' },
-                { key: 'RECURRENTES', label: 'Recurrentes', dot: 'bg-pink-500' },
-                { key: 'VARIABLES', label: 'Variables', dot: 'bg-slate-400' },
+                { key: 'FIJOS', label: 'Fijos' },
+                { key: 'PRESTAMOS_CUOTAS', label: 'Préstamos & Cuotas' },
+                { key: 'VARIABLES', label: 'Variables' },
               ].map((f) => (
                 <button
                   key={f.key}
                   type="button"
                   onClick={() => setFiltroEgreso(f.key as any)}
-                  className={`px-2.5 py-1 rounded-lg font-semibold transition shrink-0 flex items-center gap-1.5 ${
+                  className={`px-2 py-0.5 rounded-md transition ${
                     filtroEgreso === f.key
-                      ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-bold border border-border/40 dark:border-slate-700'
-                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                      ? 'bg-foreground text-background font-medium'
+                      : 'text-muted-foreground hover:text-foreground bg-muted/40'
                   }`}
                 >
-                  {f.dot && <span className={`w-1.5 h-1.5 rounded-full ${f.dot}`} />}
-                  <span>{f.label}</span>
+                  {f.label}
                 </button>
               ))}
             </div>
@@ -807,82 +589,64 @@ export function DashboardClient() {
                   onClick={() =>
                     selectAllGastos(egresosFiltrados.map((e) => ({ id: e.id, monto: e.monto })))
                   }
-                  className="font-semibold text-sky-600 hover:text-sky-500 dark:text-sky-400 flex items-center gap-1 shrink-0 text-[11px]"
+                  className="text-muted-foreground hover:text-foreground text-[11px] font-medium flex items-center gap-1"
                 >
                   <CheckSquare className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Sumar lista</span>
+                  <span>Sumar lista</span>
                 </button>
               )}
 
-              {/* Selector de Modo de Vista: Tabla o Tarjetas */}
-              <div className="inline-flex items-center gap-0.5 bg-slate-100/90 dark:bg-slate-800 p-0.5 rounded-xl border border-border/60 dark:border-slate-700">
+              <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-md">
                 <button
                   type="button"
                   onClick={() => setModoVista('TABLA')}
-                  className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
-                    modoVista === 'TABLA'
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  className={`p-1 rounded transition ${
+                    modoVista === 'TABLA' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground'
                   }`}
-                  title="Ver como Tabla"
+                  title="Vista Tabla"
                 >
                   <Table className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Tabla</span>
                 </button>
                 <button
                   type="button"
                   onClick={() => setModoVista('TARJETAS')}
-                  className={`px-2 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
-                    modoVista === 'TARJETAS'
-                      ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                      : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white'
+                  className={`p-1 rounded transition ${
+                    modoVista === 'TARJETAS' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground'
                   }`}
-                  title="Ver como Tarjetas"
+                  title="Vista Tarjetas"
                 >
                   <LayoutGrid className="w-3.5 h-3.5" />
-                  <span className="hidden sm:inline">Tarjetas</span>
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Lista de Egresos o Mensaje Vacío */}
+          {/* Lista de Egresos */}
           {egresosFiltrados.length === 0 ? (
-            <div className="bg-card border border-border/80 rounded-3xl p-8 text-center space-y-3 shadow-xs">
-              <CheckCircle2 className="w-10 h-10 text-emerald-600 dark:text-emerald-400 mx-auto stroke-1" />
-              <h3 className="text-sm font-bold text-foreground">
+            <div className="bg-card border border-border/80 rounded-xl p-8 text-center space-y-2">
+              <CheckCircle2 className="w-8 h-8 text-muted-foreground mx-auto stroke-1" />
+              <p className="text-xs text-muted-foreground">
                 {filtroEstado === 'PENDIENTE'
-                  ? '¡Todo limpio! No tienes compromisos pendientes para este mes.'
-                  : 'No se encontraron registros con los filtros seleccionados'}
-              </h3>
-              {filtroEstado === 'PENDIENTE' && countPagados > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setFiltroEstado('PAGADO')}
-                  className="text-xs text-sky-600 hover:underline font-bold"
-                >
-                  Ver los {countPagados} egresos ya pagados →
-                </button>
-              )}
+                  ? 'No hay compromisos pendientes para este mes.'
+                  : 'No se encontraron registros con los filtros seleccionados.'}
+              </p>
             </div>
           ) : modoVista === 'TABLA' ? (
-            /* ========================================================= */
-            /* 1. VISTA TABLA (Por defecto)                              */
-            /* ========================================================= */
-            <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs">
+            /* TABLA MINIMALISTA */
+            <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+                  <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                     <tr>
-                      <th className="py-3 px-2 w-10 text-center">✓</th>
-                      <th className="py-3 px-3">Compromiso / Detalle</th>
-                      <th className="py-3 px-3 text-center hidden sm:table-cell">Vence</th>
-                      <th className="py-3 px-3 text-right">Monto</th>
-                      <th className="py-3 px-3 text-center">Estado</th>
-                      <th className="py-3 px-3 text-center">Acción</th>
+                      <th className="py-2.5 px-2 w-8 text-center"></th>
+                      <th className="py-2.5 px-3 font-medium">Concepto</th>
+                      <th className="py-2.5 px-3 text-center font-medium hidden sm:table-cell">Vence</th>
+                      <th className="py-2.5 px-3 text-right font-medium">Monto</th>
+                      <th className="py-2.5 px-3 text-center font-medium">Estado</th>
+                      <th className="py-2.5 px-3 text-center font-medium">Acción</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border/60 dark:divide-slate-800/80">
+                  <tbody className="divide-y divide-border/40">
                     {egresosFiltrados.map((item) => {
                       const isSelected = selectedGastoIds.includes(item.id);
                       const estilo = ESTILOS_CLASIFICACION[item.clasificacion || 'VARIABLE'];
@@ -891,43 +655,34 @@ export function DashboardClient() {
                         <tr
                           key={item.id}
                           onClick={() => setDetalleItem(item)}
-                          className={`group transition-colors cursor-pointer hover:bg-slate-50/80 dark:hover:bg-slate-800/50 ${
-                            isSelected ? 'bg-sky-50/40 dark:bg-sky-950/30' : ''
+                          className={`group transition-colors cursor-pointer hover:bg-muted/30 ${
+                            isSelected ? 'bg-muted/40' : ''
                           }`}
                         >
-                          {/* Checkbox con barra lateral de color */}
-                          <td
-                            className={`py-3 px-2 text-center border-l-4 ${estilo.borderColor}`}
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                          <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
                             <button
                               type="button"
                               onClick={() => toggleSelectGasto(item.id, item.monto)}
-                              className="p-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 transition"
-                              title={isSelected ? 'Deseleccionar' : 'Seleccionar para sumar'}
+                              className="text-muted-foreground hover:text-foreground transition p-0.5"
                             >
                               {isSelected ? (
-                                <CheckSquare className="w-4 h-4 text-sky-600 dark:text-sky-400" />
+                                <CheckSquare className="w-3.5 h-3.5 text-foreground" />
                               ) : (
-                                <Square className="w-4 h-4 text-muted-foreground dark:text-slate-500" />
+                                <Square className="w-3.5 h-3.5" />
                               )}
                             </button>
                           </td>
 
-                          {/* Concepto y Badge de clasificación por colores */}
-                          <td className="py-3 px-3 min-w-[200px]">
+                          <td className="py-2.5 px-3">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <span className="font-bold text-foreground dark:text-white text-xs group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition">
+                              <span className="font-medium text-foreground text-xs">
                                 {item.concepto}
                               </span>
-                              <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.2 rounded-md font-bold shrink-0 border ${estilo.badgeBg} ${estilo.badgeText} ${estilo.badgeBorder}`}>
-                                <span className={`w-1.5 h-1.5 rounded-full ${estilo.dotColor}`} />
+                              <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-muted text-muted-foreground">
                                 {item.clasificacion === 'PRESTAMO_CUOTA' ? (
                                   item.tipo === 'PRESTAMO'
-                                    ? `Préstamo · Cuota ${item.cuotaActual}/${item.cuotasTotales}`
+                                    ? `Cuota ${item.cuotaActual}/${item.cuotasTotales}`
                                     : `Cuota ${item.cuotaActual}/${item.totalCuotas}`
-                                ) : item.clasificacion === 'RECURRENTE' ? (
-                                  'Recurrente'
                                 ) : item.clasificacion === 'FIJO' ? (
                                   'Fijo'
                                 ) : (
@@ -935,47 +690,52 @@ export function DashboardClient() {
                                 )}
                               </span>
                             </div>
-                            <div className="text-[11px] text-muted-foreground dark:text-slate-400 mt-0.5 truncate">
+                            <div className="text-[11px] text-muted-foreground mt-0.5 truncate">
                               {item.subtexto}
                             </div>
                           </td>
 
-                          {/* Vencimiento / Fecha */}
-                          <td className="py-3 px-3 text-center whitespace-nowrap text-muted-foreground dark:text-slate-400 text-xs hidden sm:table-cell">
+                          <td className="py-2.5 px-3 text-center whitespace-nowrap text-muted-foreground text-xs hidden sm:table-cell">
                             {item.diaVencimiento ? `Día ${item.diaVencimiento}` : 'Fin de mes'}
                           </td>
 
-                          {/* Monto */}
-                          <td className="py-3 px-3 text-right whitespace-nowrap">
-                            <div className="font-bold text-foreground dark:text-white text-sm">
-                              {formatMoney(item.monto, moneda)}
-                            </div>
+                          <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono font-medium text-foreground text-xs">
+                            <div>{formatMoney(item.monto, moneda)}</div>
                             {item.monedaOriginal === 'USD' && item.montoOriginal && (
-                              <div className="text-[10px] font-bold text-amber-600 dark:text-amber-400">
+                              <div className="text-[10px] text-muted-foreground">
                                 ${item.montoOriginal.toFixed(2)} USD
                               </div>
                             )}
                           </td>
 
-                          {/* Estado */}
-                          <td className="py-3 px-3 text-center whitespace-nowrap">
-                            {item.estado === 'ADELANTADO' ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/40">
-                                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" /> Adelantado
-                              </span>
-                            ) : item.estado === 'PAGADO' ? (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-500/20 dark:text-emerald-300 dark:border-emerald-500/40">
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> Pagado
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200/80 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/40">
-                                <span className="w-1.5 h-1.5 rounded-full bg-amber-500" /> Pendiente
-                              </span>
-                            )}
+                          <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                item.estado === 'ADELANTADO'
+                                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                  : item.estado === 'PAGADO'
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  item.estado === 'ADELANTADO'
+                                    ? 'bg-indigo-500'
+                                    : item.estado === 'PAGADO'
+                                    ? 'bg-emerald-500'
+                                    : 'bg-amber-500'
+                                }`}
+                              />
+                              {item.estado === 'ADELANTADO'
+                                ? 'Adelantado'
+                                : item.estado === 'PAGADO'
+                                ? 'Pagado'
+                                : 'Pendiente'}
+                            </span>
                           </td>
 
-                          {/* Acciones Rápidas */}
-                          <td className="py-3 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                             <div className="flex items-center justify-center gap-1">
                               <button
                                 onClick={() =>
@@ -984,12 +744,7 @@ export function DashboardClient() {
                                     item.estado === 'ADELANTADO' ? 'PENDIENTE' : 'ADELANTADO'
                                   )
                                 }
-                                className={`px-2 py-1 rounded-lg text-[11px] font-semibold transition ${
-                                  item.estado === 'ADELANTADO'
-                                    ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-500/30 dark:text-indigo-300'
-                                    : 'text-slate-400 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800'
-                                }`}
-                                title="Alternar estado Adelantado"
+                                className="px-2 py-0.5 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition"
                               >
                                 Adelantar
                               </button>
@@ -1001,14 +756,13 @@ export function DashboardClient() {
                                     item.estado === 'PAGADO' ? 'PENDIENTE' : 'PAGADO'
                                   )
                                 }
-                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${
+                                className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${
                                   item.estado === 'PAGADO'
-                                    ? 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
-                                    : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-300 dark:border-emerald-500/40'
+                                    ? 'text-muted-foreground hover:bg-muted'
+                                    : 'bg-foreground text-background hover:opacity-90'
                                 }`}
-                                title="Alternar estado Pagado"
                               >
-                                {item.estado === 'PAGADO' ? '✓ Pagado' : 'Pagar'}
+                                {item.estado === 'PAGADO' ? 'Pagado' : 'Pagar'}
                               </button>
                             </div>
                           </td>
@@ -1020,119 +774,100 @@ export function DashboardClient() {
               </div>
             </div>
           ) : (
-            /* ========================================================= */
-            /* 2. VISTA TARJETAS                                         */
-            /* ========================================================= */
-            <div className="space-y-2.5">
+            /* TARJETAS MINIMALISTAS */
+            <div className="space-y-2">
               {egresosFiltrados.map((item) => {
-              const isSelected = selectedGastoIds.includes(item.id);
-              const estilo = ESTILOS_CLASIFICACION[item.clasificacion || 'VARIABLE'];
+                const isSelected = selectedGastoIds.includes(item.id);
 
-              return (
-                <div
-                  key={item.id}
-                  onClick={() => setDetalleItem(item)}
-                  className={`group bg-card dark:bg-slate-900 border rounded-2xl p-3 sm:p-4 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 transition cursor-pointer border-l-4 ${estilo.borderColor} ${estilo.bgCardHover} hover:shadow-sm ${
-                    isSelected ? 'border-sky-400 bg-sky-50/20 dark:bg-sky-950/30' : 'border-border/80 dark:border-slate-800'
-                  }`}
-                >
-                  {/* Checkbox y Detalle */}
-                  <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleSelectGasto(item.id, item.monto);
-                      }}
-                      className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition shrink-0"
-                      title={isSelected ? 'Deseleccionar' : 'Seleccionar para sumar'}
-                    >
-                      {isSelected ? (
-                        <CheckSquare className="w-4 h-4 text-sky-600 dark:text-sky-400" />
-                      ) : (
-                        <Square className="w-4 h-4 text-muted-foreground dark:text-slate-500" />
-                      )}
-                    </button>
-
-                    <div className="min-w-0 flex-1 space-y-0.5">
-                      <div className="font-bold text-foreground dark:text-white text-xs truncate group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition flex items-center gap-1.5 sm:gap-2">
-                        <span className="truncate">{item.concepto}</span>
-
-                        {/* Badge de color distintivo según clasificación */}
-                        <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-bold shrink-0 border ${estilo.badgeBg} ${estilo.badgeText} ${estilo.badgeBorder}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${estilo.dotColor}`} />
-                          {item.clasificacion === 'PRESTAMO_CUOTA' ? (
-                            item.tipo === 'PRESTAMO'
-                              ? `Préstamo · Cuota ${item.cuotaActual}/${item.cuotasTotales}`
-                              : `Cuota ${item.cuotaActual}/${item.totalCuotas}`
-                          ) : item.clasificacion === 'RECURRENTE' ? (
-                            'Recurrente'
-                          ) : item.clasificacion === 'FIJO' ? (
-                            'Fijo'
-                          ) : (
-                            'Compra'
-                          )}
-                        </span>
-
-                        <ChevronRight className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition shrink-0 hidden sm:inline" />
-                      </div>
-                      <div className="text-[11px] text-muted-foreground dark:text-slate-400 flex items-center gap-2 truncate">
-                        <span className="truncate">{item.subtexto}</span>
-                        {item.monedaOriginal === 'USD' && item.montoOriginal && (
-                          <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-500/30 shrink-0">
-                            ${item.montoOriginal.toFixed(2)} USD{item.tipoCambio ? ` · T.C. S/ ${item.tipoCambio.toFixed(2)}` : ''}
-                          </span>
+                return (
+                  <div
+                    key={item.id}
+                    onClick={() => setDetalleItem(item)}
+                    className={`bg-card border border-border/80 rounded-xl p-3 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-3 transition cursor-pointer hover:bg-muted/20 ${
+                      isSelected ? 'bg-muted/30 border-foreground/30' : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelectGasto(item.id, item.monto);
+                        }}
+                        className="text-muted-foreground hover:text-foreground transition shrink-0"
+                      >
+                        {isSelected ? (
+                          <CheckSquare className="w-3.5 h-3.5 text-foreground" />
+                        ) : (
+                          <Square className="w-3.5 h-3.5" />
                         )}
+                      </button>
+
+                      <div className="min-w-0 flex-1 space-y-0.5">
+                        <div className="font-medium text-foreground text-xs flex items-center gap-1.5">
+                          <span className="truncate">{item.concepto}</span>
+                          <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-muted text-muted-foreground shrink-0">
+                            {item.clasificacion === 'PRESTAMO_CUOTA' ? (
+                              item.tipo === 'PRESTAMO'
+                                ? `Cuota ${item.cuotaActual}/${item.cuotasTotales}`
+                                : `Cuota ${item.cuotaActual}/${item.totalCuotas}`
+                            ) : item.clasificacion === 'FIJO' ? (
+                              'Fijo'
+                            ) : (
+                              'Compra'
+                            )}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground truncate">
+                          {item.subtexto}
+                          {item.monedaOriginal === 'USD' && item.montoOriginal && (
+                            <span className="ml-1 text-muted-foreground">
+                              (${item.montoOriginal.toFixed(2)} USD)
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between sm:justify-end gap-3 shrink-0">
+                      <span className="font-mono font-medium text-foreground text-xs">
+                        {formatMoney(item.monto, moneda)}
+                      </span>
+
+                      <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          onClick={() =>
+                            handleToggleEstadoItem(
+                              item,
+                              item.estado === 'ADELANTADO' ? 'PENDIENTE' : 'ADELANTADO'
+                            )
+                          }
+                          className="px-2 py-0.5 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition"
+                        >
+                          Adelantar
+                        </button>
+
+                        <button
+                          onClick={() =>
+                            handleToggleEstadoItem(
+                              item,
+                              item.estado === 'PAGADO' ? 'PENDIENTE' : 'PAGADO'
+                            )
+                          }
+                          className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${
+                            item.estado === 'PAGADO'
+                              ? 'text-muted-foreground hover:bg-muted'
+                              : 'bg-foreground text-background hover:opacity-90'
+                          }`}
+                        >
+                          {item.estado === 'PAGADO' ? 'Pagado' : 'Pagar'}
+                        </button>
                       </div>
                     </div>
                   </div>
-
-                  {/* Monto y Botón de Estado de 1-Click */}
-                  <div className="flex items-center justify-between sm:justify-end gap-3 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/50 dark:border-slate-800 shrink-0">
-                    <div className="font-bold text-foreground dark:text-white text-sm">
-                      {formatMoney(item.monto, moneda)}
-                    </div>
-
-                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() =>
-                          handleToggleEstadoItem(
-                            item,
-                            item.estado === 'ADELANTADO' ? 'PENDIENTE' : 'ADELANTADO'
-                          )
-                        }
-                        className={`px-2.5 py-1 rounded-xl text-[11px] font-semibold transition ${
-                          item.estado === 'ADELANTADO'
-                            ? 'bg-indigo-50 text-indigo-700 border border-indigo-200/80 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/40'
-                            : 'text-slate-400 hover:text-slate-700 dark:text-slate-500 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'
-                        }`}
-                        title="Alternar estado Adelantado"
-                      >
-                        Adelantar
-                      </button>
-
-                      <button
-                        onClick={() =>
-                          handleToggleEstadoItem(
-                            item,
-                            item.estado === 'PAGADO' ? 'PENDIENTE' : 'PAGADO'
-                          )
-                        }
-                        className={`px-3 py-1 rounded-xl text-[11px] font-bold border transition ${
-                          item.estado === 'PAGADO'
-                            ? 'bg-slate-100 text-slate-600 border-slate-200/80 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700'
-                            : 'bg-emerald-50 hover:bg-emerald-100/90 text-emerald-800 border-emerald-200/70 dark:bg-emerald-500/20 dark:hover:bg-emerald-500/30 dark:text-emerald-300 dark:border-emerald-500/40 shadow-2xs'
-                        }`}
-                        title="Alternar estado Pagado"
-                      >
-                        {item.estado === 'PAGADO' ? '✓ Pagado' : 'Pagar'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
           )}
         </div>
       </div>

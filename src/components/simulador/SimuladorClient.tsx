@@ -4,17 +4,6 @@ import React, { useState } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
 import { formatMoney } from '@/lib/utils';
 import { simularPrepago } from '@/lib/prepayment-calculator';
-import {
-  Calculator,
-  Landmark,
-  Sparkles,
-  Calendar,
-  Clock,
-  TrendingDown,
-  ArrowRight,
-  ShieldCheck,
-  CheckCircle2,
-} from 'lucide-react';
 
 export function SimuladorClient() {
   const { resumen } = useFinanzas();
@@ -47,41 +36,37 @@ export function SimuladorClient() {
     : null;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-300">
-      {/* Header */}
+    <div className="space-y-6 animate-in fade-in duration-200">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-          <Calculator className="w-6 h-6 text-purple-500" />
-          <span>Simulador de Prepagos de Préstamos</span>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Simulador de Prepagos
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Calcula cuánto te ahorras en intereses y tiempo si decides amortizar capital (ej. con tu gratificación o ahorros).
+          Calcula el ahorro en intereses y tiempo al amortizar capital en tus créditos.
         </p>
       </div>
 
       {!prestamo ? (
-        <div className="p-8 text-center bg-card border border-border rounded-2xl">
-          <Landmark className="w-10 h-10 text-muted-foreground mx-auto" />
-          <p className="text-sm font-semibold text-foreground mt-2">
+        <div className="p-8 text-center bg-card border border-border/80 rounded-xl">
+          <p className="text-xs text-muted-foreground">
             No tienes préstamos bancarios activos registrados.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           {/* Panel Izquierdo: Configurar Prepago */}
-          <div className="lg:col-span-1 bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4">
-            <h2 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <Landmark className="w-4 h-4 text-purple-500" />
-              <span>Datos del Préstamo</span>
+          <div className="lg:col-span-1 bg-card border border-border/80 rounded-xl p-5 shadow-xs space-y-4">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Datos del Préstamo
             </h2>
 
             <div className="space-y-3 text-xs">
               <div className="space-y-1">
-                <label className="font-semibold text-muted-foreground">Préstamo:</label>
+                <label className="text-muted-foreground font-medium">Préstamo:</label>
                 <select
                   value={prestamoSeleccionadoId}
                   onChange={(e) => setPrestamoSeleccionadoId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-background border border-border text-foreground font-semibold outline-none"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border text-foreground text-xs outline-none"
                 >
                   {prestamos.map((p) => (
                     <option key={p.id} value={p.id}>
@@ -91,36 +76,36 @@ export function SimuladorClient() {
                 </select>
               </div>
 
-              <div className="p-3 rounded-xl bg-secondary/50 border border-border space-y-2">
+              <div className="p-3 rounded-lg bg-muted/40 border border-border/40 space-y-1.5">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Cuota mensual:</span>
-                  <span className="font-bold text-foreground">
+                  <span className="font-mono font-medium text-foreground">
                     {formatMoney(prestamo.montoCuota, moneda)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Progreso:</span>
-                  <span className="font-bold text-purple-500">
-                    Cuota {prestamo.cuotaActual} de {prestamo.cuotasTotales}
+                  <span className="font-medium text-foreground">
+                    Cuota {prestamo.cuotaActual}/{prestamo.cuotasTotales}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">Cuotas restantes:</span>
-                  <span className="font-bold text-foreground">
+                  <span className="text-foreground">
                     {resultado?.cuotasRestantes} cuotas
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Saldo aprox. capital:</span>
-                  <span className="font-bold text-foreground">
+                  <span className="text-muted-foreground">Saldo capital aprox.:</span>
+                  <span className="font-mono font-medium text-foreground">
                     {formatMoney(resultado?.saldoActualAproximado, moneda)}
                   </span>
                 </div>
               </div>
 
               {/* Monto a Prepagar */}
-              <div className="space-y-1.5 pt-2 border-t border-border">
-                <label className="font-bold text-foreground">
+              <div className="space-y-1 pt-2 border-t border-border/60">
+                <label className="font-medium text-muted-foreground">
                   Monto a Prepagar ({moneda}):
                 </label>
                 <input
@@ -128,17 +113,16 @@ export function SimuladorClient() {
                   step="100"
                   value={montoPrepago}
                   onChange={(e) => setMontoPrepago(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground font-extrabold text-base"
+                  className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground font-mono font-medium text-sm"
                 />
 
-                {/* Presets Rápidos */}
                 <div className="grid grid-cols-3 gap-1 pt-1">
                   {['1000', '2000', '3500'].map((val) => (
                     <button
                       key={val}
                       type="button"
                       onClick={() => setMontoPrepago(val)}
-                      className="py-1 px-1 text-[11px] font-semibold bg-secondary hover:bg-secondary/80 rounded-lg text-muted-foreground hover:text-foreground transition border border-border text-center"
+                      className="py-1 px-1 text-[11px] font-medium bg-muted/60 hover:bg-muted rounded-md text-muted-foreground hover:text-foreground transition text-center"
                     >
                       {moneda} {val}
                     </button>
@@ -148,7 +132,7 @@ export function SimuladorClient() {
 
               {/* Tasa TEA */}
               <div className="space-y-1">
-                <label className="font-semibold text-muted-foreground">
+                <label className="text-muted-foreground font-medium">
                   Tasa Anual Estimada (TEA %):
                 </label>
                 <input
@@ -156,7 +140,7 @@ export function SimuladorClient() {
                   step="0.1"
                   value={tasaTEA}
                   onChange={(e) => setTasaTEA(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border outline-none text-foreground"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none text-foreground text-xs"
                 />
               </div>
             </div>
@@ -165,94 +149,85 @@ export function SimuladorClient() {
           {/* Panel Derecho: Comparativa de Opciones */}
           {resultado && (
             <div className="lg:col-span-2 space-y-4">
-              <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/30 text-purple-300 text-xs flex items-center gap-2.5">
-                <Sparkles className="w-5 h-5 text-purple-400 shrink-0" />
-                <span>
-                  Al abonar <strong>{formatMoney(resultado.montoPrepagar, moneda)}</strong> a capital, el banco te da a elegir entre 2 opciones:
-                </span>
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* OPCIÓN 1: REDUCIR PLAZO */}
-                <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 hover:border-emerald-500/40 transition">
+                <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-                      Recomendada
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-foreground">
+                      Menor tiempo
                     </span>
-                    <Clock className="w-5 h-5 text-emerald-500" />
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-foreground text-base">
+                    <h3 className="font-semibold text-foreground text-sm">
                       Opción A: Reducir Plazo
                     </h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Mantienes tu cuota de {formatMoney(resultado.cuotaActual, moneda)}, pero terminas de pagar meses antes.
+                      Mantienes tu cuota pero terminas de pagar antes.
                     </p>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-1">
-                    <span className="text-[10px] uppercase font-bold text-emerald-600 dark:text-emerald-400 block">
+                  <div className="p-3 rounded-lg bg-muted/40 border border-border/40">
+                    <span className="text-[10px] text-muted-foreground block">
                       Ahorro en Intereses:
                     </span>
-                    <div className="text-2xl font-extrabold text-emerald-500">
+                    <div className="text-xl font-semibold font-mono text-foreground mt-0.5">
                       ~ {formatMoney(resultado.opcionPlazo.interesAhorradoAproximado, moneda)}
                     </div>
                   </div>
 
-                  <div className="space-y-2 text-xs pt-2 border-t border-border">
+                  <div className="space-y-1.5 text-xs text-muted-foreground pt-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Meses que te ahorras:</span>
-                      <span className="font-bold text-foreground">
+                      <span>Meses ahorrados:</span>
+                      <span className="font-medium text-foreground">
                         {resultado.opcionPlazo.mesesAhorrados} meses antes
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Cuotas restantes ahora:</span>
-                      <span className="font-bold text-foreground">
-                        {resultado.opcionPlazo.nuevasCuotasRestantes} cuotas (en vez de {resultado.cuotasRestantes})
+                      <span>Nuevas cuotas:</span>
+                      <span className="font-medium text-foreground">
+                        {resultado.opcionPlazo.nuevasCuotasRestantes} cuotas
                       </span>
                     </div>
                   </div>
                 </div>
 
                 {/* OPCIÓN 2: REDUCIR CUOTA */}
-                <div className="bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 hover:border-sky-500/40 transition">
+                <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-sky-500/15 text-sky-500 border border-sky-500/30">
-                      Mayor Liquidez Mensual
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-md bg-muted text-foreground">
+                      Mayor liquidez
                     </span>
-                    <TrendingDown className="w-5 h-5 text-sky-500" />
                   </div>
 
                   <div>
-                    <h3 className="font-bold text-foreground text-base">
+                    <h3 className="font-semibold text-foreground text-sm">
                       Opción B: Reducir Cuota
                     </h3>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Mantienes el plazo original, pero tu cuota mensual baja de inmediato.
+                      Mantienes el plazo pero la cuota mensual disminuye.
                     </p>
                   </div>
 
-                  <div className="p-3.5 rounded-xl bg-sky-500/10 border border-sky-500/20 space-y-1">
-                    <span className="text-[10px] uppercase font-bold text-sky-600 dark:text-sky-400 block">
+                  <div className="p-3 rounded-lg bg-muted/40 border border-border/40">
+                    <span className="text-[10px] text-muted-foreground block">
                       Nueva Cuota Mensual:
                     </span>
-                    <div className="text-2xl font-extrabold text-sky-500">
+                    <div className="text-xl font-semibold font-mono text-foreground mt-0.5">
                       {formatMoney(resultado.opcionCuota.nuevaCuotaMensual, moneda)}
                     </div>
                   </div>
 
-                  <div className="space-y-2 text-xs pt-2 border-t border-border">
+                  <div className="space-y-1.5 text-xs text-muted-foreground pt-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Alivio mensual libre:</span>
-                      <span className="font-bold text-emerald-500">
-                        + {formatMoney(resultado.opcionCuota.ahorroMensual, moneda)} / mes
+                      <span>Alivio mensual:</span>
+                      <span className="font-mono font-medium text-foreground">
+                        + {formatMoney(resultado.opcionCuota.ahorroMensual, moneda)}
                       </span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Intereses ahorrados:</span>
-                      <span className="font-bold text-foreground">
+                      <span>Intereses ahorrados:</span>
+                      <span className="font-mono text-foreground">
                         ~ {formatMoney(resultado.opcionCuota.interesAhorradoAproximado, moneda)}
                       </span>
                     </div>
@@ -260,104 +235,68 @@ export function SimuladorClient() {
                 </div>
               </div>
 
-              {/* TABLA COMPARATIVA DE ESCENARIOS */}
-              <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs">
-                <div className="p-4 border-b border-border/80 dark:border-slate-800 flex items-center justify-between">
-                  <h3 className="font-bold text-foreground text-sm flex items-center gap-2">
-                    <ShieldCheck className="w-4 h-4 text-purple-500" />
-                    <span>Tabla Comparativa de Escenarios de Prepago</span>
+              {/* TABLA COMPARATIVA */}
+              <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
+                <div className="p-3.5 border-b border-border/60">
+                  <h3 className="font-semibold text-foreground text-xs">
+                    Comparativa de Escenarios
                   </h3>
-                  <span className="text-[11px] font-semibold text-muted-foreground">
-                    Prepago: {formatMoney(resultado.montoPrepagar, moneda)}
-                  </span>
                 </div>
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
-                    <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+                    <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                       <tr>
-                        <th className="py-3 px-3.5">Métrica / Concepto</th>
-                        <th className="py-3 px-3 text-center">Escenario Actual</th>
-                        <th className="py-3 px-3 text-center bg-emerald-500/5 text-emerald-600 dark:text-emerald-400 font-bold">
-                          Opción A: Reducir Plazo
-                        </th>
-                        <th className="py-3 px-3 text-center bg-sky-500/5 text-sky-600 dark:text-sky-400 font-bold">
-                          Opción B: Reducir Cuota
-                        </th>
+                        <th className="py-2.5 px-3 font-medium">Concepto</th>
+                        <th className="py-2.5 px-3 text-center font-medium">Actual</th>
+                        <th className="py-2.5 px-3 text-center font-medium">Opción A (Plazo)</th>
+                        <th className="py-2.5 px-3 text-center font-medium">Opción B (Cuota)</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/60 dark:divide-slate-800">
-                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
-                        <td className="py-3 px-3.5 font-bold text-foreground">Cuota Mensual</td>
-                        <td className="py-3 px-3 text-center font-extrabold text-foreground">
+                    <tbody className="divide-y divide-border/40 font-mono">
+                      <tr className="hover:bg-muted/30 transition">
+                        <td className="py-2.5 px-3 font-sans font-medium text-foreground">Cuota Mensual</td>
+                        <td className="py-2.5 px-3 text-center text-foreground">
                           {formatMoney(resultado.cuotaActual, moneda)}
                         </td>
-                        <td className="py-3 px-3 text-center font-extrabold text-foreground bg-emerald-500/5">
+                        <td className="py-2.5 px-3 text-center text-foreground">
                           {formatMoney(resultado.cuotaActual, moneda)}
                         </td>
-                        <td className="py-3 px-3 text-center font-extrabold text-sky-600 dark:text-sky-400 bg-sky-500/5">
+                        <td className="py-2.5 px-3 text-center text-foreground">
                           {formatMoney(resultado.opcionCuota.nuevaCuotaMensual, moneda)}
                         </td>
                       </tr>
 
-                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
-                        <td className="py-3 px-3.5 font-bold text-foreground">Cuotas Restantes</td>
-                        <td className="py-3 px-3 text-center font-semibold text-foreground">
-                          {resultado.cuotasRestantes} cuotas
+                      <tr className="hover:bg-muted/30 transition">
+                        <td className="py-2.5 px-3 font-sans font-medium text-foreground">Cuotas Restantes</td>
+                        <td className="py-2.5 px-3 text-center text-muted-foreground font-sans">
+                          {resultado.cuotasRestantes}
                         </td>
-                        <td className="py-3 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5">
-                          {resultado.opcionPlazo.nuevasCuotasRestantes} cuotas
+                        <td className="py-2.5 px-3 text-center text-foreground font-sans">
+                          {resultado.opcionPlazo.nuevasCuotasRestantes}
                         </td>
-                        <td className="py-3 px-3 text-center font-semibold text-foreground bg-sky-500/5">
-                          {resultado.cuotasRestantes} cuotas
-                        </td>
-                      </tr>
-
-                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
-                        <td className="py-3 px-3.5 font-bold text-foreground">Tiempo Ahorrado</td>
-                        <td className="py-3 px-3 text-center text-muted-foreground">0 meses</td>
-                        <td className="py-3 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5">
-                          {resultado.opcionPlazo.mesesAhorrados} meses antes
-                        </td>
-                        <td className="py-3 px-3 text-center text-muted-foreground bg-sky-500/5">
-                          0 meses
+                        <td className="py-2.5 px-3 text-center text-muted-foreground font-sans">
+                          {resultado.cuotasRestantes}
                         </td>
                       </tr>
 
-                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
-                        <td className="py-3 px-3.5 font-bold text-foreground">Alivio Mensual en Flujo</td>
-                        <td className="py-3 px-3 text-center text-muted-foreground">—</td>
-                        <td className="py-3 px-3 text-center text-muted-foreground bg-emerald-500/5">
-                          {formatMoney(0, moneda)}
+                      <tr className="hover:bg-muted/30 transition">
+                        <td className="py-2.5 px-3 font-sans font-medium text-foreground">Tiempo Ahorrado</td>
+                        <td className="py-2.5 px-3 text-center text-muted-foreground font-sans">—</td>
+                        <td className="py-2.5 px-3 text-center text-foreground font-sans">
+                          {resultado.opcionPlazo.mesesAhorrados} meses
                         </td>
-                        <td className="py-3 px-3 text-center font-bold text-emerald-600 dark:text-emerald-400 bg-sky-500/5">
-                          + {formatMoney(resultado.opcionCuota.ahorroMensual, moneda)} / mes
-                        </td>
+                        <td className="py-2.5 px-3 text-center text-muted-foreground font-sans">—</td>
                       </tr>
 
-                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
-                        <td className="py-3 px-3.5 font-bold text-foreground">Intereses Ahorrados (Aprox.)</td>
-                        <td className="py-3 px-3 text-center text-muted-foreground">—</td>
-                        <td className="py-3 px-3 text-center font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 text-sm">
+                      <tr className="hover:bg-muted/30 transition">
+                        <td className="py-2.5 px-3 font-sans font-medium text-foreground">Intereses Ahorrados</td>
+                        <td className="py-2.5 px-3 text-center text-muted-foreground font-sans">—</td>
+                        <td className="py-2.5 px-3 text-center text-foreground">
                           ~ {formatMoney(resultado.opcionPlazo.interesAhorradoAproximado, moneda)}
                         </td>
-                        <td className="py-3 px-3 text-center font-extrabold text-sky-600 dark:text-sky-400 bg-sky-500/5">
+                        <td className="py-2.5 px-3 text-center text-foreground">
                           ~ {formatMoney(resultado.opcionCuota.interesAhorradoAproximado, moneda)}
-                        </td>
-                      </tr>
-
-                      <tr className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition">
-                        <td className="py-3 px-3.5 font-bold text-foreground">Enfoque Financiero</td>
-                        <td className="py-3 px-3 text-center text-muted-foreground">Continuar amortización</td>
-                        <td className="py-3 px-3 text-center bg-emerald-500/5">
-                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-                            Máximo ahorro total
-                          </span>
-                        </td>
-                        <td className="py-3 px-3 text-center bg-sky-500/5">
-                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-bold bg-sky-500/15 text-sky-600 dark:text-sky-400">
-                            Mayor liquidez mensual
-                          </span>
                         </td>
                       </tr>
                     </tbody>

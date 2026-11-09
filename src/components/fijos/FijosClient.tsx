@@ -485,33 +485,32 @@ export function FijosClient() {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-300">
-      {/* 1. SECCIÓN: COSTOS FIJOS RECURRENTES */}
+    <div className="space-y-8 animate-in fade-in duration-200">
+      {/* 1. SECCIÓN: COSTOS FIJOS DEL MES */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                <Home className="w-6 h-6 text-sky-500" />
-                <span>Costos Fijos del Mes</span>
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">
+                Costos Fijos del Mes
               </h1>
               {/* Selector de Mes */}
-              <div className="inline-flex items-center gap-1 bg-secondary/80 px-2 py-0.5 rounded-xl border border-border shadow-inner">
+              <div className="inline-flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg text-xs">
                 <button
                   type="button"
                   onClick={irMesAnterior}
-                  className="p-0.5 hover:bg-background text-muted-foreground hover:text-foreground rounded-lg transition"
+                  className="p-1 hover:text-foreground text-muted-foreground rounded transition"
                   title="Mes anterior"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-xs font-bold text-sky-400 px-1">
+                <span className="text-xs font-semibold px-1 text-foreground capitalize">
                   {formatPeriodoLabel(periodo)}
                 </span>
                 <button
                   type="button"
                   onClick={irMesSiguiente}
-                  className="p-0.5 hover:bg-background text-muted-foreground hover:text-foreground rounded-lg transition"
+                  className="p-1 hover:text-foreground text-muted-foreground rounded transition"
                   title="Mes siguiente"
                 >
                   <ChevronRight className="w-3.5 h-3.5" />
@@ -519,38 +518,36 @@ export function FijosClient() {
               </div>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Haz clic en cualquier tarjeta para ver su ficha técnica o ajustar el monto pagado de este mes.
+              Gastos recurrentes y servicios fijos programados para este mes.
             </p>
           </div>
 
           {/* Selector de Vista y Botón Agregar */}
           <div className="flex items-center gap-2">
-            <div className="inline-flex items-center gap-0.5 bg-secondary/80 p-0.5 rounded-xl border border-border">
+            <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg">
               <button
                 type="button"
                 onClick={() => setModoVistaFijos('TABLA')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
+                className={`p-1 rounded transition ${
                   modoVistaFijos === 'TABLA'
-                    ? 'bg-background text-foreground shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground'
                 }`}
                 title="Ver como Tabla"
               >
                 <Table className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Tabla</span>
               </button>
               <button
                 type="button"
                 onClick={() => setModoVistaFijos('TARJETAS')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
+                className={`p-1 rounded transition ${
                   modoVistaFijos === 'TARJETAS'
-                    ? 'bg-background text-foreground shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground'
                 }`}
                 title="Ver como Tarjetas"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Tarjetas</span>
               </button>
             </div>
 
@@ -559,9 +556,9 @@ export function FijosClient() {
                 setNuevoFijoMesInicio(periodo);
                 setModalFijoOpen(true);
               }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-bold text-xs shadow-xs transition active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-98"
             >
-              <Plus className="w-4 h-4 shrink-0" />
+              <Plus className="w-3.5 h-3.5 shrink-0" />
               <span>Agregar Costo Fijo</span>
             </button>
           </div>
@@ -571,24 +568,23 @@ export function FijosClient() {
           /* ======================================================== */
           /* TABLA DE COSTOS FIJOS DEL MES                            */
           /* ======================================================== */
-          <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs">
+          <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+                <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                   <tr>
-                    <th className="py-3 px-3">Tipo / Concepto</th>
-                    <th className="py-3 px-3">Categoría</th>
-                    <th className="py-3 px-3 text-center">Vence</th>
-                    <th className="py-3 px-3 text-right">Monto</th>
-                    <th className="py-3 px-3 text-center">Estado este mes</th>
-                    <th className="py-3 px-3 text-center">Acciones</th>
+                    <th className="py-2.5 px-3 font-medium">Concepto</th>
+                    <th className="py-2.5 px-3 font-medium">Categoría</th>
+                    <th className="py-2.5 px-3 text-center font-medium">Vence</th>
+                    <th className="py-2.5 px-3 text-right font-medium">Monto</th>
+                    <th className="py-2.5 px-3 text-center font-medium">Estado</th>
+                    <th className="py-2.5 px-3 text-center font-medium">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/60 dark:divide-slate-800/80">
+                <tbody className="divide-y divide-border/40">
                   {costosFijos.map((cf) => {
-                    const esRecur = esItemRecurrente(cf.concepto, cf.categoria);
-                    const clasificacion: ClasificacionEgreso = esRecur ? 'RECURRENTE' : 'FIJO';
-                    const estilo = ESTILOS_CLASIFICACION[clasificacion];
+                    const clasificacion: ClasificacionEgreso = 'FIJO';
+                    const estilo = ESTILOS_CLASIFICACION.FIJO;
                     const isLoading = loadingAction === `fijo-${cf.id}`;
 
                     return (
@@ -614,52 +610,58 @@ export function FijosClient() {
                             tipoCambio: cf.tipoCambio,
                           })
                         }
-                        className="hover:bg-slate-50/60 dark:hover:bg-slate-800/40 transition cursor-pointer"
+                        className="hover:bg-muted/30 transition cursor-pointer"
                       >
-                        <td className={`py-3 px-3 border-l-4 ${estilo.borderColor}`}>
+                        <td className="py-2.5 px-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="font-bold text-foreground text-xs">{cf.concepto}</span>
-                            <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.2 rounded-md font-bold shrink-0 border ${estilo.badgeBg} ${estilo.badgeText} ${estilo.badgeBorder}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full ${estilo.dotColor}`} />
+                            <span className="font-medium text-foreground text-xs">{cf.concepto}</span>
+                            <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-muted text-muted-foreground">
                               {estilo.badgeLabel}
                             </span>
                           </div>
                           {cf.monedaOriginal === 'USD' && cf.montoOriginal && (
-                            <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">
+                            <div className="text-[10px] text-muted-foreground mt-0.5">
                               ${cf.montoOriginal.toFixed(2)} USD
                             </div>
                           )}
                         </td>
 
-                        <td className="py-3 px-3 text-muted-foreground whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
                           {cf.categoria || 'General'}
                         </td>
 
-                        <td className="py-3 px-3 text-center text-muted-foreground whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-center text-muted-foreground whitespace-nowrap">
                           Día {cf.diaVencimiento}
                         </td>
 
-                        <td className="py-3 px-3 text-right font-bold text-foreground whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-right font-mono font-medium text-foreground whitespace-nowrap">
                           {formatMoney(cf.monto, moneda)}
                         </td>
 
-                        <td className="py-3 px-3 text-center whitespace-nowrap">
-                          {cf.estado === 'ADELANTADO' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200/80 dark:bg-indigo-500/20 dark:text-indigo-300">
-                              ⚡ Adelantado
-                            </span>
-                          ) : cf.estado === 'PAGADO' ? (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200/80 dark:bg-emerald-500/20 dark:text-emerald-300">
-                              ✓ Pagado
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-sky-50 text-sky-700 border border-sky-200/80 dark:bg-sky-500/20 dark:text-sky-300">
-                              ⏳ Pendiente
-                            </span>
-                          )}
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                              cf.estado === 'ADELANTADO'
+                                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                : cf.estado === 'PAGADO'
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                            }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${
+                                cf.estado === 'ADELANTADO'
+                                  ? 'bg-indigo-500'
+                                  : cf.estado === 'PAGADO'
+                                  ? 'bg-emerald-500'
+                                  : 'bg-amber-500'
+                              }`}
+                            />
+                            {cf.estado === 'ADELANTADO' ? 'Adelantado' : cf.estado === 'PAGADO' ? 'Pagado' : 'Pendiente'}
+                          </span>
                         </td>
 
-                        <td className="py-3 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() =>
@@ -669,7 +671,7 @@ export function FijosClient() {
                                 )
                               }
                               disabled={isLoading}
-                              className="px-2 py-1 rounded-lg text-[11px] font-semibold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition"
+                              className="px-2 py-0.5 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition"
                               title="Alternar Adelantado"
                             >
                               Adelantar
@@ -683,19 +685,19 @@ export function FijosClient() {
                                 )
                               }
                               disabled={isLoading}
-                              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold border transition ${
+                              className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${
                                 cf.estado === 'PAGADO'
-                                  ? 'bg-slate-100 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400'
-                                  : 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-500/20 dark:text-emerald-300'
+                                  ? 'text-muted-foreground hover:bg-muted'
+                                  : 'bg-foreground text-background hover:opacity-90'
                               }`}
                               title="Alternar Pagado"
                             >
-                              {cf.estado === 'PAGADO' ? '✓ Pagado' : 'Pagar'}
+                              {cf.estado === 'PAGADO' ? 'Pagado' : 'Pagar'}
                             </button>
 
                             <button
                               onClick={() => abrirEdicionCostoFijo(cf)}
-                              className="p-1 rounded-lg text-muted-foreground hover:text-sky-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition ml-1"
+                              className="p-1 rounded text-muted-foreground hover:text-foreground transition ml-1"
                               title="Editar costo fijo base"
                             >
                               <Pencil className="w-3.5 h-3.5" />
@@ -703,7 +705,7 @@ export function FijosClient() {
 
                             <button
                               onClick={() => handleEliminarCostoFijo(cf.id, cf.concepto)}
-                              className="p-1 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                              className="p-1 rounded text-muted-foreground hover:text-rose-500 transition"
                               title="Eliminar costo fijo"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -725,9 +727,8 @@ export function FijosClient() {
             {costosFijos.map((cf) => {
             const Icon = getIconForConcepto(cf.concepto);
             const isLoading = loadingAction === `fijo-${cf.id}`;
-            const esRecur = esItemRecurrente(cf.concepto, cf.categoria);
-            const clasificacion: ClasificacionEgreso = esRecur ? 'RECURRENTE' : 'FIJO';
-            const estilo = ESTILOS_CLASIFICACION[clasificacion];
+            const clasificacion: ClasificacionEgreso = 'FIJO';
+            const estilo = ESTILOS_CLASIFICACION.FIJO;
 
             return (
               <div
@@ -757,7 +758,7 @@ export function FijosClient() {
               >
                 <div className="space-y-3">
                   <div className="flex items-start justify-between gap-3">
-                    <div className={`p-2.5 rounded-xl ${esRecur ? 'bg-pink-500/10 text-pink-500' : 'bg-sky-500/10 text-sky-500'}`}>
+                    <div className="p-2.5 rounded-xl bg-sky-500/10 text-sky-500">
                       <Icon className="w-5 h-5" />
                     </div>
 
@@ -871,45 +872,42 @@ export function FijosClient() {
       </div>
 
       {/* 2. SECCIÓN: PRÉSTAMOS BANCARIOS */}
-      <div className="space-y-4 pt-4 border-t border-border">
+      <div className="space-y-4 pt-4 border-t border-border/60">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-              <Landmark className="w-6 h-6 text-purple-500" />
-              <span>Préstamos Bancarios & Cuotas</span>
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              Préstamos Bancarios & Cuotas
             </h2>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Monitoreo de cuotas mensuales, progreso de pago y amortización de deudas.
+              Monitoreo de cuotas mensuales, progreso y amortización.
             </p>
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="flex items-center bg-secondary/80 p-0.5 rounded-xl border border-border">
+            <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg">
               <button
                 type="button"
                 onClick={() => setModoVistaPrestamos('TABLA')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
+                className={`p-1 rounded transition ${
                   modoVistaPrestamos === 'TABLA'
-                    ? 'bg-background text-foreground shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground'
                 }`}
                 title="Ver como Tabla"
               >
                 <Table className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Tabla</span>
               </button>
               <button
                 type="button"
                 onClick={() => setModoVistaPrestamos('TARJETAS')}
-                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold flex items-center gap-1 transition ${
+                className={`p-1 rounded transition ${
                   modoVistaPrestamos === 'TARJETAS'
-                    ? 'bg-background text-foreground shadow-xs'
-                    : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground'
                 }`}
                 title="Ver como Tarjetas"
               >
                 <LayoutGrid className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Tarjetas</span>
               </button>
             </div>
 
@@ -918,39 +916,38 @@ export function FijosClient() {
                 setNuevoPrestamoPeriodoInicio(periodo);
                 setModalPrestamoOpen(true);
               }}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-bold text-xs shadow-xs transition active:scale-95"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-98"
             >
-              <Plus className="w-4 h-4 shrink-0" />
+              <Plus className="w-3.5 h-3.5 shrink-0" />
               <span>Agregar Préstamo</span>
             </button>
           </div>
         </div>
 
         {prestamos.length === 0 ? (
-          <div className="p-8 text-center bg-card border border-border rounded-2xl">
-            <Landmark className="w-10 h-10 text-muted-foreground mx-auto stroke-1" />
-            <p className="text-sm font-semibold text-foreground mt-2">No hay préstamos activos</p>
+          <div className="p-8 text-center bg-card border border-border/80 rounded-xl">
+            <p className="text-xs text-muted-foreground">No hay préstamos activos registrados.</p>
           </div>
         ) : modoVistaPrestamos === 'TABLA' ? (
           /* ======================================================== */
           /* TABLA DE PRÉSTAMOS BANCARIOS Y CUOTAS                    */
           /* ======================================================== */
-          <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs">
+          <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
-                <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+                <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                   <tr>
-                    <th className="py-3 px-3">Banco / Concepto</th>
-                    <th className="py-3 px-3">Progreso Cuotas</th>
-                    <th className="py-3 px-3 text-center">Día Pago</th>
-                    <th className="py-3 px-3 text-center">TEA %</th>
-                    <th className="py-3 px-3 text-right">Cuota Mensual</th>
-                    <th className="py-3 px-3 text-right">Total Préstamo</th>
-                    <th className="py-3 px-3 text-center">Estado este mes</th>
-                    <th className="py-3 px-3 text-center">Acciones</th>
+                    <th className="py-2.5 px-3 font-medium">Concepto</th>
+                    <th className="py-2.5 px-3 font-medium">Progreso</th>
+                    <th className="py-2.5 px-3 text-center font-medium">Día Pago</th>
+                    <th className="py-2.5 px-3 text-center font-medium">TEA %</th>
+                    <th className="py-2.5 px-3 text-right font-medium">Cuota Mensual</th>
+                    <th className="py-2.5 px-3 text-right font-medium">Total</th>
+                    <th className="py-2.5 px-3 text-center font-medium">Estado</th>
+                    <th className="py-2.5 px-3 text-center font-medium">Acciones</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-border/60 dark:divide-slate-800">
+                <tbody className="divide-y divide-border/40">
                   {prestamos.map((p) => {
                     const progreso = Math.round((p.cuotaActual / p.cuotasTotales) * 100);
                     const isLoading = loadingAction === `cuota-${p.cuotaId}` || loadingAction === `del-prestamo-${p.id}`;
@@ -982,82 +979,87 @@ export function FijosClient() {
                             tipoCambio: p.tipoCambio,
                           })
                         }
-                        className="hover:bg-purple-50/40 dark:hover:bg-purple-950/20 transition cursor-pointer"
+                        className="hover:bg-muted/30 transition cursor-pointer"
                       >
-                        <td className="py-3 px-3 border-l-4 border-l-purple-500 dark:border-l-purple-400">
+                        <td className="py-2.5 px-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/30">
+                            <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-muted text-muted-foreground">
                               {p.banco}
                             </span>
-                            <span className="font-bold text-foreground text-xs">{p.concepto}</span>
-                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.2 rounded-md font-bold shrink-0 border bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-200/80 dark:border-purple-500/30">
-                              <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
-                              Préstamo
-                            </span>
+                            <span className="font-medium text-foreground text-xs">{p.concepto}</span>
                           </div>
                           {(p.monedaOriginal === 'USD' || p.concepto.includes('$')) && (
-                            <div className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold mt-0.5">
+                            <div className="text-[10px] text-muted-foreground mt-0.5">
                               ${p.montoOriginal ? p.montoOriginal.toFixed(2) : (p.concepto.match(/\$([0-9.]+)/)?.[1] || '')} USD
                             </div>
                           )}
                         </td>
 
-                        <td className="py-3 px-3">
-                          <div className="w-32 space-y-1">
-                            <div className="flex items-center justify-between text-[10px] text-muted-foreground font-semibold">
+                        <td className="py-2.5 px-3">
+                          <div className="w-28 space-y-1">
+                            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
                               <span>
                                 {p.aplicaEsteMes === false
                                   ? 'Fuera de rango'
                                   : `Cta ${p.cuotaActual}/${p.cuotasTotales}`}
                               </span>
-                              <span className="text-purple-600 dark:text-purple-400 font-bold">{progreso}%</span>
+                              <span>{progreso}%</span>
                             </div>
-                            <div className="w-full bg-secondary rounded-full h-1.5 overflow-hidden">
+                            <div className="w-full bg-muted rounded-full h-1 overflow-hidden">
                               <div
-                                className="bg-purple-500 h-full rounded-full transition-all duration-500"
+                                className="bg-foreground h-full rounded-full transition-all"
                                 style={{ width: `${progreso}%` }}
                               />
                             </div>
                           </div>
                         </td>
 
-                        <td className="py-3 px-3 text-center text-muted-foreground whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-center text-muted-foreground whitespace-nowrap">
                           Día {p.diaPago}
                         </td>
 
-                        <td className="py-3 px-3 text-center font-semibold text-foreground whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-center text-muted-foreground whitespace-nowrap">
                           {p.tasaInteresAnual}%
                         </td>
 
-                        <td className="py-3 px-3 text-right font-extrabold text-foreground whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-right font-mono font-medium text-foreground whitespace-nowrap">
                           {formatMoney(p.montoCuota, moneda)}
                         </td>
 
-                        <td className="py-3 px-3 text-right text-muted-foreground font-semibold whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-right font-mono text-muted-foreground whitespace-nowrap">
                           {p.montoTotal ? formatMoney(p.montoTotal, moneda) : '—'}
                         </td>
 
-                        <td className="py-3 px-3 text-center whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
                           {p.aplicaEsteMes === false ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold bg-secondary text-muted-foreground border border-border">
-                              <Clock className="w-3 h-3" /> Fuera de periodo
-                            </span>
-                          ) : p.estado === 'PAGADO' ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30">
-                              <CheckCircle2 className="w-3 h-3" /> Pagado
-                            </span>
-                          ) : p.estado === 'ADELANTADO' ? (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-                              <FastForward className="w-3 h-3" /> Adelantado
+                            <span className="text-[10px] text-muted-foreground">
+                              Fuera de periodo
                             </span>
                           ) : (
-                            <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full font-bold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">
-                              <Clock className="w-3 h-3" /> Pendiente
+                            <span
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                                p.estado === 'ADELANTADO'
+                                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                  : p.estado === 'PAGADO'
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full ${
+                                  p.estado === 'ADELANTADO'
+                                    ? 'bg-indigo-500'
+                                    : p.estado === 'PAGADO'
+                                    ? 'bg-emerald-500'
+                                    : 'bg-amber-500'
+                                }`}
+                              />
+                              {p.estado === 'ADELANTADO' ? 'Adelantado' : p.estado === 'PAGADO' ? 'Pagado' : 'Pendiente'}
                             </span>
                           )}
                         </td>
 
-                        <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-center gap-1">
                             {p.aplicaEsteMes !== false && (
                               <>
@@ -1069,14 +1071,10 @@ export function FijosClient() {
                                     )
                                   }
                                   disabled={isLoading}
-                                  className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition ${
-                                    p.estado === 'ADELANTADO'
-                                      ? 'bg-amber-500/20 text-amber-500 border-amber-500/40'
-                                      : 'bg-secondary/60 text-muted-foreground border-border hover:bg-secondary'
-                                  }`}
+                                  className="px-2 py-0.5 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition"
                                   title="Marcar Adelantado"
                                 >
-                                  ⚡
+                                  Adelantar
                                 </button>
                                 <button
                                   onClick={() =>
@@ -1086,21 +1084,21 @@ export function FijosClient() {
                                     )
                                   }
                                   disabled={isLoading}
-                                  className={`px-2 py-1 rounded-lg text-[10px] font-bold border transition ${
+                                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${
                                     p.estado === 'PAGADO'
-                                      ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40'
-                                      : 'bg-secondary/60 text-muted-foreground border-border hover:bg-secondary'
+                                      ? 'text-muted-foreground hover:bg-muted'
+                                      : 'bg-foreground text-background hover:opacity-90'
                                   }`}
                                   title="Marcar Pagado"
                                 >
-                                  ✅
+                                  {p.estado === 'PAGADO' ? 'Pagado' : 'Pagar'}
                                 </button>
                               </>
                             )}
 
                             <button
                               onClick={() => abrirEdicionPrestamo(p)}
-                              className="p-1 rounded-lg text-muted-foreground hover:text-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/40 transition"
+                              className="p-1 rounded text-muted-foreground hover:text-foreground transition ml-1"
                               title="Editar condiciones base"
                             >
                               <Pencil className="w-3.5 h-3.5" />
@@ -1108,7 +1106,7 @@ export function FijosClient() {
 
                             <button
                               onClick={() => handleEliminarPrestamo(p.id, `${p.banco} - ${p.concepto}`)}
-                              className="p-1 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                              className="p-1 rounded text-muted-foreground hover:text-rose-500 transition"
                               title="Eliminar préstamo"
                             >
                               <Trash2 className="w-3.5 h-3.5" />

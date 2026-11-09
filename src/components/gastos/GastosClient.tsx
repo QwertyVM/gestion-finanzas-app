@@ -7,19 +7,14 @@ import { calcularPeriodoFacturacion, calcularCuotasPeriodos } from '@/lib/billin
 import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import {
   Plus,
-  CreditCard,
   Banknote,
   ArrowRightLeft,
-  Calendar,
   CheckCircle2,
-  Clock,
   FastForward,
   Trash2,
-  Filter,
   CheckSquare,
   Square,
   Sparkles,
-  AlertCircle,
   X,
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -78,19 +73,16 @@ export function GastosClient() {
   const [tarjetaId, setTarjetaId] = useState('');
   const [totalCuotas, setTotalCuotas] = useState('1');
   const [estado, setEstado] = useState<'PENDIENTE' | 'ADELANTADO' | 'PAGADO'>('PENDIENTE');
-  const [notas, setNotas] = useState('');
 
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
   const tarjetas = resumen?.tarjetasCredito || [];
 
-  // Asignar primera tarjeta por defecto
   React.useEffect(() => {
     if (tarjetas.length > 0 && !tarjetaId) {
       setTarjetaId(tarjetas[0].id);
     }
   }, [tarjetas, tarjetaId]);
 
-  // Cálculo en tiempo real de facturación al cambiar fecha o tarjeta
   const previewFacturacion = useMemo(() => {
     if (metodoPago !== 'TARJETA_CREDITO') return null;
     const tarjeta = tarjetas.find((t) => t.id === tarjetaId);
@@ -107,12 +99,10 @@ export function GastosClient() {
     };
   }, [metodoPago, tarjetaId, fechaGasto, totalCuotas, tarjetas]);
 
-  // Lista consolidada de gastos del periodo activo
   const listaGastos = useMemo(() => {
     if (!resumen) return [];
     const todos: Array<any> = [];
 
-    // Gastos de tarjetas facturados en este periodo
     for (const t of resumen.tarjetasCredito) {
       for (const g of t.gastosPeriodo) {
         todos.push({
@@ -125,7 +115,6 @@ export function GastosClient() {
       }
     }
 
-    // Gastos directos (efectivo/debito/transferencia)
     for (const g of resumen.gastosDirectos) {
       todos.push({
         ...g,
@@ -134,7 +123,6 @@ export function GastosClient() {
       });
     }
 
-    // Filtrar
     return todos.filter((item) => {
       if (filtroEstado !== 'TODOS' && item.estado !== filtroEstado) return false;
       if (filtroMetodo !== 'TODOS' && item.metodoPago !== filtroMetodo) return false;
@@ -142,7 +130,6 @@ export function GastosClient() {
     });
   }, [resumen, filtroEstado, filtroMetodo]);
 
-  // Manejador para crear gasto
   const handleSubmitGasto = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!concepto.trim() || !monto || parseFloat(monto) <= 0) {
@@ -163,16 +150,14 @@ export function GastosClient() {
           tarjetaId: metodoPago === 'TARJETA_CREDITO' ? tarjetaId : undefined,
           totalCuotas: parseInt(totalCuotas, 10),
           estado,
-          notas,
         }),
       });
 
       if (!res.ok) throw new Error('Error al registrar gasto');
-      toast.success('Gasto registrado con éxito');
+      toast.success('Gasto registrado');
       setModalOpen(false);
       setConcepto('');
       setMonto('');
-      setTotalCuotas('1');
       await refresh();
     } catch (err: any) {
       toast.error(err.message || 'Error al guardar');
@@ -181,7 +166,6 @@ export function GastosClient() {
     }
   };
 
-  // Alternar estado individual
   const handleCambiarEstadoItem = async (id: string, nuevoEstado: string) => {
     try {
       const res = await fetch('/api/gastos/masivo', {
@@ -194,7 +178,7 @@ export function GastosClient() {
         }),
       });
       if (!res.ok) throw new Error('Error al actualizar estado');
-      toast.success(`Estado actualizado a ${nuevoEstado}`);
+      toast.success(`Estado: ${nuevoEstado.toLowerCase()}`);
       await refresh();
     } catch (err: any) {
       toast.error(err.message || 'Error al actualizar');
@@ -217,7 +201,7 @@ export function GastosClient() {
         }),
       });
       if (!res.ok) throw new Error('Error al eliminar');
-      toast.success('Gasto eliminado exitosamente');
+      toast.success('Gasto eliminado');
       setDetalleGasto(null);
       await refresh();
     } catch (err: any) {
@@ -225,12 +209,12 @@ export function GastosClient() {
     }
   };
 
-  const handleEliminarGastoDirecto = async (id: string, concepto: string) => {
-    if (!confirm(`¿Eliminar definitivamente el gasto "${concepto}"?`)) return;
+  const handleEliminarGastoDirecto = async (id: string, conceptoTexto: string) => {
+    if (!confirm(`¿Eliminar "${conceptoTexto}"?`)) return;
     try {
       const res = await fetch(`/api/gastos?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error al eliminar gasto');
-      toast.success(`Gasto "${concepto}" eliminado`);
+      if (!res.ok) throw new Error('Error al eliminar');
+      toast.success('Eliminado');
       await refresh();
     } catch (err: any) {
       toast.error(err.message || 'Error al eliminar');
@@ -252,7 +236,6 @@ export function GastosClient() {
     }
   };
 
-  // Seleccionar / Deseleccionar todos
   const todosSeleccionados =
     listaGastos.length > 0 &&
     listaGastos.every((item) => selectedGastoIds.includes(item.id));
@@ -262,84 +245,68 @@ export function GastosClient() {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-200">
       {/* Encabezado y Acción */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-            <CreditCard className="w-6 h-6 text-sky-500" />
-            <span>Gastos & Facturación de Tarjetas</span>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            Gastos & Compras
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Registro de compras con corte al día 10, selección interactiva para sumatorias y control de estados.
+            Registro con corte al día 10, selección interactiva y control de pagos.
           </p>
         </div>
 
         <button
           onClick={() => setModalOpen(true)}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-bold text-xs shadow-xs transition active:scale-95"
+          className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-98 self-start sm:self-auto"
         >
-          <Plus className="w-4 h-4 shrink-0" />
-          <span>Registrar Gasto / Compra</span>
+          <Plus className="w-3.5 h-3.5" />
+          <span>Registrar Gasto</span>
         </button>
       </div>
 
-      {/* Barra de Filtros y Selección rápida */}
-      <div className="bg-card border border-border/80 p-3 sm:p-4 rounded-2xl flex flex-wrap items-center justify-between gap-3 shadow-xs">
-        {/* Filtros */}
-        <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-          <div className="flex items-center gap-1 text-xs text-muted-foreground mr-1">
-            <Filter className="w-3.5 h-3.5" />
-            <span className="font-medium">Estado:</span>
-          </div>
-
+      {/* Barra de Filtros */}
+      <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg">
           {(['PENDIENTE', 'ADELANTADO', 'PAGADO', 'TODOS'] as const).map((est) => {
             const isSelected = filtroEstado === est;
-            let dotColor = 'bg-slate-400';
-            if (est === 'PENDIENTE') dotColor = 'bg-amber-500';
-            if (est === 'ADELANTADO') dotColor = 'bg-indigo-500';
-            if (est === 'PAGADO') dotColor = 'bg-emerald-500';
-
             return (
               <button
                 key={est}
                 onClick={() => setFiltroEstado(est)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition ${
                   isSelected
-                    ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs border border-border/60'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {est !== 'TODOS' && <span className={`w-2 h-2 rounded-full ${dotColor}`} />}
-                <span>
-                  {est === 'TODOS'
-                    ? 'Todos'
-                    : est === 'PENDIENTE'
-                    ? 'Por Pagar'
-                    : est === 'ADELANTADO'
-                    ? 'Adelantados'
-                    : 'Pagados'}
-                </span>
+                {est === 'TODOS'
+                  ? 'Todos'
+                  : est === 'PENDIENTE'
+                  ? 'Por Pagar'
+                  : est === 'ADELANTADO'
+                  ? 'Adelantados'
+                  : 'Pagados'}
               </button>
             );
           })}
         </div>
 
-        {/* Seleccionar Todos */}
         {listaGastos.length > 0 && (
           <button
             onClick={handleToggleSelectAll}
-            className="inline-flex items-center gap-2 text-xs font-semibold text-sky-500 hover:text-sky-400 transition"
+            className="text-xs text-muted-foreground hover:text-foreground flex items-center gap-1.5 transition font-medium"
           >
             {todosSeleccionados ? (
               <>
-                <CheckSquare className="w-4 h-4 text-sky-500" />
+                <CheckSquare className="w-3.5 h-3.5 text-foreground" />
                 <span>Deseleccionar todos</span>
               </>
             ) : (
               <>
-                <Square className="w-4 h-4 text-muted-foreground" />
-                <span>Seleccionar todos para sumar</span>
+                <Square className="w-3.5 h-3.5" />
+                <span>Seleccionar todos</span>
               </>
             )}
           </button>
@@ -348,39 +315,28 @@ export function GastosClient() {
 
       {/* Lista de Gastos */}
       {listaGastos.length === 0 ? (
-        <div className="bg-card border border-border rounded-2xl p-12 text-center space-y-3">
-          <CreditCard className="w-12 h-12 text-muted-foreground mx-auto stroke-1" />
-          <h3 className="text-base font-bold text-foreground">
-            No hay gastos registrados en {formatPeriodoLabel(periodo)}
-          </h3>
-          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-            Registra una nueva compra en efectivo, tarjeta o cuotas para comenzar a controlar tus finanzas de este mes.
+        <div className="bg-card border border-border/80 rounded-xl p-10 text-center space-y-2">
+          <p className="text-xs text-muted-foreground">
+            No hay gastos registrados para {formatPeriodoLabel(periodo)}.
           </p>
-          <button
-            onClick={() => setModalOpen(true)}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-semibold shadow transition"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Registrar primer gasto</span>
-          </button>
         </div>
       ) : (
-        <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-sm">
+        <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-secondary/60 text-muted-foreground uppercase text-[10px] tracking-wider border-b border-border">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                 <tr>
-                  <th className="p-3 w-10 text-center">✓</th>
-                  <th className="p-3">Concepto / Detalle</th>
-                  <th className="p-3">Método / Tarjeta</th>
-                  <th className="p-3">Fecha Compra</th>
-                  <th className="p-3">Cuota</th>
-                  <th className="p-3 text-right">Monto</th>
-                  <th className="p-3 text-center">Estado</th>
-                  <th className="p-3 text-center">Acción</th>
+                  <th className="py-2.5 px-2 w-8 text-center"></th>
+                  <th className="py-2.5 px-3 font-medium">Concepto</th>
+                  <th className="py-2.5 px-3 font-medium">Método</th>
+                  <th className="py-2.5 px-3 font-medium">Fecha</th>
+                  <th className="py-2.5 px-3 font-medium">Cuota</th>
+                  <th className="py-2.5 px-3 text-right font-medium">Monto</th>
+                  <th className="py-2.5 px-3 text-center font-medium">Estado</th>
+                  <th className="py-2.5 px-3 text-center font-medium">Acción</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody className="divide-y divide-border/40">
                 {listaGastos.map((gasto) => {
                   const isSelected = selectedGastoIds.includes(gasto.id);
                   const fechaObj = new Date(gasto.fechaGasto);
@@ -390,123 +346,104 @@ export function GastosClient() {
                   });
                   const esCuota = gasto.totalCuotas > 1;
                   const esRecur = esItemRecurrente(gasto.concepto, gasto.categoria);
-                  const borderClass = esCuota
-                    ? 'border-l-4 border-l-purple-500'
-                    : esRecur
-                    ? 'border-l-4 border-l-pink-500'
-                    : 'border-l-4 border-l-slate-400 dark:border-l-slate-600';
 
                   return (
                     <tr
                       key={gasto.id}
                       onClick={() => setDetalleGasto(adaptGastoToDetalle(gasto))}
-                      className={`hover:bg-secondary/40 transition-colors cursor-pointer group ${
-                        isSelected ? 'bg-sky-500/10' : ''
+                      className={`hover:bg-muted/30 transition-colors cursor-pointer ${
+                        isSelected ? 'bg-muted/40' : ''
                       }`}
                     >
-                      {/* Checkbox para sumatoria */}
-                      <td className={`p-3 text-center ${borderClass}`} onClick={(e) => e.stopPropagation()}>
+                      <td className="py-2.5 px-2 text-center" onClick={(e) => e.stopPropagation()}>
                         <button
                           type="button"
                           onClick={() => toggleSelectGasto(gasto.id, gasto.monto)}
-                          className="p-1 rounded hover:bg-secondary transition"
+                          className="text-muted-foreground hover:text-foreground transition p-0.5"
                         >
                           {isSelected ? (
-                            <CheckSquare className="w-4 h-4 text-sky-500" />
+                            <CheckSquare className="w-3.5 h-3.5 text-foreground" />
                           ) : (
-                            <Square className="w-4 h-4 text-muted-foreground" />
+                            <Square className="w-3.5 h-3.5" />
                           )}
                         </button>
                       </td>
 
-                      {/* Concepto */}
-                      <td className="p-3">
-                        <div className="font-semibold text-foreground text-xs group-hover:text-sky-400 transition flex items-center gap-1.5 flex-wrap">
+                      <td className="py-2.5 px-3">
+                        <div className="font-medium text-foreground text-xs flex items-center gap-1.5 flex-wrap">
                           <span>{gasto.concepto}</span>
                           {esRecur && (
-                            <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.2 rounded font-bold bg-pink-50 dark:bg-pink-500/15 text-pink-700 dark:text-pink-300 border border-pink-200/80 dark:border-pink-500/30">
-                              <span className="w-1 h-1 rounded-full bg-pink-500" />
-                              Recurrente
+                            <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-muted text-muted-foreground">
+                              Fijo
                             </span>
                           )}
                           {esCuota && (
-                            <span className="inline-flex items-center gap-1 text-[9px] px-1.5 py-0.2 rounded font-bold bg-purple-50 dark:bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-200/80 dark:border-purple-500/30">
-                              <span className="w-1 h-1 rounded-full bg-purple-500" />
+                            <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-muted text-muted-foreground">
                               Cuota
                             </span>
                           )}
-                          <span className="text-[10px] text-sky-400 opacity-0 group-hover:opacity-100 transition hidden sm:inline">
-                            (ver detalle)
-                          </span>
                         </div>
                         <div className="text-[11px] text-muted-foreground">
                           {gasto.categoria || 'Sin categoría'}
                         </div>
                       </td>
 
-                      {/* Método / Tarjeta */}
-                      <td className="p-3">
+                      <td className="py-2.5 px-3">
                         {gasto.metodoPago === 'TARJETA_CREDITO' ? (
-                          <div className="flex items-center gap-1.5">
-                            <span
-                              className="w-2 h-2 rounded-full"
-                              style={{ backgroundColor: gasto.tarjetaColor || '#2563eb' }}
-                            />
-                            <span className="font-medium text-foreground">
-                              {gasto.tarjetaNombre || 'Tarjeta Crédito'}
-                            </span>
-                          </div>
+                          <span className="font-medium text-foreground">
+                            {gasto.tarjetaNombre || 'Tarjeta'}
+                          </span>
                         ) : gasto.metodoPago === 'EFECTIVO_DEBITO' ? (
-                          <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-                            <Banknote className="w-3.5 h-3.5" /> Efectivo / Débito
-                          </span>
+                          <span className="text-muted-foreground">Efectivo / Débito</span>
                         ) : (
-                          <span className="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400 font-medium">
-                            <ArrowRightLeft className="w-3.5 h-3.5" /> Transferencia
-                          </span>
+                          <span className="text-muted-foreground">Transferencia</span>
                         )}
                       </td>
 
-                      {/* Fecha */}
-                      <td className="p-3 text-muted-foreground whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
                         {fechaFormateada}
                       </td>
 
-                      {/* Cuota */}
-                      <td className="p-3 whitespace-nowrap">
+                      <td className="py-2.5 px-3 whitespace-nowrap text-muted-foreground">
                         {gasto.totalCuotas > 1 ? (
-                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-500 border border-purple-500/30">
-                            Cuota {gasto.cuotaActual}/{gasto.totalCuotas}
-                          </span>
+                          `Cuota ${gasto.cuotaActual}/${gasto.totalCuotas}`
                         ) : (
-                          <span className="text-muted-foreground text-[11px]">1 cuota</span>
+                          '1 cuota'
                         )}
                       </td>
 
-                      {/* Monto */}
-                      <td className="p-3 text-right font-bold text-foreground text-sm whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right font-mono font-medium text-foreground text-xs whitespace-nowrap">
                         {formatMoney(gasto.monto, moneda)}
                       </td>
 
-                      {/* Estado */}
-                      <td className="p-3 text-center whitespace-nowrap">
-                        {gasto.estado === 'ADELANTADO' ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/15 text-amber-500 border border-amber-500/30">
-                            <FastForward className="w-3 h-3" /> Adelantado
-                          </span>
-                        ) : gasto.estado === 'PAGADO' ? (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-500 border border-emerald-500/30">
-                            <CheckCircle2 className="w-3 h-3" /> Pagado
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-sky-500/15 text-sky-400 border border-sky-500/30">
-                            <Clock className="w-3 h-3" /> Pendiente
-                          </span>
-                        )}
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                            gasto.estado === 'ADELANTADO'
+                              ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                              : gasto.estado === 'PAGADO'
+                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                              : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                          }`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              gasto.estado === 'ADELANTADO'
+                                ? 'bg-indigo-500'
+                                : gasto.estado === 'PAGADO'
+                                ? 'bg-emerald-500'
+                                : 'bg-amber-500'
+                            }`}
+                          />
+                          {gasto.estado === 'ADELANTADO'
+                            ? 'Adelantado'
+                            : gasto.estado === 'PAGADO'
+                            ? 'Pagado'
+                            : 'Pendiente'}
+                        </span>
                       </td>
 
-                      {/* Acciones Rápidas de Estado y Eliminación */}
-                      <td className="p-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() =>
@@ -515,11 +452,7 @@ export function GastosClient() {
                                 gasto.estado === 'ADELANTADO' ? 'PENDIENTE' : 'ADELANTADO'
                               )
                             }
-                            className={`p-1 rounded-lg text-xs transition ${
-                              gasto.estado === 'ADELANTADO'
-                                ? 'bg-amber-500/20 text-amber-400'
-                                : 'hover:bg-secondary text-muted-foreground'
-                            }`}
+                            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition"
                             title="Alternar Adelantado"
                           >
                             <FastForward className="w-3.5 h-3.5" />
@@ -532,11 +465,7 @@ export function GastosClient() {
                                 gasto.estado === 'PAGADO' ? 'PENDIENTE' : 'PAGADO'
                               )
                             }
-                            className={`p-1 rounded-lg text-xs transition ${
-                              gasto.estado === 'PAGADO'
-                                ? 'bg-emerald-500/20 text-emerald-400'
-                                : 'hover:bg-secondary text-muted-foreground'
-                            }`}
+                            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition"
                             title="Alternar Pagado"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />
@@ -544,7 +473,7 @@ export function GastosClient() {
 
                           <button
                             onClick={() => handleEliminarGastoDirecto(gasto.id, gasto.concepto)}
-                            className="p-1 rounded-lg text-xs text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-rose-500 transition"
                             title="Eliminar gasto"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -560,32 +489,27 @@ export function GastosClient() {
         </div>
       )}
 
-      {/* SECCIÓN INFORMATIVA: GASTOS POSTERIORES AL DÍA 10 (A PAGAR EL PRÓXIMO MES) */}
-      <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-4">
+      {/* SECCIÓN: GASTOS POSTERIORES AL DÍA 10 */}
+      <div className="bg-card border border-border/80 rounded-xl p-5 shadow-xs space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-indigo-500/10 text-indigo-400 rounded-xl">
-              <Calendar className="w-5 h-5" />
-            </div>
-            <div>
-              <h2 className="text-base font-bold text-foreground">
-                Consumos de Tarjeta que vencen el PRÓXIMO MES
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                Compras realizadas después del corte (día 10) que se debitarán en la facturación del mes entrante.
-              </p>
-            </div>
+          <div>
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Consumos a pagar el próximo mes
+            </h2>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Compras posteriores al día 10 que se debitarán en la facturación siguiente.
+            </p>
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
             {tarjetas.map((t) => (
               <div
                 key={t.id}
-                className="px-3 py-1.5 rounded-xl bg-secondary/50 border border-border flex items-center gap-2 text-xs"
+                className="px-2.5 py-1 rounded-md bg-muted/40 border border-border/40 flex items-center gap-2 text-xs"
               >
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
-                <span className="font-semibold text-foreground">{t.nombre}:</span>
-                <span className="font-bold text-indigo-500 dark:text-indigo-400">
+                <span className="text-muted-foreground">{t.nombre}:</span>
+                <span className="font-mono font-medium text-foreground">
                   {formatMoney(t.totalSiguientePeriodo, moneda)}
                 </span>
               </div>
@@ -593,22 +517,21 @@ export function GastosClient() {
           </div>
         </div>
 
-        {/* Tabla de Consumos Próximo Mes */}
-        <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xs">
+        <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+              <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                 <tr>
-                  <th className="py-3 px-3.5">Tarjeta Emisora</th>
-                  <th className="py-3 px-3">Concepto / Detalle</th>
-                  <th className="py-3 px-3">Categoría</th>
-                  <th className="py-3 px-3 text-center">Fecha Compra</th>
-                  <th className="py-3 px-3 text-center">Cuota</th>
-                  <th className="py-3 px-3 text-right">Monto</th>
-                  <th className="py-3 px-3 text-center">Acciones</th>
+                  <th className="py-2.5 px-3 font-medium">Tarjeta</th>
+                  <th className="py-2.5 px-3 font-medium">Concepto</th>
+                  <th className="py-2.5 px-3 font-medium">Categoría</th>
+                  <th className="py-2.5 px-3 text-center font-medium">Fecha</th>
+                  <th className="py-2.5 px-3 text-center font-medium">Cuota</th>
+                  <th className="py-2.5 px-3 text-right font-medium">Monto</th>
+                  <th className="py-2.5 px-3 text-center font-medium"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60 dark:divide-slate-800">
+              <tbody className="divide-y divide-border/40">
                 {tarjetas.some((t) => t.gastosSiguientePeriodo && t.gastosSiguientePeriodo.length > 0) ? (
                   tarjetas.flatMap((t) =>
                     (t.gastosSiguientePeriodo || []).map((g: any) => (
@@ -637,59 +560,42 @@ export function GastosClient() {
                             notas: g.notas,
                           })
                         }
-                        className="hover:bg-indigo-50/30 dark:hover:bg-indigo-950/20 transition cursor-pointer"
+                        className="hover:bg-muted/30 transition cursor-pointer"
                       >
-                        <td className="py-3 px-3.5 border-l-4" style={{ borderLeftColor: t.color }}>
-                          <div className="flex items-center gap-1.5 font-bold text-foreground">
-                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
-                            <span>{t.nombre}</span>
-                          </div>
+                        <td className="py-2.5 px-3 font-medium text-foreground">
+                          {t.nombre}
                         </td>
-
-                        <td className="py-3 px-3 font-semibold text-foreground">
+                        <td className="py-2.5 px-3 font-medium text-foreground">
                           {g.concepto}
                         </td>
-
-                        <td className="py-3 px-3 text-muted-foreground">
+                        <td className="py-2.5 px-3 text-muted-foreground">
                           {g.categoria || 'Sin categoría'}
                         </td>
-
-                        <td className="py-3 px-3 text-center text-muted-foreground whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-center text-muted-foreground whitespace-nowrap">
                           {new Date(g.fechaGasto).toLocaleDateString('es-PE', { day: '2-digit', month: 'short' })}
                         </td>
-
-                        <td className="py-3 px-3 text-center whitespace-nowrap">
-                          {g.totalCuotas > 1 ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/15 text-purple-500 border border-purple-500/30">
-                              Cuota {g.cuotaActual}/{g.totalCuotas}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground text-[11px]">1 cuota</span>
-                          )}
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap text-muted-foreground">
+                          {g.totalCuotas > 1 ? `Cuota ${g.cuotaActual}/${g.totalCuotas}` : '1 cuota'}
                         </td>
-
-                        <td className="py-3 px-3 text-right font-extrabold text-foreground whitespace-nowrap">
+                        <td className="py-2.5 px-3 text-right font-mono font-medium text-foreground whitespace-nowrap">
                           {formatMoney(g.monto, moneda)}
                         </td>
-
-                        <td className="py-3 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                          <div className="flex items-center justify-center gap-1">
-                            <button
-                              onClick={() => handleEliminarGastoDirecto(g.id, g.concepto)}
-                              className="p-1 rounded-lg text-xs text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
-                              title="Eliminar consumo"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => handleEliminarGastoDirecto(g.id, g.concepto)}
+                            className="p-1 rounded text-muted-foreground hover:text-rose-500 transition"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </td>
                       </tr>
                     ))
                   )
                 ) : (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
-                      No hay compras registradas con facturación diferida al siguiente mes.
+                    <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground">
+                      No hay compras facturadas para el mes siguiente.
                     </td>
                   </tr>
                 )}
@@ -701,41 +607,38 @@ export function GastosClient() {
 
       {/* MODAL REGISTRAR NUEVO GASTO */}
       {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-card border border-border w-full max-w-lg rounded-2xl shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between pb-3 border-b border-border">
-              <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-sky-500" />
-                <span>Registrar Compra / Gasto</span>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-card border border-border w-full max-w-md rounded-xl shadow-lg p-5 space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3 border-b border-border/60">
+              <h2 className="text-sm font-semibold text-foreground">
+                Registrar Gasto
               </h2>
               <button
                 onClick={() => setModalOpen(false)}
-                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary"
+                className="p-1 rounded-md text-muted-foreground hover:text-foreground transition"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmitGasto} className="space-y-4 text-xs">
-              {/* Concepto */}
-              <div className="space-y-1.5">
-                <label className="font-semibold text-foreground">
-                  Concepto / Descripción:
+            <form onSubmit={handleSubmitGasto} className="space-y-3.5 text-xs">
+              <div className="space-y-1">
+                <label className="font-medium text-muted-foreground">
+                  Concepto:
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="Ej: Supermercado Wong, Cena familiar, Zapatillas"
+                  placeholder="Ej: Supermercado, Almuerzo, Uber"
                   value={concepto}
                   onChange={(e) => setConcepto(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-background border border-border focus:ring-2 focus:ring-sky-500 outline-none text-foreground"
+                  className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-foreground outline-none text-foreground text-xs"
                 />
               </div>
 
-              {/* Monto y Fecha */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-medium text-muted-foreground">
                     Monto ({moneda}):
                   </label>
                   <input
@@ -745,83 +648,77 @@ export function GastosClient() {
                     placeholder="0.00"
                     value={monto}
                     onChange={(e) => setMonto(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border focus:ring-2 focus:ring-sky-500 outline-none text-foreground font-bold"
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-foreground outline-none text-foreground font-mono text-xs font-medium"
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">
-                    Fecha de la compra:
+                <div className="space-y-1">
+                  <label className="font-medium text-muted-foreground">
+                    Fecha:
                   </label>
                   <input
                     type="date"
                     required
                     value={fechaGasto}
                     onChange={(e) => setFechaGasto(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border focus:ring-2 focus:ring-sky-500 outline-none text-foreground"
+                    className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-foreground outline-none text-foreground text-xs"
                   />
                 </div>
               </div>
 
               {/* Método de Pago */}
-              <div className="space-y-1.5">
-                <label className="font-semibold text-foreground">
+              <div className="space-y-1">
+                <label className="font-medium text-muted-foreground">
                   Método de Pago:
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5">
                   <button
                     type="button"
                     onClick={() => setMetodoPago('TARJETA_CREDITO')}
-                    className={`py-2 px-2.5 rounded-xl font-semibold border flex flex-col items-center gap-1 transition ${
+                    className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition ${
                       metodoPago === 'TARJETA_CREDITO'
-                        ? 'bg-sky-500/20 text-sky-400 border-sky-500'
-                        : 'bg-secondary/40 text-muted-foreground border-border'
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'bg-background text-muted-foreground border-border hover:text-foreground'
                     }`}
                   >
-                    <CreditCard className="w-4 h-4" />
-                    <span className="text-[11px]">Tarjeta Crédito</span>
+                    Tarjeta
                   </button>
-
                   <button
                     type="button"
                     onClick={() => setMetodoPago('EFECTIVO_DEBITO')}
-                    className={`py-2 px-2.5 rounded-xl font-semibold border flex flex-col items-center gap-1 transition ${
+                    className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition ${
                       metodoPago === 'EFECTIVO_DEBITO'
-                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500'
-                        : 'bg-secondary/40 text-muted-foreground border-border'
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'bg-background text-muted-foreground border-border hover:text-foreground'
                     }`}
                   >
-                    <Banknote className="w-4 h-4" />
-                    <span className="text-[11px]">Efectivo/Débito</span>
+                    Efectivo
                   </button>
-
                   <button
                     type="button"
                     onClick={() => setMetodoPago('TRANSFERENCIA')}
-                    className={`py-2 px-2.5 rounded-xl font-semibold border flex flex-col items-center gap-1 transition ${
+                    className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition ${
                       metodoPago === 'TRANSFERENCIA'
-                        ? 'bg-purple-500/20 text-purple-400 border-purple-500'
-                        : 'bg-secondary/40 text-muted-foreground border-border'
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'bg-background text-muted-foreground border-border hover:text-foreground'
                     }`}
                   >
-                    <ArrowRightLeft className="w-4 h-4" />
-                    <span className="text-[11px]">Transferencia</span>
+                    Transferencia
                   </button>
                 </div>
               </div>
 
-              {/* Si es Tarjeta de Crédito */}
               {metodoPago === 'TARJETA_CREDITO' && (
-                <div className="p-3.5 rounded-xl bg-secondary/50 border border-border space-y-3">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 rounded-lg bg-muted/40 border border-border/60 space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2.5">
                     <div className="space-y-1">
-                      <label className="font-semibold text-foreground">
-                        Selecciona la Tarjeta:
+                      <label className="font-medium text-muted-foreground">
+                        Tarjeta:
                       </label>
                       <select
                         value={tarjetaId}
                         onChange={(e) => setTarjetaId(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-background border border-border text-foreground outline-none"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border text-foreground text-xs outline-none"
                       >
                         {tarjetas.map((t) => (
                           <option key={t.id} value={t.id}>
@@ -832,15 +729,15 @@ export function GastosClient() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="font-semibold text-foreground">
-                        Número de Cuotas:
+                      <label className="font-medium text-muted-foreground">
+                        Cuotas:
                       </label>
                       <select
                         value={totalCuotas}
                         onChange={(e) => setTotalCuotas(e.target.value)}
-                        className="w-full px-3 py-2 rounded-xl bg-background border border-border text-foreground outline-none"
+                        className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border text-foreground text-xs outline-none"
                       >
-                        <option value="1">1 cuota (directo)</option>
+                        <option value="1">1 cuota</option>
                         <option value="2">2 cuotas</option>
                         <option value="3">3 cuotas</option>
                         <option value="6">6 cuotas</option>
@@ -849,83 +746,68 @@ export function GastosClient() {
                     </div>
                   </div>
 
-                  {/* PREVIEW INTELIGENTE DE CORTE (DÍA 10) */}
                   {previewFacturacion && (
-                    <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs space-y-1">
-                      <div className="flex items-center gap-1.5 font-bold text-sky-400">
-                        <Sparkles className="w-4 h-4" />
-                        <span>Liquidación inteligente de facturación:</span>
-                      </div>
-                      <p>{previewFacturacion.descripcionExplicativa}</p>
-                      {previewFacturacion.cuotasNum > 1 && (
-                        <div className="pt-1 text-[11px] font-semibold text-sky-200">
-                          Se generarán {previewFacturacion.cuotasNum} cuotas de aprox.{' '}
-                          {formatMoney(
-                            parseFloat(monto || '0') / previewFacturacion.cuotasNum,
-                            moneda
-                          )}{' '}
-                          en: {previewFacturacion.periodosCuotas.map(formatPeriodoLabel).join(', ')}.
-                        </div>
-                      )}
-                    </div>
+                    <p className="text-[11px] text-muted-foreground leading-normal">
+                      {previewFacturacion.descripcionExplicativa}
+                    </p>
                   )}
                 </div>
               )}
 
-              {/* Estado Inicial */}
-              <div className="space-y-1.5">
-                <label className="font-semibold text-foreground">
-                  Estado Inicial:
+              {/* Estado */}
+              <div className="space-y-1">
+                <label className="font-medium text-muted-foreground">
+                  Estado:
                 </label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-1.5">
                   <button
                     type="button"
                     onClick={() => setEstado('PENDIENTE')}
-                    className={`py-2 px-2.5 rounded-xl font-semibold border text-center transition ${
+                    className={`py-1.5 rounded-lg text-xs font-medium border transition ${
                       estado === 'PENDIENTE'
-                        ? 'bg-sky-500/20 text-sky-400 border-sky-500'
-                        : 'bg-secondary/40 text-muted-foreground border-border'
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'bg-background text-muted-foreground border-border hover:text-foreground'
                     }`}
                   >
-                    ⏳ Pendiente
+                    Pendiente
                   </button>
                   <button
                     type="button"
                     onClick={() => setEstado('ADELANTADO')}
-                    className={`py-2 px-2.5 rounded-xl font-semibold border text-center transition ${
+                    className={`py-1.5 rounded-lg text-xs font-medium border transition ${
                       estado === 'ADELANTADO'
-                        ? 'bg-amber-500/20 text-amber-400 border-amber-500'
-                        : 'bg-secondary/40 text-muted-foreground border-border'
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'bg-background text-muted-foreground border-border hover:text-foreground'
                     }`}
                   >
-                    ⚡ Adelantado
+                    Adelantado
                   </button>
                   <button
                     type="button"
                     onClick={() => setEstado('PAGADO')}
-                    className={`py-2 px-2.5 rounded-xl font-semibold border text-center transition ${
+                    className={`py-1.5 rounded-lg text-xs font-medium border transition ${
                       estado === 'PAGADO'
-                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500'
-                        : 'bg-secondary/40 text-muted-foreground border-border'
+                        ? 'bg-foreground text-background border-foreground'
+                        : 'bg-background text-muted-foreground border-border hover:text-foreground'
                     }`}
                   >
-                    ✅ Pagado
+                    Pagado
                   </button>
                 </div>
               </div>
 
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-border">
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-border/60">
                 <button
                   type="button"
                   onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-xl text-muted-foreground hover:bg-secondary transition"
+                  className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-semibold shadow-md transition disabled:opacity-50"
+                  className="px-3.5 py-1.5 rounded-lg bg-foreground text-background font-medium hover:opacity-90 transition disabled:opacity-50"
                 >
                   {submitting ? 'Guardando...' : 'Guardar Gasto'}
                 </button>

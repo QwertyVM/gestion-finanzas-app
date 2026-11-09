@@ -3,19 +3,10 @@
 import React, { useState, useEffect } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
 import {
-  Settings,
-  CreditCard,
-  DollarSign,
-  Plus,
-  PiggyBank,
-  ArrowRightLeft,
   Trash2,
   Pencil,
-  Tag,
-  Calendar,
-  Layers,
+  Plus,
   X,
-  Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -64,7 +55,6 @@ export function ConfiguracionClient() {
     }
   }, [resumen]);
 
-  // Cargar categorías
   const cargarCategorias = async () => {
     try {
       setLoadingCategorias(true);
@@ -98,8 +88,8 @@ export function ConfiguracionClient() {
         }),
       });
 
-      if (!res.ok) throw new Error('Error al guardar configuración');
-      toast.success('Ajustes guardados correctamente');
+      if (!res.ok) throw new Error('Error al guardar ajustes');
+      toast.success('Parámetros actualizados');
       await refresh();
     } catch (err: any) {
       toast.error(err.message || 'Error al guardar');
@@ -125,7 +115,7 @@ export function ConfiguracionClient() {
             id: editandoTarjeta.id,
             nombre: nombreTarjeta.trim(),
             banco: banco.trim(),
-            ultimosCuatro: ultimosCuatro.trim() || null,
+            ultimosCuatro: ultimosCuatro.trim() || undefined,
             diaCorte: parseInt(diaCorte, 10),
             diaPago: parseInt(diaPagoTarjeta, 10),
             color: colorTarjeta,
@@ -141,14 +131,14 @@ export function ConfiguracionClient() {
           body: JSON.stringify({
             nombre: nombreTarjeta.trim(),
             banco: banco.trim(),
-            ultimosCuatro: ultimosCuatro.trim() || null,
+            ultimosCuatro: ultimosCuatro.trim() || undefined,
             diaCorte: parseInt(diaCorte, 10),
             diaPago: parseInt(diaPagoTarjeta, 10),
             color: colorTarjeta,
           }),
         });
         if (!res.ok) throw new Error('Error al crear tarjeta');
-        toast.success('Tarjeta de crédito agregada');
+        toast.success('Tarjeta agregada');
       }
 
       setNombreTarjeta('');
@@ -179,15 +169,15 @@ export function ConfiguracionClient() {
   };
 
   const handleEliminarTarjeta = async (id: string, nombre: string) => {
-    if (!confirm(`¿Estás seguro de eliminar la tarjeta "${nombre}"?`)) return;
+    if (!confirm(`¿Eliminar la tarjeta "${nombre}"?`)) return;
     try {
       setDeletingTarjetaId(id);
       const res = await fetch(`/api/tarjetas?id=${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Error al eliminar la tarjeta');
-      toast.success(`Tarjeta "${nombre}" eliminada exitosamente`);
+      toast.success(`Tarjeta eliminada`);
       await refresh();
     } catch (err: any) {
-      toast.error(err.message || 'Error al eliminar la tarjeta');
+      toast.error(err.message || 'Error al eliminar');
     } finally {
       setDeletingTarjetaId(null);
     }
@@ -213,7 +203,7 @@ export function ConfiguracionClient() {
       });
 
       if (!res.ok) throw new Error('Error al registrar categoría');
-      toast.success(`Categoría "${nombreCat}" agregada`);
+      toast.success(`Categoría agregada`);
       setNombreCat('');
       setEsFijoCat(false);
       await cargarCategorias();
@@ -229,39 +219,37 @@ export function ConfiguracionClient() {
     try {
       setDeletingCatId(id);
       const res = await fetch(`/api/categorias?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error al eliminar la categoría');
-      toast.success(`Categoría "${nombre}" eliminada`);
+      if (!res.ok) throw new Error('Error al eliminar');
+      toast.success(`Categoría eliminada`);
       await cargarCategorias();
     } catch (err: any) {
-      toast.error(err.message || 'Error al eliminar categoría');
+      toast.error(err.message || 'Error al eliminar');
     } finally {
       setDeletingCatId(null);
     }
   };
 
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in duration-300">
+    <div className="space-y-8 animate-in fade-in duration-200">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-          <Settings className="w-6 h-6 text-sky-500" />
-          <span>Configuración Integral del Sistema</span>
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Configuración
         </h1>
         <p className="text-xs text-muted-foreground mt-0.5">
-          Ajustes de sueldo base, tipo de cambio USD, meta de ahorro, tarjetas de crédito y catálogo de categorías.
+          Sueldo base, tipo de cambio USD, meta de ahorro y tarjetas.
         </p>
       </div>
 
-      {/* 1. SECCIÓN: PARÁMETROS FINANCIEROS */}
-      <div className="bg-card border border-border rounded-3xl p-6 shadow-sm space-y-4">
-        <h2 className="text-sm font-bold text-foreground flex items-center gap-2 border-b border-border/80 pb-3">
-          <DollarSign className="w-4 h-4 text-emerald-500" />
-          <span>Sueldo Base, Tipo de Cambio & Meta de Ahorro</span>
+      {/* 1. PARÁMETROS FINANCIEROS */}
+      <div className="bg-card border border-border/80 rounded-xl p-5 shadow-xs space-y-4">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Parámetros Base
         </h2>
 
         <form onSubmit={handleGuardarConfig} className="space-y-4 text-xs">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="space-y-1.5">
-              <label className="font-semibold text-foreground">
+            <div className="space-y-1">
+              <label className="font-medium text-muted-foreground">
                 Sueldo Base Mensual (S/):
               </label>
               <input
@@ -270,15 +258,13 @@ export function ConfiguracionClient() {
                 required
                 value={sueldoBase}
                 onChange={(e) => setSueldoBase(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground font-bold"
+                className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground font-mono font-medium text-xs"
               />
-              <span className="text-[10px] text-muted-foreground">Ingreso neto base proyectado</span>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="font-semibold text-foreground flex items-center gap-1">
-                <ArrowRightLeft className="w-3.5 h-3.5 text-sky-500" />
-                <span>Tipo de Cambio USD:</span>
+            <div className="space-y-1">
+              <label className="font-medium text-muted-foreground">
+                Tipo de Cambio USD:
               </label>
               <input
                 type="number"
@@ -286,15 +272,13 @@ export function ConfiguracionClient() {
                 required
                 value={tipoCambio}
                 onChange={(e) => setTipoCambio(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground font-bold"
+                className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground font-mono font-medium text-xs"
               />
-              <span className="text-[10px] text-muted-foreground">Fijo oficial para compras en $</span>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="font-semibold text-foreground flex items-center gap-1">
-                <PiggyBank className="w-3.5 h-3.5 text-emerald-500" />
-                <span>Meta de Ahorro (S/):</span>
+            <div className="space-y-1">
+              <label className="font-medium text-muted-foreground">
+                Meta de Ahorro (S/):
               </label>
               <input
                 type="number"
@@ -302,15 +286,13 @@ export function ConfiguracionClient() {
                 required
                 value={metaAhorro}
                 onChange={(e) => setMetaAhorro(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground font-bold"
+                className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground font-mono font-medium text-xs"
               />
-              <span className="text-[10px] text-muted-foreground">Monto reservado de ahorro</span>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="font-semibold text-foreground flex items-center gap-1">
-                <Calendar className="w-3.5 h-3.5 text-indigo-500" />
-                <span>Día de Pago Sueldo:</span>
+            <div className="space-y-1">
+              <label className="font-medium text-muted-foreground">
+                Día Pago Sueldo:
               </label>
               <input
                 type="number"
@@ -319,112 +301,83 @@ export function ConfiguracionClient() {
                 required
                 value={diaPago}
                 onChange={(e) => setDiaPago(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground font-bold"
+                className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
               />
-              <span className="text-[10px] text-muted-foreground">Día mensual de abono (ej. 30)</span>
             </div>
           </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="flex justify-end pt-1">
             <button
               type="submit"
               disabled={savingConfig}
-              className="py-2.5 px-6 rounded-xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 font-bold text-xs shadow-xs transition active:scale-98 disabled:opacity-50"
+              className="py-1.5 px-4 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition disabled:opacity-50"
             >
-              {savingConfig ? 'Guardando Ajustes...' : 'Guardar Parámetros Financieros'}
+              {savingConfig ? 'Guardando...' : 'Guardar Parámetros'}
             </button>
           </div>
         </form>
       </div>
 
-      {/* 2. SECCIÓN: TABLA DE TARJETAS DE CRÉDITO */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <CreditCard className="w-5 h-5 text-indigo-500" />
-              <span>Tarjetas de Crédito Registradas</span>
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Administración de tarjetas, fechas de facturación y días límite de pago.
-            </p>
-          </div>
-        </div>
+      {/* 2. TARJETAS DE CRÉDITO */}
+      <div className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Tarjetas de Crédito
+        </h2>
 
-        {/* Tabla de Tarjetas */}
-        <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs">
+        <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+              <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                 <tr>
-                  <th className="py-3 px-3.5">Tarjeta / Nombre</th>
-                  <th className="py-3 px-3">Banco</th>
-                  <th className="py-3 px-3 text-center">Últimos 4 Dígitos</th>
-                  <th className="py-3 px-3 text-center">Día Corte</th>
-                  <th className="py-3 px-3 text-center">Día Pago</th>
-                  <th className="py-3 px-3 text-center">Color Distintivo</th>
-                  <th className="py-3 px-3 text-center">Acciones</th>
+                  <th className="py-2.5 px-3 font-medium">Tarjeta</th>
+                  <th className="py-2.5 px-3 font-medium">Banco</th>
+                  <th className="py-2.5 px-3 text-center font-medium">Dígitos</th>
+                  <th className="py-2.5 px-3 text-center font-medium">Día Corte</th>
+                  <th className="py-2.5 px-3 text-center font-medium">Día Pago</th>
+                  <th className="py-2.5 px-3 text-center font-medium">Color</th>
+                  <th className="py-2.5 px-3 text-center font-medium"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60 dark:divide-slate-800">
+              <tbody className="divide-y divide-border/40">
                 {resumen?.tarjetasCredito && resumen.tarjetasCredito.length > 0 ? (
                   resumen.tarjetasCredito.map((t) => (
-                    <tr
-                      key={t.id}
-                      className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition"
-                    >
-                      <td className="py-3 px-3.5 border-l-4" style={{ borderLeftColor: t.color }}>
-                        <div className="flex items-center gap-2 font-bold text-foreground">
-                          <div
-                            className="w-2.5 h-2.5 rounded-full shrink-0"
-                            style={{ backgroundColor: t.color }}
-                          />
-                          <span>{t.nombre}</span>
-                        </div>
+                    <tr key={t.id} className="hover:bg-muted/30 transition">
+                      <td className="py-2.5 px-3 font-medium text-foreground">
+                        {t.nombre}
                       </td>
-
-                      <td className="py-3 px-3">
-                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-secondary text-foreground border border-border">
-                          {t.banco}
-                        </span>
+                      <td className="py-2.5 px-3 text-muted-foreground">
+                        {t.banco}
                       </td>
-
-                      <td className="py-3 px-3 text-center font-mono text-muted-foreground">
+                      <td className="py-2.5 px-3 text-center font-mono text-muted-foreground">
                         {t.ultimosCuatro ? `•••• ${t.ultimosCuatro}` : '—'}
                       </td>
-
-                      <td className="py-3 px-3 text-center font-semibold text-sky-600 dark:text-sky-400">
+                      <td className="py-2.5 px-3 text-center text-muted-foreground">
                         Día {t.diaCorte}
                       </td>
-
-                      <td className="py-3 px-3 text-center font-semibold text-foreground">
+                      <td className="py-2.5 px-3 text-center text-muted-foreground">
                         Día {t.diaPago}
                       </td>
-
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-2.5 px-3 text-center">
                         <span
-                          className="inline-block w-4 h-4 rounded-full border border-border/80 shadow-xs"
+                          className="inline-block w-3 h-3 rounded-full border border-border"
                           style={{ backgroundColor: t.color }}
-                          title={t.color}
                         />
                       </td>
-
-                      <td className="py-3 px-3 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
+                      <td className="py-2.5 px-3 text-center">
+                        <div className="flex items-center justify-center gap-1">
                           <button
                             type="button"
                             onClick={() => handleEditarTarjeta(t)}
-                            className="p-1 rounded-lg text-muted-foreground hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 transition"
+                            className="p-1 rounded text-muted-foreground hover:text-foreground transition"
                             title="Editar tarjeta"
                           >
                             <Pencil className="w-3.5 h-3.5" />
                           </button>
-
                           <button
                             type="button"
                             onClick={() => handleEliminarTarjeta(t.id, t.nombre)}
                             disabled={deletingTarjetaId === t.id}
-                            className="p-1 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                            className="p-1 rounded text-muted-foreground hover:text-rose-500 transition"
                             title="Eliminar tarjeta"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -435,8 +388,8 @@ export function ConfiguracionClient() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-muted-foreground">
-                      No hay tarjetas de crédito configuradas.
+                    <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground">
+                      No hay tarjetas configuradas.
                     </td>
                   </tr>
                 )}
@@ -445,65 +398,63 @@ export function ConfiguracionClient() {
           </div>
         </div>
 
-        {/* Formulario Agregar o Editar Tarjeta */}
-        <div className="bg-card border border-border rounded-2xl p-5 shadow-xs">
+        {/* Formulario Tarjeta */}
+        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs">
           <form onSubmit={handleGuardarTarjeta} className="space-y-3 text-xs">
-            <div className="flex items-center justify-between pb-2 border-b border-border/80">
-              <h3 className="font-bold text-foreground flex items-center gap-1.5">
-                {editandoTarjeta ? <Pencil className="w-4 h-4 text-indigo-500" /> : <Plus className="w-4 h-4 text-sky-500" />}
-                <span>{editandoTarjeta ? `Editar Tarjeta "${editandoTarjeta.nombre}"` : 'Registrar Nueva Tarjeta de Crédito'}</span>
-              </h3>
-
+            <div className="flex items-center justify-between pb-2 border-b border-border/60">
+              <span className="font-medium text-foreground text-xs">
+                {editandoTarjeta ? `Editar "${editandoTarjeta.nombre}"` : 'Nueva Tarjeta'}
+              </span>
               {editandoTarjeta && (
                 <button
                   type="button"
                   onClick={handleCancelarEdicionTarjeta}
-                  className="text-muted-foreground hover:text-foreground text-[11px] font-semibold flex items-center gap-1"
+                  className="text-muted-foreground hover:text-foreground text-[11px] flex items-center gap-1"
                 >
-                  <X className="w-3.5 h-3.5" /> Cancelar edición
+                  <X className="w-3.5 h-3.5" /> Cancelar
                 </button>
               )}
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
               <div className="sm:col-span-2 space-y-1">
-                <label className="text-[11px] font-semibold text-muted-foreground">Nombre de la Tarjeta</label>
+                <label className="text-muted-foreground">Nombre</label>
                 <input
                   type="text"
                   required
-                  placeholder="ej. Interbank Visa Signature"
+                  placeholder="ej. Visa Signature"
                   value={nombreTarjeta}
                   onChange={(e) => setNombreTarjeta(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-indigo-500 text-foreground"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-muted-foreground">Banco Emisor</label>
+                <label className="text-muted-foreground">Banco</label>
                 <input
                   type="text"
                   required
-                  placeholder="ej. BCP, BBVA, Interbank"
+                  placeholder="ej. BCP, BBVA"
                   value={banco}
                   onChange={(e) => setBanco(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-indigo-500 text-foreground"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-muted-foreground">Últimos 4 Dígitos</label>
+                <label className="text-muted-foreground">Últimos 4 Dígitos</label>
                 <input
                   type="text"
                   maxLength={4}
                   placeholder="ej. 4589"
                   value={ultimosCuatro}
                   onChange={(e) => setUltimosCuatro(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-indigo-500 text-foreground font-mono"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground font-mono text-xs"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-muted-foreground">Día Corte (1-31)</label>
+                <label className="text-muted-foreground">Día Corte</label>
                 <input
                   type="number"
                   min="1"
@@ -511,12 +462,12 @@ export function ConfiguracionClient() {
                   required
                   value={diaCorte}
                   onChange={(e) => setDiaCorte(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-indigo-500 text-foreground"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-muted-foreground">Día Pago (1-31)</label>
+                <label className="text-muted-foreground">Día Pago</label>
                 <input
                   type="number"
                   min="1"
@@ -524,109 +475,79 @@ export function ConfiguracionClient() {
                   required
                   value={diaPagoTarjeta}
                   onChange={(e) => setDiaPagoTarjeta(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-indigo-500 text-foreground"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
                 />
               </div>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
+            <div className="flex items-center justify-between gap-3 pt-2">
               <div className="flex items-center gap-2">
-                <label className="text-[11px] font-semibold text-muted-foreground">Color Identificador:</label>
+                <label className="text-muted-foreground text-xs">Color:</label>
                 <input
                   type="color"
                   value={colorTarjeta}
                   onChange={(e) => setColorTarjeta(e.target.value)}
-                  className="w-7 h-7 rounded-lg border border-border cursor-pointer bg-transparent"
+                  className="w-6 h-6 rounded border border-border cursor-pointer bg-transparent"
                 />
-                <span className="font-mono text-[11px] text-muted-foreground">{colorTarjeta}</span>
               </div>
 
               <button
                 type="submit"
                 disabled={savingTarjeta}
-                className="py-2 px-5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-xs transition active:scale-98 disabled:opacity-50"
+                className="py-1.5 px-3.5 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition disabled:opacity-50"
               >
-                {savingTarjeta ? 'Guardando...' : editandoTarjeta ? 'Actualizar Tarjeta' : '+ Registrar Tarjeta'}
+                {savingTarjeta ? 'Guardando...' : editandoTarjeta ? 'Actualizar Tarjeta' : '+ Agregar Tarjeta'}
               </button>
             </div>
           </form>
         </div>
       </div>
 
-      {/* 3. SECCIÓN: TABLA DE GESTIÓN DE CATEGORÍAS */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
-              <Layers className="w-5 h-5 text-emerald-500" />
-              <span>Catálogo de Categorías de Gastos & Presupuestos</span>
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Crea y clasifica tus categorías para etiquetar gastos fijos, recurrentes y variables.
-            </p>
-          </div>
-        </div>
+      {/* 3. CATEGORÍAS */}
+      <div className="space-y-3">
+        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Catálogo de Categorías
+        </h2>
 
-        {/* Tabla de Categorías */}
-        <div className="bg-card dark:bg-slate-900 border border-border/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs">
+        <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-slate-50/80 dark:bg-slate-800/60 text-slate-500 dark:text-slate-400 uppercase text-[10px] tracking-wider border-b border-border/80 dark:border-slate-800">
+              <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                 <tr>
-                  <th className="py-3 px-3.5">Categoría</th>
-                  <th className="py-3 px-3">Tipo Predeterminado</th>
-                  <th className="py-3 px-3 text-center">Color Etiqueta</th>
-                  <th className="py-3 px-3 text-center">Acciones</th>
+                  <th className="py-2.5 px-3 font-medium">Categoría</th>
+                  <th className="py-2.5 px-3 font-medium">Tipo</th>
+                  <th className="py-2.5 px-3 text-center font-medium">Color</th>
+                  <th className="py-2.5 px-3 text-center font-medium"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60 dark:divide-slate-800">
+              <tbody className="divide-y divide-border/40">
                 {loadingCategorias ? (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-muted-foreground">
-                      Cargando catálogo de categorías...
+                    <td colSpan={4} className="py-6 text-center text-xs text-muted-foreground">
+                      Cargando categorías...
                     </td>
                   </tr>
                 ) : categorias.length > 0 ? (
                   categorias.map((cat) => (
-                    <tr
-                      key={cat.id}
-                      className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition"
-                    >
-                      <td className="py-3 px-3.5 border-l-4" style={{ borderLeftColor: cat.color || '#2563eb' }}>
-                        <div className="flex items-center gap-2 font-bold text-foreground">
-                          <Tag className="w-3.5 h-3.5" style={{ color: cat.color || '#2563eb' }} />
-                          <span>{cat.nombre}</span>
-                        </div>
+                    <tr key={cat.id} className="hover:bg-muted/30 transition">
+                      <td className="py-2.5 px-3 font-medium text-foreground">
+                        {cat.nombre}
                       </td>
-
-                      <td className="py-3 px-3">
-                        {cat.esFijo ? (
-                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-bold bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30">
-                            <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
-                            Costo Fijo / Recurrente
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-bold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-border">
-                            <span className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                            Gasto Variable / Compra
-                          </span>
-                        )}
+                      <td className="py-2.5 px-3 text-muted-foreground">
+                        {cat.esFijo ? 'Fijo / Recurrente' : 'Variable / Compra'}
                       </td>
-
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-2.5 px-3 text-center">
                         <span
-                          className="inline-block w-4 h-4 rounded-full border border-border/80 shadow-xs"
+                          className="inline-block w-3 h-3 rounded-full border border-border"
                           style={{ backgroundColor: cat.color || '#2563eb' }}
-                          title={cat.color || '#2563eb'}
                         />
                       </td>
-
-                      <td className="py-3 px-3 text-center">
+                      <td className="py-2.5 px-3 text-center">
                         <button
                           type="button"
                           onClick={() => handleEliminarCategoria(cat.id, cat.nombre)}
                           disabled={deletingCatId === cat.id}
-                          className="p-1 rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition"
+                          className="p-1 rounded text-muted-foreground hover:text-rose-500 transition"
                           title="Eliminar categoría"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -636,8 +557,8 @@ export function ConfiguracionClient() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={4} className="py-8 text-center text-muted-foreground">
-                      No hay categorías registradas en la base de datos.
+                    <td colSpan={4} className="py-6 text-center text-xs text-muted-foreground">
+                      No hay categorías registradas.
                     </td>
                   </tr>
                 )}
@@ -646,61 +567,59 @@ export function ConfiguracionClient() {
           </div>
         </div>
 
-        {/* Formulario Agregar Categoría */}
-        <div className="bg-card border border-border rounded-2xl p-5 shadow-xs">
+        {/* Formulario Categoría */}
+        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs">
           <form onSubmit={handleCrearCategoria} className="space-y-3 text-xs">
-            <h3 className="font-bold text-foreground flex items-center gap-1.5 pb-2 border-b border-border/80">
-              <Plus className="w-4 h-4 text-emerald-500" />
-              <span>Registrar Nueva Categoría</span>
-            </h3>
+            <span className="font-medium text-foreground text-xs block pb-1 border-b border-border/60">
+              Nueva Categoría
+            </span>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-muted-foreground">Nombre de la Categoría</label>
+                <label className="text-muted-foreground">Nombre</label>
                 <input
                   type="text"
                   required
-                  placeholder="ej. Entretenimiento, Educación, Mascotas"
+                  placeholder="ej. Alimentación, Transporte"
                   value={nombreCat}
                   onChange={(e) => setNombreCat(e.target.value)}
-                  className="w-full px-3 py-1.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-emerald-500 text-foreground"
+                  className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
                 />
               </div>
 
               <div className="space-y-1">
-                <label className="text-[11px] font-semibold text-muted-foreground">Color Identificador</label>
+                <label className="text-muted-foreground">Color</label>
                 <div className="flex items-center gap-2">
                   <input
                     type="color"
                     value={colorCat}
                     onChange={(e) => setColorCat(e.target.value)}
-                    className="w-8 h-8 rounded-lg border border-border cursor-pointer bg-transparent"
+                    className="w-6 h-6 rounded border border-border cursor-pointer bg-transparent"
                   />
                   <span className="font-mono text-[11px] text-muted-foreground">{colorCat}</span>
                 </div>
               </div>
 
-              <div className="space-y-1 flex flex-col justify-center">
-                <label className="text-[11px] font-semibold text-muted-foreground">Naturaleza del Egreso</label>
-                <label className="inline-flex items-center gap-2 cursor-pointer mt-1">
+              <div className="flex items-center gap-2 pb-1.5">
+                <label className="inline-flex items-center gap-2 cursor-pointer">
                   <input
                     type="checkbox"
                     checked={esFijoCat}
                     onChange={(e) => setEsFijoCat(e.target.checked)}
-                    className="w-4 h-4 text-sky-600 rounded border-border focus:ring-sky-500"
+                    className="w-3.5 h-3.5 rounded border-border"
                   />
-                  <span className="text-xs text-foreground font-semibold">Es Costo Fijo / Suscripción</span>
+                  <span className="text-xs text-muted-foreground">Es Costo Fijo</span>
                 </label>
               </div>
             </div>
 
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end pt-1">
               <button
                 type="submit"
                 disabled={savingCat}
-                className="py-2 px-5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition active:scale-98 disabled:opacity-50"
+                className="py-1.5 px-3.5 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition disabled:opacity-50"
               >
-                {savingCat ? 'Registrando...' : '+ Registrar Categoría'}
+                {savingCat ? 'Guardando...' : '+ Agregar Categoría'}
               </button>
             </div>
           </form>

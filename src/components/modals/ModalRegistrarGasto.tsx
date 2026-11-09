@@ -4,15 +4,7 @@ import React, { useState, useMemo } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
 import { formatMoney } from '@/lib/utils';
 import { calcularPeriodoFacturacion, calcularCuotasPeriodos } from '@/lib/billing-cycles';
-import {
-  CreditCard,
-  Banknote,
-  ArrowRightLeft,
-  Calendar,
-  Sparkles,
-  X,
-  TrendingDown,
-} from 'lucide-react';
+import { X } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ModalRegistrarGastoProps {
@@ -52,7 +44,6 @@ export function ModalRegistrarGasto({ open, onClose }: ModalRegistrarGastoProps)
   const montoNumero = parseFloat(montoInput) || 0;
   const montoSoles = moneda === 'USD' ? Number((montoNumero * tcEfectivo).toFixed(2)) : montoNumero;
 
-  // Previsualización de corte (Día 10)
   const preview = useMemo(() => {
     if (metodoPago !== 'TARJETA_CREDITO') return null;
     const tarjeta = tarjetas.find((t) => t.id === tarjetaId);
@@ -98,7 +89,7 @@ export function ModalRegistrarGasto({ open, onClose }: ModalRegistrarGastoProps)
       });
 
       if (!res.ok) throw new Error('Error al registrar gasto');
-      toast.success('Gasto registrado exitosamente');
+      toast.success('Gasto registrado');
       onClose();
       setConcepto('');
       setMontoInput('');
@@ -112,41 +103,38 @@ export function ModalRegistrarGasto({ open, onClose }: ModalRegistrarGastoProps)
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-card border border-border w-full max-w-lg rounded-2xl shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between pb-3 border-b border-border">
-          <div className="flex items-center gap-2 text-rose-500 font-bold text-base">
-            <div className="p-2 bg-rose-500/10 rounded-xl">
-              <TrendingDown className="w-5 h-5" />
-            </div>
-            <span className="text-foreground">Registrar Nuevo Gasto / Compra</span>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="bg-card border border-border w-full max-w-md rounded-xl shadow-lg p-5 space-y-4 animate-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between pb-3 border-b border-border/60">
+          <h2 className="text-sm font-semibold text-foreground">
+            Registrar Gasto
+          </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition"
+            className="p-1 rounded-md text-muted-foreground hover:text-foreground transition"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+        <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
           {/* Concepto */}
-          <div className="space-y-1.5">
-            <label className="font-semibold text-foreground">¿En qué gastaste?:</label>
+          <div className="space-y-1">
+            <label className="font-medium text-muted-foreground">Concepto:</label>
             <input
               type="text"
               required
-              placeholder="Ej: Supermercado Wong, Cena, Zapatillas, Gasolina"
+              placeholder="Ej: Supermercado, Almuerzo, Zapatillas"
               value={concepto}
               onChange={(e) => setConcepto(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-rose-500 text-foreground text-sm"
+              className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
             />
           </div>
 
           {/* Monto y Selector de Moneda */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2 space-y-1.5">
-              <label className="font-semibold text-foreground">Monto:</label>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2 space-y-1">
+              <label className="font-medium text-muted-foreground">Monto:</label>
               <input
                 type="number"
                 step="0.01"
@@ -154,20 +142,20 @@ export function ModalRegistrarGasto({ open, onClose }: ModalRegistrarGastoProps)
                 placeholder="0.00"
                 value={montoInput}
                 onChange={(e) => setMontoInput(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-rose-500 text-foreground font-bold text-base"
+                className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground font-mono font-medium text-xs"
               />
             </div>
 
-            <div className="col-span-1 space-y-1.5">
-              <label className="font-semibold text-foreground">Moneda:</label>
-              <div className="grid grid-cols-2 gap-1 h-[42px]">
+            <div className="col-span-1 space-y-1">
+              <label className="font-medium text-muted-foreground">Moneda:</label>
+              <div className="grid grid-cols-2 gap-1 h-[30px]">
                 <button
                   type="button"
                   onClick={() => setMoneda('PEN')}
-                  className={`rounded-xl font-bold border transition ${
+                  className={`rounded-lg font-medium border text-xs transition ${
                     moneda === 'PEN'
-                      ? 'bg-rose-500/20 text-rose-400 border-rose-500'
-                      : 'bg-secondary/40 text-muted-foreground border-border'
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'bg-background text-muted-foreground border-border hover:text-foreground'
                   }`}
                 >
                   S/
@@ -175,210 +163,187 @@ export function ModalRegistrarGasto({ open, onClose }: ModalRegistrarGastoProps)
                 <button
                   type="button"
                   onClick={() => setMoneda('USD')}
-                  className={`rounded-xl font-bold border transition ${
+                  className={`rounded-lg font-medium border text-xs transition ${
                     moneda === 'USD'
-                      ? 'bg-rose-500/20 text-rose-400 border-rose-500'
-                      : 'bg-secondary/40 text-muted-foreground border-border'
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'bg-background text-muted-foreground border-border hover:text-foreground'
                   }`}
                 >
-                  $ USD
+                  $
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Conversión y Tipo de Cambio si es Dólares */}
           {moneda === 'USD' && (
-            <div className="p-3.5 rounded-2xl bg-amber-500/10 dark:bg-amber-950/40 border border-amber-500/30 space-y-2.5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <span className="text-[11px] font-bold text-amber-500 dark:text-amber-400 block">
-                    Tipo de Cambio (T.C.)
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    Ajusta según lo que cobró tu banco
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-background px-3 py-1.5 rounded-xl border border-border">
-                  <span className="text-xs font-bold text-muted-foreground">S/</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={tipoCambioInput}
-                    onChange={(e) => setTipoCambioInput(e.target.value)}
-                    className="w-16 text-right font-bold text-foreground text-xs bg-transparent outline-none focus:ring-1 focus:ring-amber-500 rounded"
-                  />
-                </div>
+            <div className="p-3 rounded-lg bg-muted/40 border border-border/60 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-muted-foreground">Tipo de Cambio (T.C.):</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={tipoCambioInput}
+                  onChange={(e) => setTipoCambioInput(e.target.value)}
+                  className="w-16 px-2 py-0.5 text-right font-mono text-foreground text-xs bg-background border border-border rounded outline-none"
+                />
               </div>
-
               {montoNumero > 0 && (
-                <div className="pt-2 border-t border-amber-500/20 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground font-medium">
-                    ${montoNumero.toFixed(2)} USD × S/ {tcEfectivo.toFixed(2)}
-                  </span>
-                  <div className="font-extrabold text-foreground text-sm">
-                    ={' '}
-                    <span className="text-amber-500 dark:text-amber-400">
-                      S/ {montoSoles.toFixed(2)}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-normal ml-1">
-                      (se paga en soles)
-                    </span>
-                  </div>
+                <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/40 flex justify-between">
+                  <span>Equivalente:</span>
+                  <span className="font-mono font-medium text-foreground">S/ {montoSoles.toFixed(2)}</span>
                 </div>
               )}
             </div>
           )}
 
           {/* Método de Pago */}
-          <div className="space-y-1.5">
-            <label className="font-semibold text-foreground">¿Cómo lo pagaste?:</label>
-            <div className="grid grid-cols-3 gap-2">
+          <div className="space-y-1">
+            <label className="font-medium text-muted-foreground">Método de Pago:</label>
+            <div className="grid grid-cols-3 gap-1.5">
               <button
                 type="button"
                 onClick={() => setMetodoPago('TARJETA_CREDITO')}
-                className={`py-2 px-2 rounded-xl font-semibold border flex flex-col items-center gap-1 transition ${
+                className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition ${
                   metodoPago === 'TARJETA_CREDITO'
-                    ? 'bg-sky-500/20 text-sky-400 border-sky-500'
-                    : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary'
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'bg-background text-muted-foreground border-border hover:text-foreground'
                 }`}
               >
-                <CreditCard className="w-4 h-4" />
-                <span className="text-[11px]">Tarjeta Crédito</span>
+                Tarjeta
               </button>
-
               <button
                 type="button"
                 onClick={() => setMetodoPago('EFECTIVO_DEBITO')}
-                className={`py-2 px-2 rounded-xl font-semibold border flex flex-col items-center gap-1 transition ${
+                className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition ${
                   metodoPago === 'EFECTIVO_DEBITO'
-                    ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500'
-                    : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary'
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'bg-background text-muted-foreground border-border hover:text-foreground'
                 }`}
               >
-                <Banknote className="w-4 h-4" />
-                <span className="text-[11px]">Efectivo/Débito</span>
+                Efectivo
               </button>
-
               <button
                 type="button"
                 onClick={() => setMetodoPago('TRANSFERENCIA')}
-                className={`py-2 px-2 rounded-xl font-semibold border flex flex-col items-center gap-1 transition ${
+                className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition ${
                   metodoPago === 'TRANSFERENCIA'
-                    ? 'bg-purple-500/20 text-purple-400 border-purple-500'
-                    : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary'
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'bg-background text-muted-foreground border-border hover:text-foreground'
                 }`}
               >
-                <ArrowRightLeft className="w-4 h-4" />
-                <span className="text-[11px]">Transferencia</span>
+                Transferencia
               </button>
             </div>
           </div>
 
-          {/* Fecha y Tarjeta */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <label className="font-semibold text-foreground">Fecha de la compra:</label>
-              <input
-                type="date"
-                required
-                value={fechaGasto}
-                onChange={(e) => setFechaGasto(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none text-foreground"
-              />
-            </div>
-
-            {metodoPago === 'TARJETA_CREDITO' ? (
-              <div className="space-y-1.5">
-                <label className="font-semibold text-foreground">Tarjeta:</label>
-                <select
-                  value={tarjetaId}
-                  onChange={(e) => setTarjetaId(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-background border border-border text-foreground outline-none"
-                >
-                  {tarjetas.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.nombre} (Corte día {t.diaCorte})
-                    </option>
-                  ))}
-                </select>
-              </div>
-            ) : (
-              <div className="space-y-1.5">
-                <label className="font-semibold text-foreground">Estado inicial:</label>
-                <select
-                  value={estado}
-                  onChange={(e) => setEstado(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-background border border-border text-foreground outline-none"
-                >
-                  <option value="PENDIENTE">⏳ Pendiente</option>
-                  <option value="ADELANTADO">⚡ Adelantado</option>
-                  <option value="PAGADO">✅ Pagado</option>
-                </select>
-              </div>
-            )}
-          </div>
-
-          {/* Cuotas si es Tarjeta */}
           {metodoPago === 'TARJETA_CREDITO' && (
-            <div className="space-y-2">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Cuotas:</label>
+            <div className="p-3 rounded-lg bg-muted/40 border border-border/60 space-y-2.5">
+              <div className="grid grid-cols-2 gap-2.5">
+                <div className="space-y-1">
+                  <label className="font-medium text-muted-foreground">Tarjeta:</label>
+                  <select
+                    value={tarjetaId}
+                    onChange={(e) => setTarjetaId(e.target.value)}
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border text-foreground text-xs outline-none"
+                  >
+                    {tarjetas.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.nombre} (Corte día {t.diaCorte})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-medium text-muted-foreground">Cuotas:</label>
                   <select
                     value={totalCuotas}
                     onChange={(e) => setTotalCuotas(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border text-foreground outline-none"
+                    className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border text-foreground text-xs outline-none"
                   >
-                    <option value="1">1 cuota (directo)</option>
+                    <option value="1">1 cuota</option>
                     <option value="2">2 cuotas</option>
                     <option value="3">3 cuotas</option>
                     <option value="6">6 cuotas</option>
                     <option value="12">12 cuotas</option>
                   </select>
                 </div>
-
-                <div className="space-y-1.5">
-                  <label className="font-semibold text-foreground">Estado:</label>
-                  <select
-                    value={estado}
-                    onChange={(e) => setEstado(e.target.value as any)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border text-foreground outline-none"
-                  >
-                    <option value="PENDIENTE">⏳ Pendiente</option>
-                    <option value="ADELANTADO">⚡ Adelantado</option>
-                    <option value="PAGADO">✅ Pagado</option>
-                  </select>
-                </div>
               </div>
 
-              {/* AVISO CLARO DE FACTURACIÓN (DÍA 10) */}
               {preview && (
-                <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-300 text-xs space-y-1">
-                  <div className="flex items-center gap-1.5 font-bold text-sky-400">
-                    <Sparkles className="w-4 h-4" />
-                    <span>Lógica de Facturación Automática (Día 10):</span>
-                  </div>
-                  <p>{preview.descripcionExplicativa}</p>
-                </div>
+                <p className="text-[11px] text-muted-foreground leading-normal">
+                  {preview.descripcionExplicativa}
+                </p>
               )}
             </div>
           )}
 
-          <div className="pt-3 flex items-center justify-end gap-2 border-t border-border">
+          {/* Fecha */}
+          <div className="space-y-1">
+            <label className="font-medium text-muted-foreground">Fecha:</label>
+            <input
+              type="date"
+              required
+              value={fechaGasto}
+              onChange={(e) => setFechaGasto(e.target.value)}
+              className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
+            />
+          </div>
+
+          {/* Estado */}
+          <div className="space-y-1">
+            <label className="font-medium text-muted-foreground">Estado:</label>
+            <div className="grid grid-cols-3 gap-1.5">
+              <button
+                type="button"
+                onClick={() => setEstado('PENDIENTE')}
+                className={`py-1.5 rounded-lg text-xs font-medium border transition ${
+                  estado === 'PENDIENTE'
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'bg-background text-muted-foreground border-border hover:text-foreground'
+                }`}
+              >
+                Pendiente
+              </button>
+              <button
+                type="button"
+                onClick={() => setEstado('ADELANTADO')}
+                className={`py-1.5 rounded-lg text-xs font-medium border transition ${
+                  estado === 'ADELANTADO'
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'bg-background text-muted-foreground border-border hover:text-foreground'
+                }`}
+              >
+                Adelantado
+              </button>
+              <button
+                type="button"
+                onClick={() => setEstado('PAGADO')}
+                className={`py-1.5 rounded-lg text-xs font-medium border transition ${
+                  estado === 'PAGADO'
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'bg-background text-muted-foreground border-border hover:text-foreground'
+                }`}
+              >
+                Pagado
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-3 flex items-center justify-end gap-2 border-t border-border/60">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-muted-foreground hover:bg-secondary transition"
+              className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground transition"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold shadow-md transition disabled:opacity-50"
+              className="px-3.5 py-1.5 rounded-lg bg-foreground text-background font-medium hover:opacity-90 transition disabled:opacity-50"
             >
-              {submitting ? 'Guardando...' : '- Guardar Gasto'}
+              {submitting ? 'Guardando...' : 'Guardar Gasto'}
             </button>
           </div>
         </form>

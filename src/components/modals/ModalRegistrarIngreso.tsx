@@ -2,8 +2,7 @@
 
 import React, { useState } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
-import { formatMoney } from '@/lib/utils';
-import { PlusCircle, TrendingUp, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ModalRegistrarIngresoProps {
@@ -61,7 +60,7 @@ export function ModalRegistrarIngreso({ open, onClose }: ModalRegistrarIngresoPr
       });
 
       if (!res.ok) throw new Error('Error al registrar ingreso');
-      toast.success('Ingreso registrado exitosamente');
+      toast.success('Ingreso registrado');
       onClose();
       setConcepto('');
       setMontoInput('');
@@ -74,67 +73,64 @@ export function ModalRegistrarIngreso({ open, onClose }: ModalRegistrarIngresoPr
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-card border border-border w-full max-w-md rounded-2xl shadow-2xl p-6 space-y-5 animate-in zoom-in-95 duration-200">
-        <div className="flex items-center justify-between pb-3 border-b border-border">
-          <div className="flex items-center gap-2 text-emerald-500 font-bold text-base">
-            <div className="p-2 bg-emerald-500/10 rounded-xl">
-              <TrendingUp className="w-5 h-5" />
-            </div>
-            <span className="text-foreground">Registrar Nuevo Ingreso</span>
-          </div>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
+      <div className="bg-card border border-border w-full max-w-md rounded-xl shadow-lg p-5 space-y-4 animate-in zoom-in-95 duration-150">
+        <div className="flex items-center justify-between pb-3 border-b border-border/60">
+          <h2 className="text-sm font-semibold text-foreground">
+            Registrar Ingreso
+          </h2>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-secondary transition"
+            className="p-1 rounded-md text-muted-foreground hover:text-foreground transition"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {/* Tipo de Ingreso Rápido */}
-          <div className="space-y-1.5">
-            <label className="font-semibold text-foreground">Tipo de Ingreso:</label>
-            <div className="grid grid-cols-4 gap-1.5">
+        <form onSubmit={handleSubmit} className="space-y-3.5 text-xs">
+          {/* Tipo de Ingreso */}
+          <div className="space-y-1">
+            <label className="font-medium text-muted-foreground">Tipo:</label>
+            <div className="grid grid-cols-4 gap-1">
               {[
-                { val: 'EXTRA', label: 'Extra / Freelance' },
+                { val: 'EXTRA', label: 'Extra' },
                 { val: 'SUELDO', label: 'Sueldo' },
-                { val: 'GRATIFICACION', label: 'Gratificación' },
+                { val: 'GRATIFICACION', label: 'Grati' },
                 { val: 'UTILIDADES', label: 'Utilidades' },
               ].map((t) => (
                 <button
                   key={t.val}
                   type="button"
                   onClick={() => setTipo(t.val as any)}
-                  className={`py-2 px-1 rounded-xl text-center font-semibold border transition ${
+                  className={`py-1.5 px-1 rounded-lg text-xs font-medium border transition text-center ${
                     tipo === t.val
-                      ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/40'
-                      : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary'
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'bg-background text-muted-foreground border-border hover:text-foreground'
                   }`}
                 >
-                  <span className="text-[10px] block leading-tight">{t.label}</span>
+                  {t.label}
                 </button>
               ))}
             </div>
           </div>
 
           {/* Concepto */}
-          <div className="space-y-1.5">
-            <label className="font-semibold text-foreground">Concepto / Origen:</label>
+          <div className="space-y-1">
+            <label className="font-medium text-muted-foreground">Concepto:</label>
             <input
               type="text"
               required
-              placeholder="Ej: Bono por desempeño, Trabajo freelance, Venta"
+              placeholder="Ej: Freelance, Bono, Venta"
               value={concepto}
               onChange={(e) => setConcepto(e.target.value)}
-              className="w-full px-3 py-2.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-emerald-500 text-foreground text-sm"
+              className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
             />
           </div>
 
-          {/* Monto y Selector de Moneda (Soles o Dólares) */}
-          <div className="grid grid-cols-3 gap-3">
-            <div className="col-span-2 space-y-1.5">
-              <label className="font-semibold text-foreground">Monto:</label>
+          {/* Monto y Selector de Moneda */}
+          <div className="grid grid-cols-3 gap-2">
+            <div className="col-span-2 space-y-1">
+              <label className="font-medium text-muted-foreground">Monto:</label>
               <input
                 type="number"
                 step="0.01"
@@ -142,20 +138,20 @@ export function ModalRegistrarIngreso({ open, onClose }: ModalRegistrarIngresoPr
                 placeholder="0.00"
                 value={montoInput}
                 onChange={(e) => setMontoInput(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-emerald-500 text-foreground font-bold text-base"
+                className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground font-mono font-medium text-xs"
               />
             </div>
 
-            <div className="col-span-1 space-y-1.5">
-              <label className="font-semibold text-foreground">Moneda:</label>
-              <div className="grid grid-cols-2 gap-1 h-[42px]">
+            <div className="col-span-1 space-y-1">
+              <label className="font-medium text-muted-foreground">Moneda:</label>
+              <div className="grid grid-cols-2 gap-1 h-[30px]">
                 <button
                   type="button"
                   onClick={() => setMoneda('PEN')}
-                  className={`rounded-xl font-bold border transition ${
+                  className={`rounded-lg font-medium border text-xs transition ${
                     moneda === 'PEN'
-                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500'
-                      : 'bg-secondary/40 text-muted-foreground border-border'
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'bg-background text-muted-foreground border-border hover:text-foreground'
                   }`}
                 >
                   S/
@@ -163,94 +159,65 @@ export function ModalRegistrarIngreso({ open, onClose }: ModalRegistrarIngresoPr
                 <button
                   type="button"
                   onClick={() => setMoneda('USD')}
-                  className={`rounded-xl font-bold border transition ${
+                  className={`rounded-lg font-medium border text-xs transition ${
                     moneda === 'USD'
-                      ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500'
-                      : 'bg-secondary/40 text-muted-foreground border-border'
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'bg-background text-muted-foreground border-border hover:text-foreground'
                   }`}
                 >
-                  $ USD
+                  $
                 </button>
               </div>
             </div>
           </div>
 
-          {/* Explicación y Conversión de Divisa si es Dólares */}
-          <div className="p-3 rounded-2xl bg-secondary/50 border border-border text-[11px] text-muted-foreground flex items-start gap-2">
-            <span className="font-bold text-foreground">💡 Moneda:</span>
-            <span>
-              Tu sueldo base es en <strong>Soles (S/)</strong>. Si recibes un pago o trabajo extra facturado en <strong>Dólares ($ USD)</strong>, el sistema lo convertirá al tipo de cambio que indiques para sumarlo a tu disponible en soles.
-            </span>
-          </div>
-
           {moneda === 'USD' && (
-            <div className="p-3.5 rounded-2xl bg-emerald-500/10 dark:bg-emerald-950/40 border border-emerald-500/30 space-y-2.5">
-              <div className="flex items-center justify-between gap-3">
-                <div className="space-y-0.5">
-                  <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 block">
-                    Tipo de Cambio (T.C.)
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    Ajusta según la tasa a la que cambies tus dólares
-                  </span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-background px-3 py-1.5 rounded-xl border border-border">
-                  <span className="text-xs font-bold text-muted-foreground">S/</span>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={tipoCambioInput}
-                    onChange={(e) => setTipoCambioInput(e.target.value)}
-                    className="w-16 text-right font-bold text-foreground text-xs bg-transparent outline-none focus:ring-1 focus:ring-emerald-500 rounded"
-                  />
-                </div>
+            <div className="p-3 rounded-lg bg-muted/40 border border-border/60 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-muted-foreground">Tipo de Cambio (T.C.):</span>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={tipoCambioInput}
+                  onChange={(e) => setTipoCambioInput(e.target.value)}
+                  className="w-16 px-2 py-0.5 text-right font-mono text-foreground text-xs bg-background border border-border rounded outline-none"
+                />
               </div>
-
               {montoNumero > 0 && (
-                <div className="pt-2 border-t border-emerald-500/20 flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground font-medium">
-                    ${montoNumero.toFixed(2)} USD × S/ {tcEfectivo.toFixed(2)}
-                  </span>
-                  <div className="font-extrabold text-foreground text-sm">
-                    ={' '}
-                    <span className="text-emerald-600 dark:text-emerald-400">
-                      S/ {montoSoles.toFixed(2)}
-                    </span>
-                    <span className="text-[10px] text-muted-foreground font-normal ml-1">
-                      (sumados a tu disponible)
-                    </span>
-                  </div>
+                <div className="text-[11px] text-muted-foreground pt-1 border-t border-border/40 flex justify-between">
+                  <span>Equivalente:</span>
+                  <span className="font-mono font-medium text-foreground">S/ {montoSoles.toFixed(2)}</span>
                 </div>
               )}
             </div>
           )}
 
           {/* Fecha */}
-          <div className="space-y-1.5">
-            <label className="font-semibold text-foreground">Fecha esperada / recibida:</label>
+          <div className="space-y-1">
+            <label className="font-medium text-muted-foreground">Fecha:</label>
             <input
               type="date"
               required
               value={fechaEsperada}
               onChange={(e) => setFechaEsperada(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-emerald-500 text-foreground"
+              className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
             />
           </div>
 
-          <div className="pt-3 flex items-center justify-end gap-2 border-t border-border">
+          <div className="pt-3 flex items-center justify-end gap-2 border-t border-border/60">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-muted-foreground hover:bg-secondary transition"
+              className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground transition"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-md transition disabled:opacity-50"
+              className="px-3.5 py-1.5 rounded-lg bg-foreground text-background font-medium hover:opacity-90 transition disabled:opacity-50"
             >
-              {submitting ? 'Guardando...' : '+ Guardar Ingreso'}
+              {submitting ? 'Guardando...' : 'Guardar Ingreso'}
             </button>
           </div>
         </form>

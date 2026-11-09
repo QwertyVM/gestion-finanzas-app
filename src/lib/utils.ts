@@ -33,7 +33,7 @@ export function getCurrentPeriodo(): string {
 // CLASIFICACIÓN VISUAL DE EGRESOS DEL MES
 // ==========================================
 
-export type ClasificacionEgreso = 'FIJO' | 'PRESTAMO_CUOTA' | 'RECURRENTE' | 'VARIABLE';
+export type ClasificacionEgreso = 'FIJO' | 'PRESTAMO_CUOTA' | 'VARIABLE';
 
 export interface EstiloClasificacion {
   key: ClasificacionEgreso;
@@ -50,47 +50,36 @@ export interface EstiloClasificacion {
 export const ESTILOS_CLASIFICACION: Record<ClasificacionEgreso, EstiloClasificacion> = {
   FIJO: {
     key: 'FIJO',
-    label: 'Fijos',
+    label: 'Costos Fijos',
     badgeLabel: 'Fijo',
-    borderColor: 'border-l-sky-500 dark:border-l-sky-400',
-    bgCardHover: 'hover:border-sky-300 dark:hover:border-sky-700',
-    badgeBg: 'bg-sky-50 dark:bg-sky-500/15',
+    borderColor: 'border-l-sky-500/70 dark:border-l-sky-400/70',
+    bgCardHover: 'hover:border-zinc-300 dark:hover:border-zinc-700',
+    badgeBg: 'bg-sky-50 dark:bg-sky-950/40',
     badgeText: 'text-sky-700 dark:text-sky-300',
-    badgeBorder: 'border-sky-200/80 dark:border-sky-500/30',
+    badgeBorder: 'border-sky-200/60 dark:border-sky-800/50',
     dotColor: 'bg-sky-500',
   },
   PRESTAMO_CUOTA: {
     key: 'PRESTAMO_CUOTA',
     label: 'Préstamos & Cuotas',
-    badgeLabel: 'Préstamo / Cuota',
-    borderColor: 'border-l-purple-500 dark:border-l-purple-400',
-    bgCardHover: 'hover:border-purple-300 dark:hover:border-purple-700',
-    badgeBg: 'bg-purple-50 dark:bg-purple-500/15',
-    badgeText: 'text-purple-700 dark:text-purple-300',
-    badgeBorder: 'border-purple-200/80 dark:border-purple-500/30',
-    dotColor: 'bg-purple-500',
-  },
-  RECURRENTE: {
-    key: 'RECURRENTE',
-    label: 'Recurrentes',
-    badgeLabel: 'Recurrente',
-    borderColor: 'border-l-pink-500 dark:border-l-pink-400',
-    bgCardHover: 'hover:border-pink-300 dark:hover:border-pink-700',
-    badgeBg: 'bg-pink-50 dark:bg-pink-500/15',
-    badgeText: 'text-pink-700 dark:text-pink-300',
-    badgeBorder: 'border-pink-200/80 dark:border-pink-500/30',
-    dotColor: 'bg-pink-500',
+    badgeLabel: 'Préstamo',
+    borderColor: 'border-l-violet-500/70 dark:border-l-violet-400/70',
+    bgCardHover: 'hover:border-zinc-300 dark:hover:border-zinc-700',
+    badgeBg: 'bg-violet-50 dark:bg-violet-950/40',
+    badgeText: 'text-violet-700 dark:text-violet-300',
+    badgeBorder: 'border-violet-200/60 dark:border-violet-800/50',
+    dotColor: 'bg-violet-500',
   },
   VARIABLE: {
     key: 'VARIABLE',
     label: 'Compras & Variables',
-    badgeLabel: 'Compra',
-    borderColor: 'border-l-slate-400 dark:border-l-slate-600',
-    bgCardHover: 'hover:border-slate-300 dark:hover:border-slate-700',
-    badgeBg: 'bg-slate-100 dark:bg-slate-800',
-    badgeText: 'text-slate-600 dark:text-slate-300',
-    badgeBorder: 'border-slate-200/60 dark:border-slate-700',
-    dotColor: 'bg-slate-400 dark:bg-slate-500',
+    badgeLabel: 'Variable',
+    borderColor: 'border-l-zinc-300 dark:border-l-zinc-700',
+    bgCardHover: 'hover:border-zinc-300 dark:hover:border-zinc-700',
+    badgeBg: 'bg-zinc-100 dark:bg-zinc-800/60',
+    badgeText: 'text-zinc-600 dark:text-zinc-400',
+    badgeBorder: 'border-zinc-200 dark:border-zinc-700/60',
+    dotColor: 'bg-zinc-400 dark:bg-zinc-500',
   },
 };
 
@@ -129,17 +118,14 @@ export function obtenerClasificacionEgreso(item: {
     return 'PRESTAMO_CUOTA';
   }
 
-  // Costo Fijo -> chequear si es recurrente (suscripción) o fijo esencial
+  // Costo Fijo (incluye suscripciones y gastos recurrentes mensuales)
   if (item.tipo === 'FIJO') {
-    if (esItemRecurrente(item.concepto, item.categoria)) {
-      return 'RECURRENTE';
-    }
     return 'FIJO';
   }
 
-  // Compras de tarjeta o directos -> chequear si son suscripciones recurrentes
+  // Compras de tarjeta o directos recurrentes (ej: streaming, suscripciones) se consideran fijos mensuales
   if (esItemRecurrente(item.concepto, item.categoria)) {
-    return 'RECURRENTE';
+    return 'FIJO';
   }
 
   return 'VARIABLE';
