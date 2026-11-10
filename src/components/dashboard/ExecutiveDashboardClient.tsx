@@ -2,6 +2,7 @@
 
 import React, { useMemo } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useFinanzas } from '@/context/FinanzasContext';
 import { formatMoney, formatPeriodoLabel, esItemRecurrente } from '@/lib/utils';
 import {
@@ -31,6 +32,7 @@ import {
 } from 'recharts';
 
 export function ExecutiveDashboardClient() {
+  const router = useRouter();
   const { periodo, irMesAnterior, irMesSiguiente, resumen, loading } = useFinanzas();
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
 
@@ -92,7 +94,7 @@ export function ExecutiveDashboardClient() {
     ].filter((item) => item.value > 0);
   }, [resumen]);
 
-  // Proyección anual
+  // Proyección anual (próximos 12 meses)
   const datosFlujoAnual = useMemo(() => {
     if (!resumen?.proyeccionMultiMes) return [];
     return resumen.proyeccionMultiMes.map((m) => {
@@ -104,7 +106,7 @@ export function ExecutiveDashboardClient() {
         periodo: m.periodo,
         Ingresos: m.ingresos,
         Egresos: m.egresos,
-        Disponible: Math.max(0, m.disponible),
+        Disponible: m.disponible,
       };
     });
   }, [resumen]);
@@ -112,22 +114,28 @@ export function ExecutiveDashboardClient() {
   // Préstamos activos
   const prestamosActivos = useMemo(() => {
     if (!resumen?.prestamos) return [];
-    return resumen.prestamos.map((p) => {
-      const progreso = Math.round((p.cuotaActual / p.cuotasTotales) * 100);
-      const saldoAprox = Math.max(0, (p.cuotasTotales - p.cuotaActual + 1) * p.montoCuota);
-      return {
-        id: p.id,
-        banco: p.banco,
-        concepto: p.concepto,
-        cuotaActual: p.cuotaActual,
-        cuotasTotales: p.cuotasTotales,
-        progreso,
-        montoCuota: p.montoCuota,
-        saldoAprox,
-        estado: p.estado,
-        diaPago: p.diaPago,
-      };
-    });
+    return resumen.prestamos
+      .filter((p) => p.mensajePeriodo !== 'Finalizado')
+      .map((p) => {
+        const pagada = p.estado === 'PAGADO';
+        const cuotasRestantes = Math.max(0, p.cuotasTotales - p.cuotaActual + (pagada ? 0 : 1));
+        const progreso = Math.round((p.cuotaActual / p.cuotasTotales) * 100);
+        const saldoAprox = Math.max(0, cuotasRestantes * p.montoCuota);
+        return {
+          id: p.id,
+          banco: p.banco,
+          concepto: p.concepto,
+          cuotaActual: p.cuotaActual,
+          cuotasTotales: p.cuotasTotales,
+          progreso,
+          montoCuota: p.montoCuota,
+          saldoAprox,
+          estado: p.estado,
+          diaPago: p.diaPago,
+          monedaOriginal: p.monedaOriginal,
+          montoOriginal: p.montoOriginal,
+        };
+      });
   }, [resumen]);
 
   const deudaTotalConsolidada = useMemo(() => {
@@ -143,6 +151,47 @@ export function ExecutiveDashboardClient() {
   const totalEgresos = resumen.totalEgresos;
   const disponibleNeto = resumen.dineroDisponibleNeto;
   const disponibleEsPositivo = disponibleNeto >= 0;
+
+  // Custom tooltips accesibles y adaptados a modo oscuro/claro
+  const CustomBarTooltip = ({ active, payload, label }: any) => {
+    if (!active || !payload || !payload.length) return null;
+    return (
+      <div className="bg-popover text-popover-foreground border border-border shadow-lg rounded-xl p-3 text-xs space-y-1.5 min-w-[170px]">
+        <p className="font-semibold text-foreground border-b border-border/60 pb-1 text-xs">
+          {label}
+        </p>
+        {payload.map((entry: any, i: number) => (
+          <div key={i} className="flex items-center justify-between gap-3">
+            <span className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+              <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: entry.color }} />
+              {entry.name}:
+            </span>
+            <span className="font-mono font-medium text-foreground text-[11px]">
+              {formatMoney(entry.value, moneda)}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  };
+
+  const CustomPieTooltip = ({ active, payload }: any) => {
+    if (!active || !payload || !payload.length) return null;
+    const data = payload[0];
+    const porcentaje = totalEgresos > 0 ? Math.round((data.value / totalEgresos) * 100) : 0;
+    return (
+      <div className="bg-popover text-popover-foreground border border-border shadow-lg rounded-xl p-2.5 text-xs min-w-[140px]">
+        <div className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: data.payload.color }} />
+          <span className="font-medium text-foreground">{data.name}</span>
+        </div>
+        <div className="mt-1 flex items-baseline justify-between gap-2 text-[11px]">
+          <span className="font-mono font-bold text-foreground">{formatMoney(data.value, moneda)}</span>
+          <span className="text-muted-foreground font-medium">({porcentaje}%)</span>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -220,7 +269,7 @@ export function ExecutiveDashboardClient() {
             {formatMoney(disponibleNeto, moneda)}
           </div>
           <span className="text-[11px] text-muted-foreground block">
-            Tras gastos y ahorro
+            Ingresos menos egresos
           </span>
         </div>
 
@@ -250,7 +299,7 @@ export function ExecutiveDashboardClient() {
             </p>
           </div>
 
-          <div className="h-60 w-full">
+          <div className="h-60 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -266,16 +315,25 @@ export function ExecutiveDashboardClient() {
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip
-                  formatter={(value: any) => [formatMoney(value, moneda), 'Monto']}
-                  contentStyle={{
-                    backgroundColor: 'var(--card)',
-                    borderColor: 'var(--border)',
-                    borderRadius: '0.5rem',
-                    color: 'var(--foreground)',
-                    fontSize: '11px',
-                  }}
-                />
+                <Tooltip content={<CustomPieTooltip />} />
+                <text
+                  x="50%"
+                  y="46%"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  className="fill-muted-foreground text-[10px] font-medium uppercase tracking-wider"
+                >
+                  Total
+                </text>
+                <text
+                  x="50%"
+                  y="56%"
+                  textAnchor="middle"
+                  dominantBaseline="middle"
+                  className="fill-foreground text-xs font-semibold font-mono"
+                >
+                  {formatMoney(totalEgresos, moneda)}
+                </text>
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -324,27 +382,28 @@ export function ExecutiveDashboardClient() {
           </div>
 
           <div className="h-72 w-full pt-2">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={datosFlujoAnual} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
-                <XAxis dataKey="mes" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
-                <YAxis tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
-                <Tooltip
-                  formatter={(val: any) => formatMoney(val, moneda)}
-                  contentStyle={{
-                    backgroundColor: 'var(--card)',
-                    borderColor: 'var(--border)',
-                    borderRadius: '0.5rem',
-                    color: 'var(--foreground)',
-                    fontSize: '11px',
-                  }}
-                />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
-                <Bar dataKey="Ingresos" fill="#10b981" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="Egresos" fill="#f43f5e" radius={[3, 3, 0, 0]} />
-                <Bar dataKey="Disponible" fill="#0ea5e9" radius={[3, 3, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {datosFlujoAnual.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-xs text-muted-foreground">
+                No hay datos de proyección disponibles
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={datosFlujoAnual} margin={{ top: 10, right: 10, left: -5, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
+                  <XAxis dataKey="mes" tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }} />
+                  <YAxis
+                    tick={{ fontSize: 10, fill: 'var(--muted-foreground)' }}
+                    tickFormatter={(val) => (val >= 1000 ? `${(val / 1000).toFixed(0)}k` : `${val}`)}
+                    width={38}
+                  />
+                  <Tooltip content={<CustomBarTooltip />} />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+                  <Bar dataKey="Ingresos" fill="#10b981" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="Egresos" fill="#f43f5e" radius={[3, 3, 0, 0]} />
+                  <Bar dataKey="Disponible" fill="#0ea5e9" radius={[3, 3, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </div>
       </div>
@@ -388,10 +447,22 @@ export function ExecutiveDashboardClient() {
               </thead>
               <tbody className="divide-y divide-border/40">
                 {prestamosActivos.map((p) => (
-                  <tr key={p.id} className="hover:bg-muted/30 transition">
+                  <tr
+                    key={p.id}
+                    onClick={() => router.push('/fijos-y-prestamos')}
+                    className="hover:bg-muted/40 transition cursor-pointer"
+                    title="Ver detalle en Fijos y Préstamos"
+                  >
                     <td className="py-2.5 px-3">
                       <div className="font-medium text-foreground text-xs">{p.concepto}</div>
-                      <div className="text-[11px] text-muted-foreground">{p.banco}</div>
+                      <div className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+                        <span>{p.banco}</span>
+                        {p.monedaOriginal === 'USD' && p.montoOriginal && (
+                          <span className="text-[10px] text-muted-foreground">
+                            · ${p.montoOriginal.toFixed(2)} USD
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-2.5 px-3 min-w-[140px]">
                       <div className="space-y-1">

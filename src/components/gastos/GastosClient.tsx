@@ -30,15 +30,14 @@ export function GastosClient() {
     selectedGastoIds,
     toggleSelectGasto,
     selectAllGastos,
+    openRecordModal,
   } = useFinanzas();
 
   // Estados locales
-  const [modalOpen, setModalOpen] = useState(false);
   const [detalleGasto, setDetalleGasto] = useState<DetalleItemData | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<string>('PENDIENTE');
   const [filtroMetodo, setFiltroMetodo] = useState<string>('TODOS');
   const [busqueda, setBusqueda] = useState<string>('');
-  const [submitting, setSubmitting] = useState(false);
 
   const adaptGastoToDetalle = (g: any): DetalleItemData => ({
     id: g.id,
@@ -69,39 +68,8 @@ export function GastosClient() {
     fechaPagoReal: g.fechaPagoReal,
   });
 
-  // Formulario nuevo gasto
-  const [concepto, setConcepto] = useState('');
-  const [monto, setMonto] = useState('');
-  const [fechaGasto, setFechaGasto] = useState(() => new Date().toISOString().split('T')[0]);
-  const [metodoPago, setMetodoPago] = useState<'TARJETA_CREDITO' | 'EFECTIVO_DEBITO' | 'TRANSFERENCIA'>('TARJETA_CREDITO');
-  const [tarjetaId, setTarjetaId] = useState('');
-  const [totalCuotas, setTotalCuotas] = useState('1');
-  const [estado, setEstado] = useState<'PENDIENTE' | 'ADELANTADO' | 'PAGADO'>('PENDIENTE');
-
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
   const tarjetas = resumen?.tarjetasCredito || [];
-
-  React.useEffect(() => {
-    if (tarjetas.length > 0 && !tarjetaId) {
-      setTarjetaId(tarjetas[0].id);
-    }
-  }, [tarjetas, tarjetaId]);
-
-  const previewFacturacion = useMemo(() => {
-    if (metodoPago !== 'TARJETA_CREDITO') return null;
-    const tarjeta = tarjetas.find((t) => t.id === tarjetaId);
-    const diaCorte = tarjeta?.diaCorte || 10;
-    const diaPago = tarjeta?.diaPago || 30;
-    const res = calcularPeriodoFacturacion(new Date(`${fechaGasto}T12:00:00`), diaCorte, diaPago);
-    const cuotasNum = parseInt(totalCuotas, 10) || 1;
-    const periodosCuotas = cuotasNum > 1 ? calcularCuotasPeriodos(res.periodoPago, cuotasNum) : [];
-
-    return {
-      ...res,
-      cuotasNum,
-      periodosCuotas,
-    };
-  }, [metodoPago, tarjetaId, fechaGasto, totalCuotas, tarjetas]);
 
   const listaGastos = useMemo(() => {
     if (!resumen) return [];
@@ -140,42 +108,6 @@ export function GastosClient() {
       return true;
     });
   }, [resumen, filtroEstado, filtroMetodo, busqueda]);
-
-  const handleSubmitGasto = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!concepto.trim() || !monto || parseFloat(monto) <= 0) {
-      toast.error('Ingresa un concepto y un monto válido');
-      return;
-    }
-
-    try {
-      setSubmitting(true);
-      const res = await fetch('/api/gastos', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          concepto,
-          monto: parseFloat(monto),
-          fechaGasto: new Date(`${fechaGasto}T12:00:00`),
-          metodoPago,
-          tarjetaId: metodoPago === 'TARJETA_CREDITO' ? tarjetaId : undefined,
-          totalCuotas: parseInt(totalCuotas, 10),
-          estado,
-        }),
-      });
-
-      if (!res.ok) throw new Error('Error al registrar gasto');
-      toast.success('Gasto registrado');
-      setModalOpen(false);
-      setConcepto('');
-      setMonto('');
-      await refresh();
-    } catch (err: any) {
-      toast.error(err.message || 'Error al guardar');
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const handleCambiarEstadoItem = async (id: string, nuevoEstado: string) => {
     try {
@@ -273,7 +205,7 @@ export function GastosClient() {
         </div>
 
         <button
-          onClick={() => setModalOpen(true)}
+          onClick={() => openRecordModal('GASTO')}
           className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-98 self-start sm:self-auto"
         >
           <Plus className="w-3.5 h-3.5" />
@@ -650,218 +582,6 @@ export function GastosClient() {
         </div>
       </div>
 
-      {/* MODAL REGISTRAR NUEVO GASTO */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-card border border-border w-full max-w-md rounded-xl shadow-lg p-5 space-y-4 animate-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3 border-b border-border/60">
-              <h2 className="text-sm font-semibold text-foreground">
-                Registrar Gasto
-              </h2>
-              <button
-                onClick={() => setModalOpen(false)}
-                className="p-1 rounded-md text-muted-foreground hover:text-foreground transition"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitGasto} className="space-y-3.5 text-xs">
-              <div className="space-y-1">
-                <label className="font-medium text-muted-foreground">
-                  Concepto:
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="Ej: Supermercado, Almuerzo, Uber"
-                  value={concepto}
-                  onChange={(e) => setConcepto(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-foreground outline-none text-foreground text-xs"
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <label className="font-medium text-muted-foreground">
-                    Monto ({moneda}):
-                  </label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    required
-                    placeholder="0.00"
-                    value={monto}
-                    onChange={(e) => setMonto(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-foreground outline-none text-foreground font-mono text-xs font-medium"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="font-medium text-muted-foreground">
-                    Fecha:
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={fechaGasto}
-                    onChange={(e) => setFechaGasto(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg bg-background border border-border focus:border-foreground outline-none text-foreground text-xs"
-                  />
-                </div>
-              </div>
-
-              {/* Método de Pago */}
-              <div className="space-y-1">
-                <label className="font-medium text-muted-foreground">
-                  Método de Pago:
-                </label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setMetodoPago('TARJETA_CREDITO')}
-                    className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition ${
-                      metodoPago === 'TARJETA_CREDITO'
-                        ? 'bg-foreground text-background border-foreground'
-                        : 'bg-background text-muted-foreground border-border hover:text-foreground'
-                    }`}
-                  >
-                    Tarjeta
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMetodoPago('EFECTIVO_DEBITO')}
-                    className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition ${
-                      metodoPago === 'EFECTIVO_DEBITO'
-                        ? 'bg-foreground text-background border-foreground'
-                        : 'bg-background text-muted-foreground border-border hover:text-foreground'
-                    }`}
-                  >
-                    Efectivo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setMetodoPago('TRANSFERENCIA')}
-                    className={`py-1.5 px-2 rounded-lg text-xs font-medium border transition ${
-                      metodoPago === 'TRANSFERENCIA'
-                        ? 'bg-foreground text-background border-foreground'
-                        : 'bg-background text-muted-foreground border-border hover:text-foreground'
-                    }`}
-                  >
-                    Transferencia
-                  </button>
-                </div>
-              </div>
-
-              {metodoPago === 'TARJETA_CREDITO' && (
-                <div className="p-3 rounded-lg bg-muted/40 border border-border/60 space-y-2.5">
-                  <div className="grid grid-cols-2 gap-2.5">
-                    <div className="space-y-1">
-                      <label className="font-medium text-muted-foreground">
-                        Tarjeta:
-                      </label>
-                      <select
-                        value={tarjetaId}
-                        onChange={(e) => setTarjetaId(e.target.value)}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border text-foreground text-xs outline-none"
-                      >
-                        {tarjetas.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.nombre} (Corte día {t.diaCorte})
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="font-medium text-muted-foreground">
-                        Cuotas:
-                      </label>
-                      <select
-                        value={totalCuotas}
-                        onChange={(e) => setTotalCuotas(e.target.value)}
-                        className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border text-foreground text-xs outline-none"
-                      >
-                        <option value="1">1 cuota</option>
-                        <option value="2">2 cuotas</option>
-                        <option value="3">3 cuotas</option>
-                        <option value="6">6 cuotas</option>
-                        <option value="12">12 cuotas</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {previewFacturacion && (
-                    <p className="text-[11px] text-muted-foreground leading-normal">
-                      {previewFacturacion.descripcionExplicativa}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Estado */}
-              <div className="space-y-1">
-                <label className="font-medium text-muted-foreground">
-                  Estado:
-                </label>
-                <div className="grid grid-cols-3 gap-1.5">
-                  <button
-                    type="button"
-                    onClick={() => setEstado('PENDIENTE')}
-                    className={`py-1.5 rounded-lg text-xs font-medium border transition ${
-                      estado === 'PENDIENTE'
-                        ? 'bg-foreground text-background border-foreground'
-                        : 'bg-background text-muted-foreground border-border hover:text-foreground'
-                    }`}
-                  >
-                    Pendiente
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEstado('ADELANTADO')}
-                    className={`py-1.5 rounded-lg text-xs font-medium border transition ${
-                      estado === 'ADELANTADO'
-                        ? 'bg-foreground text-background border-foreground'
-                        : 'bg-background text-muted-foreground border-border hover:text-foreground'
-                    }`}
-                  >
-                    Adelantado
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setEstado('PAGADO')}
-                    className={`py-1.5 rounded-lg text-xs font-medium border transition ${
-                      estado === 'PAGADO'
-                        ? 'bg-foreground text-background border-foreground'
-                        : 'bg-background text-muted-foreground border-border hover:text-foreground'
-                    }`}
-                  >
-                    Pagado
-                  </button>
-                </div>
-              </div>
-
-              <div className="pt-3 flex items-center justify-end gap-2 border-t border-border/60">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground transition"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-3.5 py-1.5 rounded-lg bg-foreground text-background font-medium hover:opacity-90 transition disabled:opacity-50"
-                >
-                  {submitting ? 'Guardando...' : 'Guardar Gasto'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
       {/* MODAL DETALLE DE GASTO */}
       <ModalDetalleGasto
         item={detalleGasto}
@@ -869,6 +589,7 @@ export function GastosClient() {
         onCambiarEstado={handleCambiarEstadoModal}
         onGuardarMonto={handleGuardarMontoModal}
         onEliminarGasto={handleEliminarGastoModal}
+        tarjetas={tarjetas}
         monedaSimbolo={moneda}
       />
     </div>

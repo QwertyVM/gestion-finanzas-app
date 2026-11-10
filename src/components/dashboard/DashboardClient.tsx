@@ -9,8 +9,6 @@ import {
   ESTILOS_CLASIFICACION,
   esItemRecurrente,
 } from '@/lib/utils';
-import { ModalRegistrarIngreso } from '@/components/modals/ModalRegistrarIngreso';
-import { ModalRegistrarGasto } from '@/components/modals/ModalRegistrarGasto';
 import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import { DashboardSkeleton } from '@/components/common/Skeleton';
 import {
@@ -41,10 +39,9 @@ export function DashboardClient() {
     selectedGastoIds,
     toggleSelectGasto,
     selectAllGastos,
+    openRecordModal,
   } = useFinanzas();
 
-  const [modalIngresoOpen, setModalIngresoOpen] = useState(false);
-  const [modalGastoOpen, setModalGastoOpen] = useState(false);
   const [detalleItem, setDetalleItem] = useState<DetalleItemData | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<'PENDIENTE' | 'ADELANTADO' | 'PAGADO' | 'TODOS'>('PENDIENTE');
   const [filtroEgreso, setFiltroEgreso] = useState<'TODOS' | 'FIJOS' | 'PRESTAMOS_CUOTAS' | 'VARIABLES'>('TODOS');
@@ -103,9 +100,19 @@ export function DashboardClient() {
         monedaOriginal: cf.monedaOriginal,
         montoOriginal: cf.montoOriginal,
         tipoCambio: cf.tipoCambio,
-        subtexto: esItemRecurrente(cf.concepto, cf.categoria)
-          ? `Suscripción · Día ${cf.diaVencimiento}`
-          : `Costo fijo · Día ${cf.diaVencimiento}`,
+        metodoPago: cf.metodoPago,
+        tarjetaId: cf.tarjetaId,
+        tarjetaNombre: cf.tarjetaNombre,
+        tarjetaBanco: cf.tarjetaBanco,
+        tarjetaColor: cf.tarjetaColor,
+        tarjetaUltimosCuatro: cf.tarjetaUltimosCuatro,
+        subtexto: cf.metodoPago === 'TARJETA_CREDITO'
+          ? `${cf.tarjetaNombre || 'Tarjeta'} · Día ${cf.diaVencimiento}`
+          : cf.metodoPago === 'TRANSFERENCIA'
+          ? `Transferencia · Día ${cf.diaVencimiento}`
+          : esItemRecurrente(cf.concepto, cf.categoria)
+          ? `Suscripción · Efectivo · Día ${cf.diaVencimiento}`
+          : `Efectivo / Débito · Día ${cf.diaVencimiento}`,
       });
     }
 
@@ -208,34 +215,41 @@ export function DashboardClient() {
     return list;
   }, [resumen]);
 
-  // Filtrado reactivo por Estado y Clasificación
-  const egresosFiltrados = useMemo(() => {
+  // Filtrado reactivo por Clasificación primero
+  const egresosPorClasificacion = useMemo(() => {
     return todosEgresos.filter((item) => {
-      if (filtroEstado !== 'TODOS' && item.estado !== filtroEstado) return false;
       if (filtroEgreso === 'FIJOS') return item.clasificacion === 'FIJO';
       if (filtroEgreso === 'PRESTAMOS_CUOTAS') return item.clasificacion === 'PRESTAMO_CUOTA';
       if (filtroEgreso === 'VARIABLES') return item.clasificacion === 'VARIABLE';
       return true;
     });
-  }, [todosEgresos, filtroEstado, filtroEgreso]);
+  }, [todosEgresos, filtroEgreso]);
+
+  // Filtrado reactivo por Estado
+  const egresosFiltrados = useMemo(() => {
+    return egresosPorClasificacion.filter((item) => {
+      if (filtroEstado !== 'TODOS' && item.estado !== filtroEstado) return false;
+      return true;
+    });
+  }, [egresosPorClasificacion, filtroEstado]);
 
   const totalEgresosFiltrados = useMemo(
     () => egresosFiltrados.reduce((sum, item) => sum + (item.monto || 0), 0),
     [egresosFiltrados]
   );
 
-  // Conteo rápido de estados
+  // Conteo rápido de estados según la clasificación activa
   const countPendientes = useMemo(
-    () => todosEgresos.filter((i) => i.estado === 'PENDIENTE').length,
-    [todosEgresos]
+    () => egresosPorClasificacion.filter((i) => i.estado === 'PENDIENTE').length,
+    [egresosPorClasificacion]
   );
   const countAdelantados = useMemo(
-    () => todosEgresos.filter((i) => i.estado === 'ADELANTADO').length,
-    [todosEgresos]
+    () => egresosPorClasificacion.filter((i) => i.estado === 'ADELANTADO').length,
+    [egresosPorClasificacion]
   );
   const countPagados = useMemo(
-    () => todosEgresos.filter((i) => i.estado === 'PAGADO').length,
-    [todosEgresos]
+    () => egresosPorClasificacion.filter((i) => i.estado === 'PAGADO').length,
+    [egresosPorClasificacion]
   );
 
   if (loading || !resumen) {
@@ -243,7 +257,6 @@ export function DashboardClient() {
   }
 
   const disponibleNeto = resumen.dineroDisponibleNeto;
-  const metaAhorro = resumen.metaAhorro;
   const disponibleEsPositivo = disponibleNeto >= 0;
 
   // Cambiar estado de un ítem
@@ -320,6 +333,60 @@ export function DashboardClient() {
       await refresh();
     } catch (e: any) {
       toast.error('Error al eliminar');
+    }
+  };
+
+  const handleCambiarMetodoPagoModal = async (
+    item: DetalleItemData,
+    nuevoMetodo: string,
+    tarjetaId?: string | null,
+    aplicarFuturos?: boolean
+  ) => {
+    try {
+      if (item.tipo === 'FIJO') {
+        const res = await fetch('/api/fijos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            costoFijoId: item.dbId,
+            periodo,
+            metodoPago: nuevoMetodo,
+            tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? tarjetaId : null,
+          }),
+        });
+        if (!res.ok) throw new Error('Error al actualizar');
+
+        if (aplicarFuturos) {
+          await fetch('/api/fijos', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: item.dbId,
+              metodoPago: nuevoMetodo,
+              tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? tarjetaId : null,
+              mesDesde: periodo,
+            }),
+          });
+        }
+
+        const tObj = resumen.tarjetasCredito.find((t) => t.id === tarjetaId);
+        setDetalleItem((prev) =>
+          prev
+            ? {
+                ...prev,
+                metodoPago: nuevoMetodo,
+                tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? (tarjetaId || null) : null,
+                tarjetaNombre: tObj?.nombre || null,
+                tarjetaBanco: tObj?.banco || null,
+                tarjetaColor: tObj?.color || null,
+              }
+            : null
+        );
+        toast.success('Forma de pago actualizada');
+        await refresh();
+      }
+    } catch (e: any) {
+      toast.error('Error al actualizar forma de pago');
     }
   };
 
@@ -404,14 +471,14 @@ export function DashboardClient() {
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Dinero disponible tras cubrir compromisos y descontar ahorro.
+              Dinero disponible tras cubrir compromisos del mes.
             </p>
           </div>
 
           {/* Botones de Acción */}
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
-              onClick={() => setModalIngresoOpen(true)}
+              onClick={() => openRecordModal('INGRESO')}
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-98"
             >
               <Plus className="w-3.5 h-3.5" />
@@ -419,7 +486,7 @@ export function DashboardClient() {
             </button>
 
             <button
-              onClick={() => setModalGastoOpen(true)}
+              onClick={() => openRecordModal('GASTO')}
               className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-background hover:bg-muted text-foreground border border-border font-medium text-xs transition active:scale-98"
             >
               <Minus className="w-3.5 h-3.5 text-muted-foreground" />
@@ -428,8 +495,8 @@ export function DashboardClient() {
           </div>
         </div>
 
-        {/* 3 Métricas en fila */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-4">
+        {/* Métricas clave en fila */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
           <div className="p-3 rounded-lg bg-muted/40 border border-border/40">
             <span className="text-xs text-muted-foreground block">Total Ingresos</span>
             <span className="text-lg font-semibold text-foreground font-mono mt-0.5 block">
@@ -447,16 +514,6 @@ export function DashboardClient() {
             </span>
             <span className="text-[11px] text-muted-foreground">
               {formatMoney(resumen.totalPendiente, moneda)} pendientes
-            </span>
-          </div>
-
-          <div className="p-3 rounded-lg bg-muted/40 border border-border/40">
-            <span className="text-xs text-muted-foreground block">Meta de Ahorro</span>
-            <span className="text-lg font-semibold text-foreground font-mono mt-0.5 block">
-              {formatMoney(metaAhorro, moneda)}
-            </span>
-            <span className="text-[11px] text-muted-foreground">
-              Fondo protegido
             </span>
           </div>
         </div>
@@ -493,7 +550,7 @@ export function DashboardClient() {
           </div>
 
           <button
-            onClick={() => setModalIngresoOpen(true)}
+            onClick={() => openRecordModal('INGRESO')}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-98 self-start sm:self-auto"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -650,7 +707,7 @@ export function DashboardClient() {
           </div>
 
           <button
-            onClick={() => setModalGastoOpen(true)}
+            onClick={() => openRecordModal('GASTO')}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-98 self-start sm:self-auto"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -705,7 +762,7 @@ export function DashboardClient() {
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                Todos ({todosEgresos.length})
+                Todos ({egresosPorClasificacion.length})
               </button>
             </div>
 
@@ -1042,20 +1099,14 @@ export function DashboardClient() {
       </div>
 
       {/* MODALES */}
-      <ModalRegistrarIngreso
-        open={modalIngresoOpen}
-        onClose={() => setModalIngresoOpen(false)}
-      />
-      <ModalRegistrarGasto
-        open={modalGastoOpen}
-        onClose={() => setModalGastoOpen(false)}
-      />
       <ModalDetalleGasto
         item={detalleItem}
         onClose={() => setDetalleItem(null)}
         onCambiarEstado={handleCambiarEstadoModal}
         onGuardarMonto={handleGuardarMontoModal}
         onEliminarGasto={handleEliminarGastoModal}
+        onCambiarMetodoPago={handleCambiarMetodoPagoModal}
+        tarjetas={resumen.tarjetasCredito}
         monedaSimbolo={moneda}
       />
     </div>

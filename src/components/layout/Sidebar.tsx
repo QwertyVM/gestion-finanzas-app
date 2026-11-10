@@ -21,11 +21,12 @@ import {
   Moon,
   Menu,
   X,
+  Plus,
 } from 'lucide-react';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { periodo, irMesAnterior, irMesSiguiente } = useFinanzas();
+  const { periodo, irMesAnterior, irMesSiguiente, openRecordModal } = useFinanzas();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -124,6 +125,26 @@ export function Sidebar() {
             <X className="w-4 h-4" />
           </button>
         </div>
+
+        {/* Botón de Registro Rápido Dinámico */}
+        <button
+          type="button"
+          onClick={() => {
+            setMobileOpen(false);
+            openRecordModal('GASTO');
+          }}
+          className="w-full flex items-center justify-between px-3 py-2 rounded-xl bg-foreground text-background font-semibold text-xs shadow-sm hover:opacity-90 active:scale-98 transition group"
+        >
+          <div className="flex items-center gap-2">
+            <div className="w-5 h-5 rounded-md bg-background/20 text-background flex items-center justify-center">
+              <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+            </div>
+            <span>Nuevo Registro</span>
+          </div>
+          <kbd className="hidden lg:inline-block px-1.5 py-0.5 text-[10px] bg-background/20 rounded font-mono font-normal">
+            N
+          </kbd>
+        </button>
 
         {/* Period Selector Minimalist */}
         <div className="bg-muted/40 p-1.5 rounded-xl border border-border/60">
@@ -235,7 +256,15 @@ export function Sidebar() {
           </Link>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <button
+            onClick={() => openRecordModal('GASTO')}
+            className="p-1.5 rounded-lg bg-foreground text-background hover:opacity-90 active:scale-95 transition"
+            title="Nuevo Registro"
+            aria-label="Nuevo Registro"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
           <span className="text-xs font-medium text-muted-foreground capitalize">
             {formatPeriodoLabel(periodo)}
           </span>

@@ -41,6 +41,12 @@ export interface ResumenFinanciero {
     monedaOriginal?: string;
     montoOriginal?: number | null;
     tipoCambio?: number;
+    metodoPago: MetodoPago;
+    tarjetaId?: string | null;
+    tarjetaNombre?: string | null;
+    tarjetaBanco?: string | null;
+    tarjetaColor?: string | null;
+    tarjetaUltimosCuatro?: string | null;
   }>;
   totalCostosFijos: number;
   prestamos: Array<{
@@ -117,6 +123,12 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
   const nextDate = new Date(sAnio, sMes, 1);
   const siguientePeriodo = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
 
+  const periodos12: string[] = [];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(sAnio, sMes - 1 + i, 1);
+    periodos12.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+  }
+
   // CONSULTAS ULTRA-OPTIMIZADAS EN PARALELO
   const [
     configRaw,
@@ -126,6 +138,10 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     tarjetasDb,
     gastosDirectosDb,
     gastosNextAll,
+    ingresosMulti,
+    registrosFijosMulti,
+    cuotasMulti,
+    gastosMulti,
   ] = await Promise.all([
     prisma.configuracionUsuario.findFirst(),
     prisma.ingresoMes.findMany({
@@ -136,8 +152,12 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
       where: { activo: true },
       include: {
         categoria: true,
+        tarjeta: true,
         registrosMes: {
           where: { periodo },
+          include: {
+            tarjeta: true,
+          },
         },
       },
       orderBy: { diaVencimiento: 'asc' },
@@ -176,6 +196,19 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
       },
       include: { categoria: true },
       orderBy: { fechaGasto: 'desc' },
+    }),
+    prisma.ingresoMes.findMany({
+      where: { periodo: { in: periodos12 } },
+    }),
+    prisma.registroCostoFijoMes.findMany({
+      where: { periodo: { in: periodos12 } },
+    }),
+    prisma.cuotaPrestamo.findMany({
+      where: { periodo: { in: periodos12 } },
+    }),
+    prisma.gasto.findMany({
+      where: { periodoPago: { in: periodos12 } },
+      select: { monto: true, periodoPago: true },
     }),
   ]);
 
@@ -242,6 +275,12 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
       }
     }
 
+    const metodoPago = reg?.metodoPago || cf.metodoPago || MetodoPago.EFECTIVO_DEBITO;
+    const tarjetaObj = metodoPago === MetodoPago.TARJETA_CREDITO
+      ? (reg?.tarjeta || cf.tarjeta || null)
+      : null;
+    const tarjetaId = tarjetaObj?.id || (metodoPago === MetodoPago.TARJETA_CREDITO ? (reg?.tarjetaId || cf.tarjetaId || null) : null);
+
     costosFijos.push({
       id: cf.id,
       concepto: cf.concepto,
@@ -257,6 +296,12 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
       monedaOriginal,
       montoOriginal,
       tipoCambio,
+      metodoPago,
+      tarjetaId,
+      tarjetaNombre: tarjetaObj?.nombre || null,
+      tarjetaBanco: tarjetaObj?.banco || null,
+      tarjetaColor: tarjetaObj?.color || null,
+      tarjetaUltimosCuatro: tarjetaObj?.ultimosCuatro || null,
     });
   }
 
@@ -443,7 +488,69 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
   const totalEgresos = totalCostosFijos + totalPrestamos + totalTarjetas + totalGastosDirectos;
   const dineroDisponibleBruto = totalIngresos - totalEgresos;
   const metaAhorro = Number(config.metaAhorroMensual || 1000);
-  const dineroDisponibleNeto = dineroDisponibleBruto - metaAhorro;
+  const dineroDisponibleNeto = dineroDisponibleBruto;
+
+  const sueldoBaseNum = Number(config.sueldoBaseMensual || 8200);
+
+  const proyeccionMultiMes = periodos12.map((p, idx) => {
+    const [, monthStr] = p.split('-');
+    const mesNum = parseInt(monthStr, 10);
+    const esGrati = mesNum === 7 || mesNum === 12;
+    const esUtilidad = mesNum === 3;
+
+    // Para el mes seleccionado (idx 0), usar los totales exactos calculados
+    if (idx === 0) {
+      return {
+        periodo: p,
+        ingresos: totalIngresos,
+        egresos: totalEgresos,
+        disponible: dineroDisponibleNeto,
+        esGrati,
+        esUtilidad,
+      };
+    }
+
+    // Ingresos
+    const ingMes = ingresosMulti.filter((i) => i.periodo === p);
+    let totalIng = ingMes.reduce((acc, curr) => acc + Number(curr.monto), 0);
+    if (totalIng === 0) {
+      totalIng += sueldoBaseNum;
+      if (esGrati) totalIng += sueldoBaseNum * 1.09;
+      if (esUtilidad) totalIng += sueldoBaseNum * 1.5;
+    }
+
+    // Costos fijos
+    const fijosReg = registrosFijosMulti.filter((r) => r.periodo === p);
+    let totalFij = fijosReg.reduce((acc, r) => acc + Number(r.monto), 0);
+    if (totalFij === 0) {
+      const vigentes = costosFijosBase.filter((f) => {
+        const inicioOk = !f.mesInicio || f.mesInicio <= p;
+        const finOk = !f.mesFin || f.mesFin >= p;
+        return inicioOk && finOk;
+      });
+      totalFij = vigentes.reduce((acc, f) => acc + Number(f.monto), 0);
+    }
+
+    // Préstamos
+    const cuotasMes = cuotasMulti.filter((c) => c.periodo === p);
+    const totalPres = cuotasMes.reduce((acc, c) => acc + Number(c.monto), 0);
+
+    // Gastos
+    const gastosMes = gastosMulti.filter((g) => g.periodoPago === p);
+    const totalGas = gastosMes.reduce((acc, g) => acc + Number(g.monto), 0);
+
+    const totalEgr = Number((totalFij + totalPres + totalGas).toFixed(2));
+    const disp = Number((totalIng - totalEgr).toFixed(2));
+
+    return {
+      periodo: p,
+      ingresos: totalIng,
+      egresos: totalEgr,
+      disponible: disp,
+      esGrati,
+      esUtilidad,
+    };
+  });
 
   return {
     periodo,
@@ -472,7 +579,7 @@ export async function getResumenMensual(periodo: string): Promise<ResumenFinanci
     dineroDisponibleBruto,
     metaAhorro,
     dineroDisponibleNeto,
-    proyeccionMultiMes: [],
+    proyeccionMultiMes,
   };
 }
 

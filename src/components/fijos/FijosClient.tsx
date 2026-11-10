@@ -35,6 +35,9 @@ import {
   Trash2,
   Table,
   LayoutGrid,
+  CreditCard,
+  Banknote,
+  ChevronDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -84,6 +87,8 @@ export function FijosClient() {
   const [nuevoFijoDia, setNuevoFijoDia] = useState('30');
   const [nuevoFijoMesInicio, setNuevoFijoMesInicio] = useState(periodo);
   const [nuevoFijoMesFin, setNuevoFijoMesFin] = useState('');
+  const [nuevoFijoMetodoPago, setNuevoFijoMetodoPago] = useState<'EFECTIVO_DEBITO' | 'TRANSFERENCIA' | 'TARJETA_CREDITO'>('EFECTIVO_DEBITO');
+  const [nuevoFijoTarjetaId, setNuevoFijoTarjetaId] = useState('');
 
   // Form Editar Costo Fijo Base (No Retroactivo)
   const [editFijoConcepto, setEditFijoConcepto] = useState('');
@@ -94,6 +99,8 @@ export function FijosClient() {
   const [editFijoDia, setEditFijoDia] = useState('30');
   const [editFijoMesDesde, setEditFijoMesDesde] = useState(periodo);
   const [editFijoMesFin, setEditFijoMesFin] = useState('');
+  const [editFijoMetodoPago, setEditFijoMetodoPago] = useState<'EFECTIVO_DEBITO' | 'TRANSFERENCIA' | 'TARJETA_CREDITO'>('EFECTIVO_DEBITO');
+  const [editFijoTarjetaId, setEditFijoTarjetaId] = useState('');
 
   // Form Nuevo Préstamo
   const [nuevoPrestamoBanco, setNuevoPrestamoBanco] = useState('BCP');
@@ -125,6 +132,7 @@ export function FijosClient() {
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
   const costosFijos = resumen?.costosFijos || [];
   const prestamos = resumen?.prestamos || [];
+  const tarjetas = resumen?.tarjetasCredito || [];
 
   // Cuando se selecciona un Costo Fijo para editar base
   const abrirEdicionCostoFijo = (cf: any) => {
@@ -134,6 +142,8 @@ export function FijosClient() {
     setEditFijoDia(cf.diaVencimiento.toString());
     setEditFijoMesDesde(periodo);
     setEditFijoMesFin(cf.mesFin || '');
+    setEditFijoMetodoPago(cf.metodoPago || 'EFECTIVO_DEBITO');
+    setEditFijoTarjetaId(cf.tarjetaId || (tarjetas[0]?.id || ''));
 
     const isUsd = cf.monedaOriginal === 'USD' || cf.concepto.includes('$');
     setEditFijoMoneda(isUsd ? 'USD' : 'PEN');
@@ -238,6 +248,92 @@ export function FijosClient() {
     }
   };
 
+  // Cambiar método de pago de un Costo Fijo para el mes directamente desde la tabla/tarjetas
+  const handleCambiarMetodoPagoFijo = async (costoFijoId: string, nuevoMetodo: string, tarjetaId: string | null) => {
+    try {
+      setLoadingAction(`metodo-${costoFijoId}`);
+      const res = await fetch('/api/fijos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          costoFijoId,
+          periodo,
+          metodoPago: nuevoMetodo,
+          tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? tarjetaId : null,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Error al actualizar forma de pago');
+      const tarjetaNombre = tarjetas.find((t) => t.id === tarjetaId)?.nombre;
+      const label = nuevoMetodo === 'TARJETA_CREDITO'
+        ? (tarjetaNombre ? `Tarjeta (${tarjetaNombre})` : 'Tarjeta de Crédito')
+        : nuevoMetodo === 'TRANSFERENCIA'
+        ? 'Transferencia'
+        : 'Efectivo / Débito';
+      toast.success(`Forma de pago actualizada a: ${label}`);
+      await refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar forma de pago');
+    } finally {
+      setLoadingAction(null);
+    }
+  };
+
+  // Cambiar método de pago desde el modal de detalle
+  const handleCambiarMetodoPagoModal = async (
+    item: DetalleItemData,
+    nuevoMetodo: string,
+    tarjetaId?: string | null,
+    aplicarFuturos?: boolean
+  ) => {
+    try {
+      if (item.tipo === 'FIJO') {
+        const res = await fetch('/api/fijos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            costoFijoId: item.dbId,
+            periodo,
+            metodoPago: nuevoMetodo,
+            tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? tarjetaId : null,
+          }),
+        });
+        if (!res.ok) throw new Error('Error al actualizar');
+
+        if (aplicarFuturos) {
+          await fetch('/api/fijos', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: item.dbId,
+              metodoPago: nuevoMetodo,
+              tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? tarjetaId : null,
+              mesDesde: periodo,
+            }),
+          });
+        }
+
+        const tObj = tarjetas.find((t) => t.id === tarjetaId);
+        setDetalleItem((prev) =>
+          prev
+            ? {
+                ...prev,
+                metodoPago: nuevoMetodo,
+                tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? (tarjetaId || null) : null,
+                tarjetaNombre: tObj?.nombre || null,
+                tarjetaBanco: tObj?.banco || null,
+                tarjetaColor: tObj?.color || null,
+              }
+            : null
+        );
+        toast.success('Forma de pago actualizada');
+        await refresh();
+      }
+    } catch (e: any) {
+      toast.error('Error al actualizar forma de pago');
+    }
+  };
+
   const handleCambiarEstadoModal = async (item: DetalleItemData, nuevoEstado: string) => {
     if (item.tipo === 'FIJO') {
       await handleToggleEstadoFijo(item.dbId, nuevoEstado);
@@ -316,6 +412,8 @@ export function FijosClient() {
           mesInicio: nuevoFijoMesInicio || periodo,
           mesFin: nuevoFijoMesFin.trim() || null,
           notas: notasFinal,
+          metodoPago: nuevoFijoMetodoPago,
+          tarjetaId: nuevoFijoMetodoPago === 'TARJETA_CREDITO' ? nuevoFijoTarjetaId : null,
         }),
       });
 
@@ -326,6 +424,8 @@ export function FijosClient() {
       setNuevoFijoMonto('');
       setNuevoFijoMontoUSD('');
       setNuevoFijoMoneda('PEN');
+      setNuevoFijoMetodoPago('EFECTIVO_DEBITO');
+      setNuevoFijoTarjetaId(tarjetas[0]?.id || '');
       await refresh();
     } catch (err: any) {
       toast.error(err.message || 'Error al crear');
@@ -370,6 +470,8 @@ export function FijosClient() {
           diaVencimiento: parseInt(editFijoDia, 10),
           mesDesde: editFijoMesDesde,
           mesFin: editFijoMesFin.trim() || null,
+          metodoPago: editFijoMetodoPago,
+          tarjetaId: editFijoMetodoPago === 'TARJETA_CREDITO' ? editFijoTarjetaId : null,
         }),
       });
 
@@ -610,6 +712,7 @@ export function FijosClient() {
                     <th scope="col" className="py-2.5 px-3 font-medium">Categoría</th>
                     <th scope="col" className="py-2.5 px-3 text-center font-medium">Vence</th>
                     <th scope="col" className="py-2.5 px-3 text-right font-medium">Monto</th>
+                    <th scope="col" className="py-2.5 px-3 font-medium">Forma de Pago</th>
                     <th scope="col" className="py-2.5 px-3 text-center font-medium">Estado</th>
                     <th scope="col" className="py-2.5 px-3 text-center font-medium">Acciones</th>
                   </tr>
@@ -641,6 +744,12 @@ export function FijosClient() {
                             monedaOriginal: cf.monedaOriginal,
                             montoOriginal: cf.montoOriginal,
                             tipoCambio: cf.tipoCambio,
+                            metodoPago: cf.metodoPago,
+                            tarjetaId: cf.tarjetaId,
+                            tarjetaNombre: cf.tarjetaNombre,
+                            tarjetaBanco: cf.tarjetaBanco,
+                            tarjetaColor: cf.tarjetaColor,
+                            tarjetaUltimosCuatro: cf.tarjetaUltimosCuatro,
                           })
                         }
                         className="hover:bg-muted/30 transition cursor-pointer"
@@ -669,6 +778,45 @@ export function FijosClient() {
 
                         <td className="py-2.5 px-3 text-right font-mono font-medium text-foreground whitespace-nowrap">
                           {formatMoney(cf.monto, moneda)}
+                        </td>
+
+                        <td className="py-2.5 px-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <div className="relative inline-flex items-center">
+                            <select
+                              value={
+                                cf.metodoPago === 'TARJETA_CREDITO'
+                                  ? `TARJETA:${cf.tarjetaId || ''}`
+                                  : cf.metodoPago || 'EFECTIVO_DEBITO'
+                              }
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (val.startsWith('TARJETA:')) {
+                                  const tId = val.replace('TARJETA:', '');
+                                  handleCambiarMetodoPagoFijo(cf.id, 'TARJETA_CREDITO', tId || null);
+                                } else {
+                                  handleCambiarMetodoPagoFijo(cf.id, val, null);
+                                }
+                              }}
+                              disabled={isLoading}
+                              className={`text-[11px] font-medium py-1 pl-2 pr-6 rounded-lg border appearance-none cursor-pointer outline-none transition bg-background ${
+                                cf.metodoPago === 'TARJETA_CREDITO'
+                                  ? 'text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/40 dark:bg-indigo-950/20 font-semibold'
+                                  : cf.metodoPago === 'TRANSFERENCIA'
+                                  ? 'text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-900/50 bg-cyan-50/40 dark:bg-cyan-950/20 font-semibold'
+                                  : 'text-muted-foreground border-border hover:text-foreground'
+                              }`}
+                              title="Cambiar forma de pago para este mes"
+                            >
+                              <option value="EFECTIVO_DEBITO">💵 Efectivo / Débito</option>
+                              <option value="TRANSFERENCIA">🏦 Transferencia</option>
+                              {tarjetas.map((t) => (
+                                <option key={t.id} value={`TARJETA:${t.id}`}>
+                                  💳 {t.nombre}
+                                </option>
+                              ))}
+                            </select>
+                            <ChevronDown className="w-3 h-3 absolute right-1.5 pointer-events-none text-muted-foreground" />
+                          </div>
                         </td>
 
                         <td className="py-2.5 px-3 text-center whitespace-nowrap">
@@ -784,6 +932,12 @@ export function FijosClient() {
                     monedaOriginal: cf.monedaOriginal,
                     montoOriginal: cf.montoOriginal,
                     tipoCambio: cf.tipoCambio,
+                    metodoPago: cf.metodoPago,
+                    tarjetaId: cf.tarjetaId,
+                    tarjetaNombre: cf.tarjetaNombre,
+                    tarjetaBanco: cf.tarjetaBanco,
+                    tarjetaColor: cf.tarjetaColor,
+                    tarjetaUltimosCuatro: cf.tarjetaUltimosCuatro,
                   })
                 }
                 className={`group bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between border-l-4 ${estilo.borderColor} ${estilo.bgCardHover} hover:shadow-md transition cursor-pointer`}
@@ -840,8 +994,48 @@ export function FijosClient() {
                   </div>
                 </div>
 
-                {/* Estado y Botones de 1-Click */}
-                <div className="pt-3 border-t border-border space-y-2" onClick={(e) => e.stopPropagation()}>
+                {/* Estado y Forma de Pago */}
+                <div className="pt-3 border-t border-border space-y-2.5" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-muted-foreground">Forma de pago:</span>
+                    <div className="relative inline-flex items-center">
+                      <select
+                        value={
+                          cf.metodoPago === 'TARJETA_CREDITO'
+                            ? `TARJETA:${cf.tarjetaId || ''}`
+                            : cf.metodoPago || 'EFECTIVO_DEBITO'
+                        }
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val.startsWith('TARJETA:')) {
+                            const tId = val.replace('TARJETA:', '');
+                            handleCambiarMetodoPagoFijo(cf.id, 'TARJETA_CREDITO', tId || null);
+                          } else {
+                            handleCambiarMetodoPagoFijo(cf.id, val, null);
+                          }
+                        }}
+                        disabled={isLoading}
+                        className={`text-[11px] font-medium py-0.5 pl-2 pr-5 rounded-md border appearance-none cursor-pointer outline-none transition bg-background ${
+                          cf.metodoPago === 'TARJETA_CREDITO'
+                            ? 'text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/40 dark:bg-indigo-950/20 font-semibold'
+                            : cf.metodoPago === 'TRANSFERENCIA'
+                            ? 'text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-900/50 bg-cyan-50/40 dark:bg-cyan-950/20 font-semibold'
+                            : 'text-muted-foreground border-border hover:text-foreground'
+                        }`}
+                        title="Cambiar forma de pago para este mes"
+                      >
+                        <option value="EFECTIVO_DEBITO">💵 Efectivo / Débito</option>
+                        <option value="TRANSFERENCIA">🏦 Transferencia</option>
+                        {tarjetas.map((t) => (
+                          <option key={t.id} value={`TARJETA:${t.id}`}>
+                            💳 {t.nombre}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="w-3 h-3 absolute right-1 pointer-events-none text-muted-foreground" />
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Estado este mes:</span>
                     {cf.estado === 'ADELANTADO' ? (
@@ -1529,6 +1723,76 @@ export function FijosClient() {
                 </div>
               </div>
 
+              {/* Selector de Forma de Pago */}
+              <div className="space-y-1.5 pt-1">
+                <label className="font-semibold text-foreground">
+                  Forma de Pago:
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setNuevoFijoMetodoPago('EFECTIVO_DEBITO')}
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${
+                      nuevoFijoMetodoPago === 'EFECTIVO_DEBITO'
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    💵 Efectivo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setNuevoFijoMetodoPago('TRANSFERENCIA')}
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${
+                      nuevoFijoMetodoPago === 'TRANSFERENCIA'
+                        ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    🏦 Transferencia
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNuevoFijoMetodoPago('TARJETA_CREDITO');
+                      if (!nuevoFijoTarjetaId && tarjetas.length > 0) {
+                        setNuevoFijoTarjetaId(tarjetas[0].id);
+                      }
+                    }}
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${
+                      nuevoFijoMetodoPago === 'TARJETA_CREDITO'
+                        ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    💳 Tarjeta
+                  </button>
+                </div>
+              </div>
+
+              {nuevoFijoMetodoPago === 'TARJETA_CREDITO' && (
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-foreground">
+                    Tarjeta de Crédito:
+                  </label>
+                  <select
+                    value={nuevoFijoTarjetaId}
+                    onChange={(e) => setNuevoFijoTarjetaId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-background border border-border text-foreground text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    {tarjetas && tarjetas.length > 0 ? (
+                      tarjetas.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.nombre} ({t.banco})
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">No hay tarjetas registradas</option>
+                    )}
+                  </select>
+                </div>
+              )}
+
               <div className="pt-3 flex items-center justify-end gap-2 border-t border-border">
                 <button
                   type="button"
@@ -1748,6 +2012,76 @@ export function FijosClient() {
                   />
                 </div>
               </div>
+
+              {/* Selector de Forma de Pago Predeterminada en Edición */}
+              <div className="space-y-1.5 pt-1">
+                <label className="font-semibold text-foreground">
+                  Forma de Pago Predeterminada:
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setEditFijoMetodoPago('EFECTIVO_DEBITO')}
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${
+                      editFijoMetodoPago === 'EFECTIVO_DEBITO'
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    💵 Efectivo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditFijoMetodoPago('TRANSFERENCIA')}
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${
+                      editFijoMetodoPago === 'TRANSFERENCIA'
+                        ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    🏦 Transferencia
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setEditFijoMetodoPago('TARJETA_CREDITO');
+                      if (!editFijoTarjetaId && tarjetas.length > 0) {
+                        setEditFijoTarjetaId(tarjetas[0].id);
+                      }
+                    }}
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${
+                      editFijoMetodoPago === 'TARJETA_CREDITO'
+                        ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500 shadow-xs'
+                        : 'bg-secondary/40 text-muted-foreground border-border'
+                    }`}
+                  >
+                    💳 Tarjeta
+                  </button>
+                </div>
+              </div>
+
+              {editFijoMetodoPago === 'TARJETA_CREDITO' && (
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-foreground">
+                    Tarjeta de Crédito:
+                  </label>
+                  <select
+                    value={editFijoTarjetaId}
+                    onChange={(e) => setEditFijoTarjetaId(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-background border border-border text-foreground text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-500"
+                  >
+                    {tarjetas && tarjetas.length > 0 ? (
+                      tarjetas.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.nombre} ({t.banco})
+                        </option>
+                      ))
+                    ) : (
+                      <option value="">No hay tarjetas registradas</option>
+                    )}
+                  </select>
+                </div>
+              )}
 
               <div className="pt-3 flex items-center justify-end gap-2 border-t border-border">
                 <button
@@ -2301,6 +2635,8 @@ export function FijosClient() {
         onClose={() => setDetalleItem(null)}
         onCambiarEstado={handleCambiarEstadoModal}
         onGuardarMonto={handleGuardarMontoModal}
+        onCambiarMetodoPago={handleCambiarMetodoPagoModal}
+        tarjetas={tarjetas}
         monedaSimbolo={moneda}
       />
     </div>

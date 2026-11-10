@@ -3,6 +3,8 @@
 import React from 'react';
 import { Sidebar } from './Sidebar';
 import { FloatingSumBar } from '../common/FloatingSumBar';
+import { DynamicRecordModal } from '../modals/DynamicRecordModal';
+import { MobileRecordFAB } from './MobileRecordFAB';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
@@ -17,7 +19,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </main>
       </div>
 
+      {/* Barra de Sumatoria Flotante */}
       <FloatingSumBar />
+
+      {/* Botón Flotante para Móvil (FAB) */}
+      <MobileRecordFAB />
+
+      {/* Modal Dinámico Global (Desktop + Mobile Sheet) */}
+      <DynamicRecordModal />
     </div>
   );
 }

@@ -19,6 +19,11 @@ interface FinanzasContextType {
   selectAllGastos: (items: Array<{ id: string; monto: number }>) => void;
   clearSelection: () => void;
   sumaSeleccionada: number;
+  // Modal Dinámico de Registro Rápido
+  isRecordModalOpen: boolean;
+  recordModalType: 'GASTO' | 'INGRESO' | 'FIJO';
+  openRecordModal: (type?: 'GASTO' | 'INGRESO' | 'FIJO') => void;
+  closeRecordModal: () => void;
 }
 
 const FinanzasContext = createContext<FinanzasContextType | undefined>(undefined);
@@ -45,6 +50,46 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
 
   // Selección de items y sumatoria instantánea
   const [selectedItems, setSelectedItems] = useState<Map<string, number>>(new Map());
+
+  // Modal Dinámico de Registro Unificado
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [recordModalType, setRecordModalType] = useState<'GASTO' | 'INGRESO' | 'FIJO'>('GASTO');
+
+  const openRecordModal = useCallback((type: 'GASTO' | 'INGRESO' | 'FIJO' = 'GASTO') => {
+    setRecordModalType(type);
+    setIsRecordModalOpen(true);
+  }, []);
+
+  const closeRecordModal = useCallback(() => {
+    setIsRecordModalOpen(false);
+  }, []);
+
+  // Atajo global de teclado para registro rápido (Desktop: N o Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if ((e.key === 'n' || e.key === 'N') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        openRecordModal('GASTO');
+      } else if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        openRecordModal('GASTO');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [openRecordModal]);
 
   const fetchResumen = useCallback(async (intentos: number = 2) => {
     try {
@@ -133,6 +178,10 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
         selectAllGastos,
         clearSelection,
         sumaSeleccionada,
+        isRecordModalOpen,
+        recordModalType,
+        openRecordModal,
+        closeRecordModal,
       }}
     >
       {children}

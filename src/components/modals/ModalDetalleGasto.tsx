@@ -64,12 +64,13 @@ export interface DetalleItemData {
   cuotasTotales?: number;
 
   // Tarjeta de crédito
-  tarjetaNombre?: string;
-  tarjetaBanco?: string;
+  tarjetaId?: string | null;
+  tarjetaNombre?: string | null;
+  tarjetaBanco?: string | null;
   tarjetaUltimosCuatro?: string | null;
   tarjetaDiaCorte?: number;
   tarjetaDiaPago?: number;
-  tarjetaColor?: string;
+  tarjetaColor?: string | null;
 
   // Préstamo
   banco?: string;
@@ -89,7 +90,20 @@ interface ModalDetalleGastoProps {
   onCambiarEstado?: (item: DetalleItemData, nuevoEstado: string) => Promise<void>;
   onGuardarMonto?: (item: DetalleItemData, nuevoMonto: number) => Promise<void>;
   onEliminarGasto?: (item: DetalleItemData) => Promise<void>;
+  onCambiarMetodoPago?: (
+    item: DetalleItemData,
+    nuevoMetodo: string,
+    tarjetaId?: string | null,
+    aplicarFuturos?: boolean
+  ) => Promise<void>;
   monedaSimbolo?: string;
+  tarjetas?: Array<{
+    id: string;
+    nombre: string;
+    banco: string;
+    color: string;
+    ultimosCuatro?: string | null;
+  }>;
 }
 
 export function ModalDetalleGasto({
@@ -98,7 +112,9 @@ export function ModalDetalleGasto({
   onCambiarEstado,
   onGuardarMonto,
   onEliminarGasto,
+  onCambiarMetodoPago,
   monedaSimbolo = 'S/',
+  tarjetas = [],
 }: ModalDetalleGastoProps) {
   const [updating, setUpdating] = useState(false);
   const [editandoMonto, setEditandoMonto] = useState(false);
@@ -107,6 +123,13 @@ export function ModalDetalleGasto({
   const [editandoMontoTotal, setEditandoMontoTotal] = useState(false);
   const [nuevoMontoTotal, setNuevoMontoTotal] = useState(item?.montoTotal ? item.montoTotal.toString() : '');
   const [savingMontoTotal, setSavingMontoTotal] = useState(false);
+
+  // Edición método de pago (Fijo)
+  const [editandoMetodoPago, setEditandoMetodoPago] = useState(false);
+  const [metodoPagoSeleccionado, setMetodoPagoSeleccionado] = useState(item?.metodoPago || 'EFECTIVO_DEBITO');
+  const [tarjetaIdSeleccionada, setTarjetaIdSeleccionada] = useState(item?.tarjetaId || (tarjetas?.[0]?.id || ''));
+  const [aplicarMetodoAFuturos, setAplicarMetodoAFuturos] = useState(false);
+  const [savingMetodo, setSavingMetodo] = useState(false);
 
   // Conversor en edición
   const [modoEdicion, setModoEdicion] = useState<'SOLES' | 'DOLARES'>('SOLES');
@@ -128,10 +151,30 @@ export function ModalDetalleGasto({
       setTcEdit(item.tipoCambio ? item.tipoCambio.toString() : '4.00');
       setNuevoMontoTotal(item.montoTotal ? item.montoTotal.toString() : '');
       setEditandoMontoTotal(false);
+      setMetodoPagoSeleccionado(item.metodoPago || 'EFECTIVO_DEBITO');
+      setTarjetaIdSeleccionada(item.tarjetaId || (tarjetas?.[0]?.id || ''));
+      setEditandoMetodoPago(false);
+      setAplicarMetodoAFuturos(false);
     }
-  }, [item]);
+  }, [item, tarjetas]);
 
   if (!item) return null;
+
+  const handleGuardarMetodoPago = async () => {
+    if (!onCambiarMetodoPago) return;
+    try {
+      setSavingMetodo(true);
+      await onCambiarMetodoPago(
+        item,
+        metodoPagoSeleccionado,
+        metodoPagoSeleccionado === 'TARJETA_CREDITO' ? tarjetaIdSeleccionada : null,
+        aplicarMetodoAFuturos
+      );
+      setEditandoMetodoPago(false);
+    } finally {
+      setSavingMetodo(false);
+    }
+  };
 
   const handleGuardarMontoTotal = async () => {
     const val = parseFloat(nuevoMontoTotal);
@@ -739,30 +782,208 @@ export function ModalDetalleGasto({
             </div>
           )}
 
-          {/* DETALLES DE COSTO FIJO Y VIGENCIA */}
+          {/* DETALLES DE COSTO FIJO: FORMA DE PAGO (TARJETA O EFECTIVO) Y VIGENCIA */}
           {item.tipo === 'FIJO' && (
-            <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
-              <div className="flex items-center gap-2 text-xs font-bold text-sky-400">
-                <Home className="w-4 h-4" />
-                <span>Vigencia y Recurrencia</span>
-              </div>
+            <>
+              {/* FORMA DE PAGO: TARJETA O EFECTIVO */}
+              <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                <div className="flex items-center justify-between text-xs font-bold">
+                  <div className="flex items-center gap-2 text-foreground">
+                    {item.metodoPago === 'TARJETA_CREDITO' ? (
+                      <CreditCard className="w-4 h-4 text-indigo-400" />
+                    ) : item.metodoPago === 'TRANSFERENCIA' ? (
+                      <Landmark className="w-4 h-4 text-cyan-400" />
+                    ) : (
+                      <Banknote className="w-4 h-4 text-emerald-400" />
+                    )}
+                    <span>Forma de Pago del Mes</span>
+                  </div>
+                  {onCambiarMetodoPago && !editandoMetodoPago && (
+                    <button
+                      type="button"
+                      onClick={() => setEditandoMetodoPago(true)}
+                      className="text-[11px] font-semibold text-sky-400 hover:text-sky-300 flex items-center gap-1 transition"
+                    >
+                      <Pencil className="w-3 h-3" />
+                      <span>Cambiar</span>
+                    </button>
+                  )}
+                </div>
 
-              <div className="space-y-2 text-xs">
-                {item.mesFin ? (
-                  <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400 space-y-1">
-                    <span className="font-bold block">⏳ Compromiso con Vigencia Temporal</span>
-                    <p className="text-[11px] text-muted-foreground">
-                      Activo desde <strong className="text-foreground">{formatPeriodoLabel(item.mesInicio || '2026-11')}</strong> hasta <strong className="text-foreground">{formatPeriodoLabel(item.mesFin)}</strong>.
-                      Al concluir su vigencia, dejará de descontarse automáticamente.
-                    </p>
+                {!editandoMetodoPago ? (
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 border border-border">
+                    <div className="flex items-center gap-2.5">
+                      <div
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
+                          item.metodoPago === 'TARJETA_CREDITO'
+                            ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
+                            : item.metodoPago === 'TRANSFERENCIA'
+                            ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                            : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                        }`}
+                      >
+                        {item.metodoPago === 'TARJETA_CREDITO' ? (
+                          <CreditCard className="w-4 h-4" />
+                        ) : item.metodoPago === 'TRANSFERENCIA' ? (
+                          <Landmark className="w-4 h-4" />
+                        ) : (
+                          <Banknote className="w-4 h-4" />
+                        )}
+                      </div>
+                      <div>
+                        <span className="text-xs font-bold text-foreground block">
+                          {item.metodoPago === 'TARJETA_CREDITO'
+                            ? (item.tarjetaNombre || 'Tarjeta de Crédito')
+                            : item.metodoPago === 'TRANSFERENCIA'
+                            ? 'Transferencia Bancaria'
+                            : 'Efectivo / Débito'}
+                        </span>
+                        <span className="text-[11px] text-muted-foreground block">
+                          {item.metodoPago === 'TARJETA_CREDITO'
+                            ? `Cargo mensual a tu tarjeta ${item.tarjetaBanco ? `(${item.tarjetaBanco})` : ''}`
+                            : item.metodoPago === 'TRANSFERENCIA'
+                            ? 'Transferencia directa o débito en cuenta'
+                            : 'Pago en efectivo o saldo disponible'}
+                        </span>
+                      </div>
+                    </div>
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                        item.metodoPago === 'TARJETA_CREDITO'
+                          ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
+                          : item.metodoPago === 'TRANSFERENCIA'
+                          ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                      }`}
+                    >
+                      {item.metodoPago === 'TARJETA_CREDITO'
+                        ? 'A la Tarjeta'
+                        : item.metodoPago === 'TRANSFERENCIA'
+                        ? 'Transferencia'
+                        : 'Efectivo'}
+                    </span>
                   </div>
                 ) : (
-                  <div className="p-3 rounded-xl bg-secondary/40 border border-border text-[11px] text-muted-foreground">
-                    🔄 Costo mensual recurrente. Se factura todos los meses con vencimiento el día <strong className="text-foreground">{item.diaVencimiento || 30}</strong>.
+                  <div className="space-y-3 p-3.5 rounded-xl bg-secondary/40 border border-border text-xs animate-in fade-in duration-150">
+                    <div className="grid grid-cols-3 gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => setMetodoPagoSeleccionado('EFECTIVO_DEBITO')}
+                        className={`py-2 px-2 rounded-xl text-center font-bold border transition ${
+                          metodoPagoSeleccionado === 'EFECTIVO_DEBITO'
+                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500 shadow-xs'
+                            : 'bg-background/80 text-muted-foreground border-border hover:text-foreground'
+                        }`}
+                      >
+                        <Banknote className="w-3.5 h-3.5 mx-auto mb-1" />
+                        <span>Efectivo</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setMetodoPagoSeleccionado('TRANSFERENCIA')}
+                        className={`py-2 px-2 rounded-xl text-center font-bold border transition ${
+                          metodoPagoSeleccionado === 'TRANSFERENCIA'
+                            ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500 shadow-xs'
+                            : 'bg-background/80 text-muted-foreground border-border hover:text-foreground'
+                        }`}
+                      >
+                        <Landmark className="w-3.5 h-3.5 mx-auto mb-1" />
+                        <span>Transferencia</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setMetodoPagoSeleccionado('TARJETA_CREDITO')}
+                        className={`py-2 px-2 rounded-xl text-center font-bold border transition ${
+                          metodoPagoSeleccionado === 'TARJETA_CREDITO'
+                            ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500 shadow-xs'
+                            : 'bg-background/80 text-muted-foreground border-border hover:text-foreground'
+                        }`}
+                      >
+                        <CreditCard className="w-3.5 h-3.5 mx-auto mb-1" />
+                        <span>Tarjeta</span>
+                      </button>
+                    </div>
+
+                    {metodoPagoSeleccionado === 'TARJETA_CREDITO' && (
+                      <div className="space-y-1.5 pt-1">
+                        <label className="text-[11px] font-semibold text-foreground block">
+                          Selecciona la Tarjeta de Crédito:
+                        </label>
+                        <select
+                          value={tarjetaIdSeleccionada}
+                          onChange={(e) => setTarjetaIdSeleccionada(e.target.value)}
+                          className="w-full px-3 py-2 rounded-xl bg-background border border-border text-foreground text-xs font-semibold outline-none focus:ring-2 focus:ring-indigo-500"
+                        >
+                          {tarjetas && tarjetas.length > 0 ? (
+                            tarjetas.map((t) => (
+                              <option key={t.id} value={t.id}>
+                                {t.nombre} ({t.banco})
+                              </option>
+                            ))
+                          ) : (
+                            <option value="">No hay tarjetas registradas</option>
+                          )}
+                        </select>
+                      </div>
+                    )}
+
+                    <label className="flex items-center gap-2 pt-1 text-[11px] text-muted-foreground cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={aplicarMetodoAFuturos}
+                        onChange={(e) => setAplicarMetodoAFuturos(e.target.checked)}
+                        className="rounded border-border text-sky-500 focus:ring-sky-500"
+                      />
+                      <span>Aplicar también como método predeterminado a meses futuros</span>
+                    </label>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-border">
+                      <button
+                        type="button"
+                        onClick={() => setEditandoMetodoPago(false)}
+                        className="px-3 py-1.5 rounded-lg text-muted-foreground hover:bg-secondary text-xs"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        disabled={savingMetodo}
+                        onClick={handleGuardarMetodoPago}
+                        className="px-3.5 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-semibold text-xs shadow disabled:opacity-50"
+                      >
+                        {savingMetodo ? 'Guardando...' : 'Guardar Forma de Pago'}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
-            </div>
+
+              {/* VIGENCIA Y RECURRENCIA */}
+              <div className="bg-card border border-border rounded-2xl p-4 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-sky-400">
+                  <Home className="w-4 h-4" />
+                  <span>Vigencia y Recurrencia</span>
+                </div>
+
+                <div className="space-y-2 text-xs">
+                  {item.mesFin ? (
+                    <div className="p-3 rounded-xl bg-sky-500/10 border border-sky-500/30 text-sky-400 space-y-1">
+                      <span className="font-bold block">⏳ Compromiso con Vigencia Temporal</span>
+                      <p className="text-[11px] text-muted-foreground">
+                        Activo desde <strong className="text-foreground">{formatPeriodoLabel(item.mesInicio || '2026-11')}</strong> hasta <strong className="text-foreground">{formatPeriodoLabel(item.mesFin)}</strong>.
+                        Al concluir su vigencia, dejará de descontarse automáticamente.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="p-3 rounded-xl bg-secondary/40 border border-border text-[11px] text-muted-foreground">
+                      🔄 Costo mensual recurrente. Se factura todos los meses con vencimiento el día <strong className="text-foreground">{item.diaVencimiento || 30}</strong>.
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
           )}
 
           {/* CARACTERÍSTICAS ADICIONALES: CATEGORÍA, FECHA, PERIODO, NOTAS */}

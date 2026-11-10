@@ -39,17 +39,19 @@ model ConfiguracionUsuario {
 }
 
 model TarjetaCredito {
-  id            String   @id @default(uuid())
-  nombre        String   // Ej: BCP Visa Signature
-  banco         String   // BCP, BBVA, Interbank, etc.
-  ultimosCuatro String?  // Ej: 4521
-  diaCorte      Int      @default(10) // Día de corte (ej: 10)
-  diaPago       Int      @default(30) // Día límite de pago (fin de mes)
-  color         String   @default("#2563eb")
-  activa        Boolean  @default(true)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  gastos        Gasto[]
+  id                 String                 @id @default(uuid())
+  nombre             String                 // Ej: BCP Visa Signature
+  banco              String                 // BCP, BBVA, Interbank, etc.
+  ultimosCuatro      String?                // Ej: 4521
+  diaCorte           Int                    @default(10) // Día de corte (ej: 10)
+  diaPago            Int                    @default(30) // Día límite de pago (fin de mes)
+  color              String                 @default("#2563eb")
+  activa             Boolean                @default(true)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  gastos             Gasto[]
+  costosFijos        CostoFijo[]
+  registrosCostoFijo RegistroCostoFijoMes[]
 }
 
 model Categoria {
@@ -71,6 +73,9 @@ model CostoFijo {
   diaVencimiento Int                   @default(30) // Día del mes
   categoriaId    String?
   categoria      Categoria?            @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  metodoPago     MetodoPago            @default(EFECTIVO_DEBITO)
+  tarjetaId      String?
+  tarjeta        TarjetaCredito?       @relation(fields: [tarjetaId], references: [id], onDelete: SetNull)
   activo         Boolean               @default(true)
   mesInicio      String?               // YYYY-MM
   mesFin         String?               // YYYY-MM
@@ -80,16 +85,19 @@ model CostoFijo {
 }
 
 model RegistroCostoFijoMes {
-  id            String     @id @default(uuid())
+  id            String          @id @default(uuid())
   costoFijoId   String
-  costoFijo     CostoFijo  @relation(fields: [costoFijoId], references: [id], onDelete: Cascade)
-  periodo       String     // YYYY-MM (ej: "2026-11", "2026-12")
-  monto         Decimal    @db.Decimal(12, 2)
-  estado        EstadoPago @default(PENDIENTE)
+  costoFijo     CostoFijo       @relation(fields: [costoFijoId], references: [id], onDelete: Cascade)
+  periodo       String          // YYYY-MM (ej: "2026-11", "2026-12")
+  monto         Decimal         @db.Decimal(12, 2)
+  estado        EstadoPago      @default(PENDIENTE)
+  metodoPago    MetodoPago?
+  tarjetaId     String?
+  tarjeta       TarjetaCredito? @relation(fields: [tarjetaId], references: [id], onDelete: SetNull)
   fechaPagoReal DateTime?
   notas         String?
-  createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   @@unique([costoFijoId, periodo])
 }

@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { EstadoPago } from '@prisma/client';
+import { EstadoPago, MetodoPago } from '@prisma/client';
 
-// POST: Actualizar registro mensual específico (ej: cambiar monto de Octubre a S/ 220 o cambiar estado)
+// POST: Actualizar registro mensual específico (ej: cambiar monto de Octubre a S/ 220 o cambiar estado o método de pago)
 export async function POST(request: NextRequest) {
   try {
-    const { costoFijoId, periodo, estado, monto, notas } = await request.json();
+    const { costoFijoId, periodo, estado, monto, notas, metodoPago, tarjetaId } = await request.json();
 
     const costoFijo = await prisma.costoFijo.findUnique({ where: { id: costoFijoId } });
     if (!costoFijo) {
@@ -26,6 +26,15 @@ export async function POST(request: NextRequest) {
     if (notas !== undefined) {
       updateData.notas = notas;
     }
+    if (metodoPago !== undefined) {
+      updateData.metodoPago = metodoPago as MetodoPago;
+      updateData.tarjetaId = metodoPago === MetodoPago.TARJETA_CREDITO ? (tarjetaId || null) : null;
+    }
+
+    const createMetodoPago = (metodoPago as MetodoPago) || costoFijo.metodoPago || MetodoPago.EFECTIVO_DEBITO;
+    const createTarjetaId = createMetodoPago === MetodoPago.TARJETA_CREDITO
+      ? (tarjetaId !== undefined ? tarjetaId : costoFijo.tarjetaId)
+      : null;
 
     const registro = await prisma.registroCostoFijoMes.upsert({
       where: {
@@ -40,6 +49,8 @@ export async function POST(request: NextRequest) {
         periodo,
         monto: montoNum !== undefined ? montoNum : costoFijo.monto,
         estado: (estado as EstadoPago) || EstadoPago.PENDIENTE,
+        metodoPago: createMetodoPago,
+        tarjetaId: createTarjetaId,
         fechaPagoReal,
         notas,
       },
@@ -56,7 +67,7 @@ export async function POST(request: NextRequest) {
 // Los meses pasados y los que ya están PAGADOS o ADELANTADOS quedan 100% intactos.
 export async function PUT(request: NextRequest) {
   try {
-    const { id, concepto, monto, diaVencimiento, mesDesde, mesFin, activo } = await request.json();
+    const { id, concepto, monto, diaVencimiento, mesDesde, mesFin, activo, metodoPago, tarjetaId } = await request.json();
 
     const costoFijo = await prisma.costoFijo.findUnique({ where: { id } });
     if (!costoFijo) {
@@ -75,20 +86,29 @@ export async function PUT(request: NextRequest) {
         ...(diaVencimiento !== undefined && { diaVencimiento: diaNum }),
         ...(mesFin !== undefined && { mesFin }),
         ...(activo !== undefined && { activo }),
+        ...(metodoPago !== undefined && {
+          metodoPago: metodoPago as MetodoPago,
+          tarjetaId: metodoPago === MetodoPago.TARJETA_CREDITO ? (tarjetaId || null) : null,
+        }),
       },
     });
 
     // 2. Aplicar a registros futuros PENDIENTES (no retroactivo)
-    if (mesDesde && monto !== undefined) {
+    if (mesDesde && (monto !== undefined || metodoPago !== undefined)) {
+      const updateDataFuture: any = {};
+      if (monto !== undefined) updateDataFuture.monto = montoNum;
+      if (metodoPago !== undefined) {
+        updateDataFuture.metodoPago = metodoPago as MetodoPago;
+        updateDataFuture.tarjetaId = metodoPago === MetodoPago.TARJETA_CREDITO ? (tarjetaId || null) : null;
+      }
+
       await prisma.registroCostoFijoMes.updateMany({
         where: {
           costoFijoId: id,
           periodo: { gte: mesDesde },
           estado: EstadoPago.PENDIENTE, // Lo que ya se pagó o adelantó NO se modifica
         },
-        data: {
-          monto: montoNum,
-        },
+        data: updateDataFuture,
       });
     }
 
