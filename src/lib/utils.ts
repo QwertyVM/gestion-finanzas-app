@@ -30,21 +30,25 @@ export function getCurrentPeriodo(): string {
 }
 
 // ==========================================
-// CLASIFICACIÓN VISUAL DE EGRESOS DEL MES
+// CLASIFICACIÓN VISUAL Y DE NEGOCIO DE EGRESOS
 // ==========================================
 
-export type ClasificacionEgreso = 'FIJO' | 'PRESTAMO_CUOTA' | 'VARIABLE';
+export type ClasificacionEgreso = 'FIJO' | 'PRESTAMO' | 'CUOTA' | 'PRESTAMO_CUOTA' | 'VARIABLE';
 
 export interface EstiloClasificacion {
   key: ClasificacionEgreso;
   label: string;
   badgeLabel: string;
+  hexColor: string;
   borderColor: string;
   bgCardHover: string;
   badgeBg: string;
   badgeText: string;
   badgeBorder: string;
   dotColor: string;
+  accentText: string;
+  pillActiveBg: string;
+  lightBg: string;
 }
 
 export const ESTILOS_CLASIFICACION: Record<ClasificacionEgreso, EstiloClasificacion> = {
@@ -52,36 +56,88 @@ export const ESTILOS_CLASIFICACION: Record<ClasificacionEgreso, EstiloClasificac
     key: 'FIJO',
     label: 'Costos Fijos',
     badgeLabel: 'Fijo',
-    borderColor: 'border-l-sky-500/70 dark:border-l-sky-400/70',
-    bgCardHover: 'hover:border-zinc-300 dark:hover:border-zinc-700',
-    badgeBg: 'bg-sky-50 dark:bg-sky-950/40',
+    hexColor: '#0284c7', // Sky-600
+    borderColor: 'border-l-sky-500 dark:border-l-sky-400',
+    bgCardHover: 'hover:border-sky-300 dark:hover:border-sky-700/60',
+    badgeBg: 'bg-sky-50 dark:bg-sky-950/50',
     badgeText: 'text-sky-700 dark:text-sky-300',
-    badgeBorder: 'border-sky-200/60 dark:border-sky-800/50',
+    badgeBorder: 'border-sky-200/80 dark:border-sky-800/60',
     dotColor: 'bg-sky-500',
+    accentText: 'text-sky-600 dark:text-sky-400',
+    pillActiveBg: 'bg-sky-600 text-white dark:bg-sky-500',
+    lightBg: 'bg-sky-500/10 dark:bg-sky-500/20',
+  },
+  PRESTAMO: {
+    key: 'PRESTAMO',
+    label: 'Préstamos Bancarios',
+    badgeLabel: 'Préstamo',
+    hexColor: '#7c3aed', // Purple-600
+    borderColor: 'border-l-purple-500 dark:border-l-purple-400',
+    bgCardHover: 'hover:border-purple-300 dark:hover:border-purple-700/60',
+    badgeBg: 'bg-purple-50 dark:bg-purple-950/50',
+    badgeText: 'text-purple-700 dark:text-purple-300',
+    badgeBorder: 'border-purple-200/80 dark:border-purple-800/60',
+    dotColor: 'bg-purple-500',
+    accentText: 'text-purple-600 dark:text-purple-400',
+    pillActiveBg: 'bg-purple-600 text-white dark:bg-purple-500',
+    lightBg: 'bg-purple-500/10 dark:bg-purple-500/20',
+  },
+  CUOTA: {
+    key: 'CUOTA',
+    label: 'Cuotas de Tarjeta',
+    badgeLabel: 'Cuota',
+    hexColor: '#4f46e5', // Indigo-600
+    borderColor: 'border-l-indigo-500 dark:border-l-indigo-400',
+    bgCardHover: 'hover:border-indigo-300 dark:hover:border-indigo-700/60',
+    badgeBg: 'bg-indigo-50 dark:bg-indigo-950/50',
+    badgeText: 'text-indigo-700 dark:text-indigo-300',
+    badgeBorder: 'border-indigo-200/80 dark:border-indigo-800/60',
+    dotColor: 'bg-indigo-500',
+    accentText: 'text-indigo-600 dark:text-indigo-400',
+    pillActiveBg: 'bg-indigo-600 text-white dark:bg-indigo-500',
+    lightBg: 'bg-indigo-500/10 dark:bg-indigo-500/20',
   },
   PRESTAMO_CUOTA: {
     key: 'PRESTAMO_CUOTA',
     label: 'Préstamos & Cuotas',
-    badgeLabel: 'Préstamo',
-    borderColor: 'border-l-violet-500/70 dark:border-l-violet-400/70',
-    bgCardHover: 'hover:border-zinc-300 dark:hover:border-zinc-700',
-    badgeBg: 'bg-violet-50 dark:bg-violet-950/40',
+    badgeLabel: 'Préstamo / Cuota',
+    hexColor: '#8b5cf6', // Violet-500
+    borderColor: 'border-l-violet-500 dark:border-l-violet-400',
+    bgCardHover: 'hover:border-violet-300 dark:hover:border-violet-700/60',
+    badgeBg: 'bg-violet-50 dark:bg-violet-950/50',
     badgeText: 'text-violet-700 dark:text-violet-300',
-    badgeBorder: 'border-violet-200/60 dark:border-violet-800/50',
+    badgeBorder: 'border-violet-200/80 dark:border-violet-800/60',
     dotColor: 'bg-violet-500',
+    accentText: 'text-violet-600 dark:text-violet-400',
+    pillActiveBg: 'bg-violet-600 text-white dark:bg-violet-500',
+    lightBg: 'bg-violet-500/10 dark:bg-violet-500/20',
   },
   VARIABLE: {
     key: 'VARIABLE',
     label: 'Compras & Variables',
     badgeLabel: 'Variable',
-    borderColor: 'border-l-zinc-300 dark:border-l-zinc-700',
-    bgCardHover: 'hover:border-zinc-300 dark:hover:border-zinc-700',
-    badgeBg: 'bg-zinc-100 dark:bg-zinc-800/60',
-    badgeText: 'text-zinc-600 dark:text-zinc-400',
-    badgeBorder: 'border-zinc-200 dark:border-zinc-700/60',
-    dotColor: 'bg-zinc-400 dark:bg-zinc-500',
+    hexColor: '#0d9488', // Teal-600
+    borderColor: 'border-l-teal-500 dark:border-l-teal-400',
+    bgCardHover: 'hover:border-teal-300 dark:hover:border-teal-700/60',
+    badgeBg: 'bg-teal-50 dark:bg-teal-950/50',
+    badgeText: 'text-teal-700 dark:text-teal-300',
+    badgeBorder: 'border-teal-200/80 dark:border-teal-800/60',
+    dotColor: 'bg-teal-500',
+    accentText: 'text-teal-600 dark:text-teal-400',
+    pillActiveBg: 'bg-teal-600 text-white dark:bg-teal-500',
+    lightBg: 'bg-teal-500/10 dark:bg-teal-500/20',
   },
 };
+
+export function getEstiloClasificacion(clasificacion?: string | null): EstiloClasificacion {
+  if (!clasificacion) return ESTILOS_CLASIFICACION.VARIABLE;
+  if (clasificacion === 'PRESTAMO_CUOTA') return ESTILOS_CLASIFICACION.PRESTAMO_CUOTA;
+  if (clasificacion === 'PRESTAMO') return ESTILOS_CLASIFICACION.PRESTAMO;
+  if (clasificacion === 'CUOTA') return ESTILOS_CLASIFICACION.CUOTA;
+  if (clasificacion === 'FIJO') return ESTILOS_CLASIFICACION.FIJO;
+  if (clasificacion === 'VARIABLE') return ESTILOS_CLASIFICACION.VARIABLE;
+  return ESTILOS_CLASIFICACION.VARIABLE;
+}
 
 /**
  * Detecta si un concepto o categoría corresponde a una suscripción o servicio recurrente.
@@ -105,17 +161,22 @@ export function esItemRecurrente(concepto: string = '', categoria: string = ''):
 }
 
 /**
- * Determina la clasificación visual de cualquier egreso o compromiso del mes.
+ * Determina la clasificación de cualquier egreso o compromiso del mes.
  */
 export function obtenerClasificacionEgreso(item: {
-  tipo: string;
-  concepto: string;
+  tipo?: string;
+  concepto?: string;
   categoria?: string;
   totalCuotas?: number;
 }): ClasificacionEgreso {
-  // Préstamos formales o compras diferidas en varias cuotas
-  if (item.tipo === 'PRESTAMO' || (item.totalCuotas !== undefined && item.totalCuotas > 1)) {
-    return 'PRESTAMO_CUOTA';
+  // Préstamos formales bancarios
+  if (item.tipo === 'PRESTAMO') {
+    return 'PRESTAMO';
+  }
+
+  // Compras diferidas en cuotas de tarjeta
+  if (item.totalCuotas !== undefined && item.totalCuotas > 1) {
+    return 'CUOTA';
   }
 
   // Costo Fijo (incluye suscripciones y gastos recurrentes mensuales)

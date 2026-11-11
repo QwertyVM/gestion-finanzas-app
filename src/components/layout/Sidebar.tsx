@@ -22,11 +22,13 @@ import {
   Menu,
   X,
   Plus,
+  LogOut,
 } from 'lucide-react';
+import { UserMenu } from './UserMenu';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { periodo, irMesAnterior, irMesSiguiente, openRecordModal } = useFinanzas();
+  const { periodo, irMesAnterior, irMesSiguiente, openRecordModal, usuarioActual, cerrarSesion } = useFinanzas();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -213,22 +215,31 @@ export function Sidebar() {
       </div>
 
       {/* Bottom Area: Minimal Profile & Theme Switch */}
-      <div className="pt-3 border-t border-border/60 flex items-center justify-between px-1">
-        <div className="text-[11px] text-muted-foreground">
-          <span className="font-medium text-foreground">Víctor</span>
-          <span className="mx-1.5 opacity-40">·</span>
-          <span>TC S/ 4.00</span>
-        </div>
+      <div className="pt-3 border-t border-border/60 flex items-center justify-between gap-1.5 px-1">
+        <UserMenu />
 
-        <button
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition"
-          title="Cambiar tema"
-          aria-label="Cambiar tema"
-        >
-          <Sun className="w-4 h-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="w-4 h-4 absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
-        </button>
+        <div className="flex items-center gap-1">
+          {usuarioActual && (
+            <button
+              onClick={cerrarSesion}
+              className="p-1.5 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition shrink-0"
+              title="Cerrar sesión"
+              aria-label="Cerrar sesión"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
+
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition shrink-0"
+            title="Cambiar tema"
+            aria-label="Cambiar tema"
+          >
+            <Sun className="w-4 h-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+            <Moon className="w-4 h-4 absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -257,6 +268,17 @@ export function Sidebar() {
         </div>
 
         <div className="flex items-center gap-1.5">
+          <UserMenu />
+          {usuarioActual && (
+            <button
+              onClick={cerrarSesion}
+              className="p-1.5 rounded-lg text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition"
+              title="Cerrar sesión"
+              aria-label="Cerrar sesión"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={() => openRecordModal('GASTO')}
             className="p-1.5 rounded-lg bg-foreground text-background hover:opacity-90 active:scale-95 transition"
@@ -265,9 +287,6 @@ export function Sidebar() {
           >
             <Plus className="w-4 h-4" />
           </button>
-          <span className="text-xs font-medium text-muted-foreground capitalize">
-            {formatPeriodoLabel(periodo)}
-          </span>
           <button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
             className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition"

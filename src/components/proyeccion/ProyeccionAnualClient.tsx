@@ -162,9 +162,9 @@ export function ProyeccionAnualClient() {
                 <tr>
                   <th scope="col" className="py-2.5 px-3 font-medium">Mes</th>
                   <th scope="col" className="py-2.5 px-3 text-right font-medium">Ingresos</th>
-                  <th scope="col" className="py-2.5 px-3 text-right font-medium">Fijos</th>
-                  <th scope="col" className="py-2.5 px-3 text-right font-medium">Préstamos</th>
-                  <th scope="col" className="py-2.5 px-3 text-right font-medium">Tarjetas & Var</th>
+                  <th scope="col" className="py-2.5 px-3 text-right font-semibold text-sky-600 dark:text-sky-400">Fijos</th>
+                  <th scope="col" className="py-2.5 px-3 text-right font-semibold text-purple-600 dark:text-purple-400">Préstamos</th>
+                  <th scope="col" className="py-2.5 px-3 text-right font-semibold text-teal-600 dark:text-teal-400">Tarjetas & Var</th>
                   <th scope="col" className="py-2.5 px-3 text-right font-medium">Egresos</th>
                   <th scope="col" className="py-2.5 px-3 text-right font-medium">Disponible</th>
                   <th scope="col" className="py-2.5 px-3 text-center font-medium">% Ahorro</th>
@@ -214,15 +214,15 @@ export function ProyeccionAnualClient() {
                         {formatMoney(m.ingresos, moneda)}
                       </td>
 
-                      <td className="py-2.5 px-3 text-right font-mono text-muted-foreground whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right font-mono font-medium text-sky-600 dark:text-sky-400 whitespace-nowrap">
                         {formatMoney(m.fijos, moneda)}
                       </td>
 
-                      <td className="py-2.5 px-3 text-right font-mono text-muted-foreground whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right font-mono font-medium text-purple-600 dark:text-purple-400 whitespace-nowrap">
                         {formatMoney(m.prestamos, moneda)}
                       </td>
 
-                      <td className="py-2.5 px-3 text-right font-mono text-muted-foreground whitespace-nowrap">
+                      <td className="py-2.5 px-3 text-right font-mono font-medium text-teal-600 dark:text-teal-400 whitespace-nowrap">
                         {formatMoney(m.gastos, moneda)}
                       </td>
 
@@ -331,14 +331,26 @@ export function ProyeccionAnualClient() {
                   </div>
                 </div>
 
-                <div className="space-y-1 text-xs text-muted-foreground">
+                <div className="space-y-1 text-xs text-muted-foreground pt-1 border-t border-border/40">
                   <div className="flex items-center justify-between">
                     <span>Ingresos</span>
-                    <span className="font-mono text-foreground">{formatMoney(m.ingresos, moneda)}</span>
+                    <span className="font-mono font-medium text-foreground">{formatMoney(m.ingresos, moneda)}</span>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <span>Egresos</span>
-                    <span className="font-mono text-foreground">{formatMoney(m.totalEgresos, moneda)}</span>
+                  <div className="flex items-center justify-between text-sky-600 dark:text-sky-400">
+                    <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-sky-500" /> Fijos</span>
+                    <span className="font-mono font-medium">{formatMoney(m.fijos, moneda)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-purple-600 dark:text-purple-400">
+                    <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-purple-500" /> Préstamos</span>
+                    <span className="font-mono font-medium">{formatMoney(m.prestamos, moneda)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-teal-600 dark:text-teal-400">
+                    <span className="inline-flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-teal-500" /> Tarjetas & Var</span>
+                    <span className="font-mono font-medium">{formatMoney(m.gastos, moneda)}</span>
+                  </div>
+                  <div className="flex items-center justify-between pt-1 border-t border-border/40 font-medium text-foreground">
+                    <span>Total Egresos</span>
+                    <span className="font-mono">{formatMoney(m.totalEgresos, moneda)}</span>
                   </div>
                 </div>
 

@@ -26,6 +26,46 @@ enum TipoIngreso {
   EXTRA
 }
 
+model Usuario {
+  id                 String           @id @default(uuid())
+  nombre             String           @unique // "Víctor", "Jamile"
+  slug               String           @unique // "victor", "jamile"
+  pin                String?          // PIN opcional de 4 dígitos
+  color              String           @default("#2563eb") // Azul para Víctor, Rosa para Jamile
+  avatar             String?          // Identificador visual
+  monedaSimbolo      String           @default("S/")
+  sueldoBaseMensual  Decimal          @default(6000.00) @db.Decimal(12, 2)
+  diaPagoSueldo      Int              @default(30)
+  tipoCambioUSD      Decimal          @default(4.00) @db.Decimal(6, 2)
+  metaAhorroMensual  Decimal          @default(1000.00) @db.Decimal(12, 2)
+  activo             Boolean          @default(true)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  tarjetas           TarjetaCredito[]
+  costosFijos        CostoFijo[]
+  prestamos          Prestamo[]
+  gastos             Gasto[]
+  ingresos           IngresoMes[]
+  categorias         Categoria[]
+  sesiones           Sesion[]
+}
+
+model Sesion {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  usuarioId String
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  userAgent String?
+  ipAddress String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([token])
+  @@index([usuarioId])
+}
+
 model ConfiguracionUsuario {
   id                 String   @id @default(uuid())
   nombre             String   @default("Víctor")
@@ -40,6 +80,8 @@ model ConfiguracionUsuario {
 
 model TarjetaCredito {
   id                 String                 @id @default(uuid())
+  usuarioId          String?
+  usuario            Usuario?               @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   nombre             String                 // Ej: BCP Visa Signature
   banco              String                 // BCP, BBVA, Interbank, etc.
   ultimosCuatro      String?                // Ej: 4521
@@ -56,7 +98,9 @@ model TarjetaCredito {
 
 model Categoria {
   id          String      @id @default(uuid())
-  nombre      String      @unique
+  usuarioId   String?
+  usuario     Usuario?    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  nombre      String
   icono       String?     // Nombre del ícono lucide
   color       String?     // Código hex o color tailwind
   esFijo      Boolean     @default(false)
@@ -64,10 +108,14 @@ model Categoria {
   updatedAt   DateTime    @updatedAt
   gastos      Gasto[]
   costosFijos CostoFijo[]
+
+  @@unique([usuarioId, nombre])
 }
 
 model CostoFijo {
   id             String                @id @default(uuid())
+  usuarioId      String?
+  usuario        Usuario?              @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   concepto       String                // Ej: Alquiler, Comida mensual, Netflix
   monto          Decimal               @db.Decimal(12, 2)
   diaVencimiento Int                   @default(30) // Día del mes
@@ -77,6 +125,7 @@ model CostoFijo {
   tarjetaId      String?
   tarjeta        TarjetaCredito?       @relation(fields: [tarjetaId], references: [id], onDelete: SetNull)
   activo         Boolean               @default(true)
+  orden          Int                   @default(0)
   mesInicio      String?               // YYYY-MM
   mesFin         String?               // YYYY-MM
   createdAt      DateTime              @default(now())
@@ -104,6 +153,8 @@ model RegistroCostoFijoMes {
 
 model Prestamo {
   id               String          @id @default(uuid())
+  usuarioId        String?
+  usuario          Usuario?        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   banco            String          // Ej: BCP, BBVA, Interbank
   concepto         String          // Ej: Préstamo personal, Crédito vehicular
   montoTotal       Decimal         @db.Decimal(12, 2)
@@ -113,6 +164,7 @@ model Prestamo {
   tasaInteresAnual Decimal         @default(14.50) @db.Decimal(5, 2) // TEA %
   fechaInicio      DateTime
   activo           Boolean         @default(true)
+  orden            Int             @default(0)
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   cuotas           CuotaPrestamo[]
@@ -135,6 +187,8 @@ model CuotaPrestamo {
 
 model Gasto {
   id             String          @id @default(uuid())
+  usuarioId      String?
+  usuario        Usuario?        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   concepto       String
   monto          Decimal         @db.Decimal(12, 2) // En Soles
   monedaOriginal String          @default("PEN")   // "PEN" o "USD"
@@ -152,6 +206,7 @@ model Gasto {
   estado         EstadoPago      @default(PENDIENTE)
   fechaPagoReal  DateTime?
   gastoPadreId   String?         // Para agrupar compras en cuotas
+  orden          Int             @default(0)
   notas          String?
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -159,6 +214,8 @@ model Gasto {
 
 model IngresoMes {
   id             String      @id @default(uuid())
+  usuarioId      String?
+  usuario        Usuario?    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   periodo        String      // YYYY-MM
   tipo           TipoIngreso
   concepto       String      // "Sueldo", "Gratificación Julio", "Utilidades", etc.
@@ -173,5 +230,5 @@ model IngresoMes {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
-  @@unique([periodo, tipo, concepto])
+  @@unique([usuarioId, periodo, tipo, concepto])
 }

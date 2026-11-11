@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { getAuthenticatedUser } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
     const tarjetas = await prisma.tarjetaCredito.findMany({
+      where: { usuarioId: user.id },
       orderBy: { nombre: 'asc' },
     });
     return NextResponse.json(tarjetas);
@@ -14,9 +19,14 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
     const body = await request.json();
+
     const tarjeta = await prisma.tarjetaCredito.create({
       data: {
+        usuarioId: user.id,
         nombre: body.nombre,
         banco: body.banco,
         ultimosCuatro: body.ultimosCuatro || null,
@@ -33,13 +43,17 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
     const body = await request.json();
     const { id, nombre, banco, ultimosCuatro, diaCorte, diaPago, color } = body;
     if (!id) {
       return NextResponse.json({ error: 'ID es requerido' }, { status: 400 });
     }
-    const tarjeta = await prisma.tarjetaCredito.update({
-      where: { id },
+
+    const tarjeta = await prisma.tarjetaCredito.updateMany({
+      where: { id, usuarioId: user.id },
       data: {
         ...(nombre && { nombre }),
         ...(banco && { banco }),
@@ -49,7 +63,7 @@ export async function PUT(request: NextRequest) {
         ...(color && { color }),
       },
     });
-    return NextResponse.json({ success: true, data: tarjeta });
+    return NextResponse.json({ success: true, count: tarjeta.count });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -57,6 +71,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
     const { searchParams } = new URL(request.url);
     let id = searchParams.get('id');
 
@@ -71,17 +88,17 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID de tarjeta requerido' }, { status: 400 });
     }
 
-    // Desvincular cualquier gasto asociado para que no falle por foreign key
+    // Desvincular gastos asociados solo del usuario
     await prisma.gasto.updateMany({
-      where: { tarjetaId: id },
+      where: { tarjetaId: id, usuarioId: user.id },
       data: { tarjetaId: null },
     });
 
-    await prisma.tarjetaCredito.delete({
-      where: { id },
+    const res = await prisma.tarjetaCredito.deleteMany({
+      where: { id, usuarioId: user.id },
     });
 
-    return NextResponse.json({ success: true, message: 'Tarjeta eliminada exitosamente' });
+    return NextResponse.json({ success: true, count: res.count });
   } catch (error: any) {
     console.error('Error al eliminar tarjeta:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

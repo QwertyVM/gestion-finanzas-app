@@ -1,11 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { EstadoPago } from '@prisma/client';
+import { ajustarCuotasPrestamo } from '@/lib/finanzas-service';
+import { getAuthenticatedUser } from '@/lib/auth';
 
 // POST: Actualizar cuota específica (estado o monto real pagado en ese mes)
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
     const { cuotaId, estado, monto } = await request.json();
+
+    const cuota = await prisma.cuotaPrestamo.findUnique({
+      where: { id: cuotaId },
+      include: { prestamo: true },
+    });
+
+    if (!cuota || cuota.prestamo.usuarioId !== user.id) {
+      return NextResponse.json({ error: 'Cuota no encontrada' }, { status: 404 });
+    }
 
     const fechaPagoReal = (estado === EstadoPago.PAGADO || estado === EstadoPago.ADELANTADO) ? new Date() : null;
     const updateData: any = {};
@@ -17,22 +31,29 @@ export async function POST(request: NextRequest) {
       updateData.monto = parseFloat(monto);
     }
 
-    const cuota = await prisma.cuotaPrestamo.update({
+    const updated = await prisma.cuotaPrestamo.update({
       where: { id: cuotaId },
       data: updateData,
     });
 
-    return NextResponse.json({ success: true, data: cuota });
+    return NextResponse.json({ success: true, data: updated });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 
 // PUT: Edición de condiciones base del préstamo (NO RETROACTIVA)
-// Solo actualiza cuotas futuras PENDIENTES, lo pagado no se toca.
 export async function PUT(request: NextRequest) {
   try {
-    const { id, concepto, banco, montoTotal, montoCuota, diaPago, tasaInteresAnual, mesDesde, activo } = await request.json();
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+    const { id, concepto, banco, montoTotal, montoCuota, diaPago, tasaInteresAnual, mesDesde, activo, cuotasTotales, cuotaActual } = await request.json();
+
+    const prestamo = await prisma.prestamo.findUnique({ where: { id } });
+    if (!prestamo || prestamo.usuarioId !== user.id) {
+      return NextResponse.json({ error: 'Préstamo no encontrado' }, { status: 404 });
+    }
 
     const cuotaMontoNum = montoCuota !== undefined ? parseFloat(montoCuota) : undefined;
     const montoTotalNum = montoTotal !== undefined ? parseFloat(montoTotal) : undefined;
@@ -49,6 +70,16 @@ export async function PUT(request: NextRequest) {
         ...(activo !== undefined && { activo }),
       },
     });
+
+    // Actualizar cuota actual o total de cuotas y generar/eliminar cuotas pendientes si cambiaron
+    if ((cuotasTotales !== undefined && cuotasTotales !== null) || (cuotaActual !== undefined && cuotaActual !== null)) {
+      await ajustarCuotasPrestamo({
+        prestamoId: id,
+        cuotaActual: cuotaActual !== undefined ? parseInt(String(cuotaActual), 10) : undefined,
+        cuotasTotales: cuotasTotales !== undefined ? parseInt(String(cuotasTotales), 10) : undefined,
+        periodoActual: mesDesde,
+      });
+    }
 
     // Actualizar cuotas futuras pendientes si cambió el monto de la cuota
     if (mesDesde && cuotaMontoNum !== undefined) {
@@ -73,6 +104,9 @@ export async function PUT(request: NextRequest) {
 // DELETE: Eliminar préstamo bancario y sus cuotas asociadas
 export async function DELETE(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -80,9 +114,13 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID es requerido' }, { status: 400 });
     }
 
-    await prisma.prestamo.delete({
-      where: { id },
+    const res = await prisma.prestamo.deleteMany({
+      where: { id, usuarioId: user.id },
     });
+
+    if (res.count === 0) {
+      return NextResponse.json({ error: 'Préstamo no encontrado' }, { status: 404 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

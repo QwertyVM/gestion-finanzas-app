@@ -7,6 +7,7 @@ import {
   ClasificacionEgreso,
   obtenerClasificacionEgreso,
   ESTILOS_CLASIFICACION,
+  getEstiloClasificacion,
   esItemRecurrente,
 } from '@/lib/utils';
 import {
@@ -37,6 +38,7 @@ import {
   Check,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useFinanzas } from '@/context/FinanzasContext';
 
 export interface DetalleItemData {
   id: string;
@@ -45,6 +47,8 @@ export interface DetalleItemData {
   clasificacion?: ClasificacionEgreso;
   concepto: string;
   categoria?: string;
+  categoriaColor?: string;
+  categoriaIcono?: string;
   monto: number; // En Soles
   monedaOriginal?: string;
   montoOriginal?: number | null;
@@ -116,6 +120,7 @@ export function ModalDetalleGasto({
   monedaSimbolo = 'S/',
   tarjetas = [],
 }: ModalDetalleGastoProps) {
+  const { refresh, periodo } = useFinanzas();
   const [updating, setUpdating] = useState(false);
   const [editandoMonto, setEditandoMonto] = useState(false);
   const [montoEditInput, setMontoEditInput] = useState(item ? item.monto.toString() : '');
@@ -123,6 +128,19 @@ export function ModalDetalleGasto({
   const [editandoMontoTotal, setEditandoMontoTotal] = useState(false);
   const [nuevoMontoTotal, setNuevoMontoTotal] = useState(item?.montoTotal ? item.montoTotal.toString() : '');
   const [savingMontoTotal, setSavingMontoTotal] = useState(false);
+
+  // Edición de cuotas restantes / totales / cuota actual ("cuántas voy pagando")
+  const [editandoCuotaActual, setEditandoCuotaActual] = useState(false);
+  const [nuevaCuotaActual, setNuevaCuotaActual] = useState('');
+  const [savingCuotaActual, setSavingCuotaActual] = useState(false);
+
+  const [editandoCuotasTotales, setEditandoCuotasTotales] = useState(false);
+  const [nuevasCuotasTotales, setNuevasCuotasTotales] = useState('');
+  const [savingCuotasTotales, setSavingCuotasTotales] = useState(false);
+
+  const [editandoCuotas, setEditandoCuotas] = useState(false);
+  const [nuevasCuotasRestantes, setNuevasCuotasRestantes] = useState('');
+  const [savingCuotas, setSavingCuotas] = useState(false);
 
   // Edición método de pago (Fijo)
   const [editandoMetodoPago, setEditandoMetodoPago] = useState(false);
@@ -151,6 +169,14 @@ export function ModalDetalleGasto({
       setTcEdit(item.tipoCambio ? item.tipoCambio.toString() : '4.00');
       setNuevoMontoTotal(item.montoTotal ? item.montoTotal.toString() : '');
       setEditandoMontoTotal(false);
+      const cuotasTotInit = item.totalCuotas || item.cuotasTotales || 1;
+      const cuotaActInit = item.cuotaActual || 1;
+      setNuevaCuotaActual(cuotaActInit.toString());
+      setEditandoCuotaActual(false);
+      setNuevasCuotasTotales(cuotasTotInit.toString());
+      setEditandoCuotasTotales(false);
+      setNuevasCuotasRestantes(Math.max(0, cuotasTotInit - cuotaActInit).toString());
+      setEditandoCuotas(false);
       setMetodoPagoSeleccionado(item.metodoPago || 'EFECTIVO_DEBITO');
       setTarjetaIdSeleccionada(item.tarjetaId || (tarjetas?.[0]?.id || ''));
       setEditandoMetodoPago(false);
@@ -204,6 +230,121 @@ export function ModalDetalleGasto({
     }
   };
 
+  const handleGuardarCuotaActual = async () => {
+    const val = parseInt(nuevaCuotaActual, 10);
+    if (isNaN(val) || val < 1) {
+      toast.error('Ingresa una cuota válida (mínimo 1)');
+      return;
+    }
+
+    try {
+      setSavingCuotaActual(true);
+      const targetId = item.prestamoId || item.dbId || item.id;
+      const res = await fetch('/api/cuotas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: item.tipo,
+          id: targetId,
+          cuotaActual: val,
+          cuotasTotales: cuotasTot,
+          periodoActual: item.periodoPago || periodo,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al actualizar cuota actual');
+
+      item.cuotaActual = val;
+      setEditandoCuotaActual(false);
+      toast.success(`Cuota actual actualizada: vas pagando la cuota ${val} de ${cuotasTot}`);
+      await refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar cuota actual');
+    } finally {
+      setSavingCuotaActual(false);
+    }
+  };
+
+  const handleGuardarCuotasTotales = async () => {
+    const val = parseInt(nuevasCuotasTotales, 10);
+    if (isNaN(val) || val < 1) {
+      toast.error('Ingresa una cantidad válida de cuotas totales (mínimo 1)');
+      return;
+    }
+
+    try {
+      setSavingCuotasTotales(true);
+      const targetId = item.prestamoId || item.dbId || item.id;
+      const res = await fetch('/api/cuotas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: item.tipo,
+          id: targetId,
+          cuotaActual: cuotaAct,
+          cuotasTotales: val,
+          periodoActual: item.periodoPago || periodo,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al actualizar cuotas totales');
+
+      item.cuotasTotales = val;
+      item.totalCuotas = val;
+      setEditandoCuotasTotales(false);
+      toast.success(`Total de cuotas actualizado: ${val} cuotas pactadas`);
+      await refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar cuotas totales');
+    } finally {
+      setSavingCuotasTotales(false);
+    }
+  };
+
+  const handleGuardarCuotas = async () => {
+    const numRestantes = parseInt(nuevasCuotasRestantes, 10);
+    if (isNaN(numRestantes) || numRestantes < 0) {
+      toast.error('Ingresa una cantidad válida de cuotas restantes (0 o más)');
+      return;
+    }
+
+    try {
+      setSavingCuotas(true);
+      const targetId = item.prestamoId || item.dbId || item.id;
+      const currentCuota = item.cuotaActual || 1;
+      const res = await fetch('/api/cuotas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          tipo: item.tipo,
+          id: targetId,
+          cuotasRestantes: numRestantes,
+          cuotaActual: currentCuota,
+          periodoActual: item.periodoPago || periodo,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Error al actualizar cuotas');
+
+      const nuevoTotal = currentCuota + numRestantes;
+      item.cuotasTotales = nuevoTotal;
+      item.totalCuotas = nuevoTotal;
+
+      setEditandoCuotas(false);
+      toast.success(
+        `Cuotas actualizadas: ${numRestantes} cuotas por pagar (Total: ${nuevoTotal} cuotas)`
+      );
+      await refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar cuotas');
+    } finally {
+      setSavingCuotas(false);
+    }
+  };
+
   const handleGuardarMonto = async () => {
     let val: number;
     if (modoEdicion === 'DOLARES') {
@@ -249,11 +390,38 @@ export function ModalDetalleGasto({
 
   const handleEliminar = async () => {
     if (updating || !onEliminarGasto) return;
-    if (!confirm(`¿Estás seguro de eliminar "${item.concepto}"?`)) return;
+    if (!confirm(`¿Estás seguro de eliminar "${item.concepto}" de este mes?`)) return;
     try {
       setUpdating(true);
       await onEliminarGasto(item);
       onClose();
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleEliminarCompraCompleta = async () => {
+    if (updating) return;
+    const baseName = item.concepto.replace(/\s*\(Cuota\s+\d+\/\d+\)/i, '').trim();
+    if (
+      !confirm(
+        `¿Estás seguro de eliminar TODA la compra "${baseName}" y todas sus cuotas de todos los meses?\n\nEsta acción eliminará el registro por completo de forma permanente.`
+      )
+    ) {
+      return;
+    }
+    try {
+      setUpdating(true);
+      const res = await fetch(`/api/gastos?id=${item.dbId}&eliminarSerie=true`, {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Error al eliminar compra completa');
+      const data = await res.json();
+      toast.success(`Compra eliminada (${data.count} cuotas eliminadas en total)`);
+      await refresh();
+      onClose();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al eliminar');
     } finally {
       setUpdating(false);
     }
@@ -290,31 +458,41 @@ export function ModalDetalleGasto({
 
   // Clasificación y estilos de color
   const clasificacionEfectiva: ClasificacionEgreso = item.clasificacion || obtenerClasificacionEgreso(item);
-  const estilo = ESTILOS_CLASIFICACION[clasificacionEfectiva];
+  const estilo = getEstiloClasificacion(clasificacionEfectiva);
 
   // Icono según tipo y clasificación
   const renderIconoTipo = () => {
     switch (clasificacionEfectiva) {
+      case 'PRESTAMO':
       case 'PRESTAMO_CUOTA':
-        return <Landmark className="w-5 h-5 text-purple-500 dark:text-purple-400" />;
+        return item.tipo === 'PRESTAMO' ? (
+          <Landmark className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+        ) : (
+          <Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+        );
+      case 'CUOTA':
+        return <Layers className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />;
       case 'FIJO':
-        return <Home className="w-5 h-5 text-sky-500 dark:text-sky-400" />;
+        return <Home className="w-5 h-5 text-sky-600 dark:text-sky-400" />;
       case 'VARIABLE':
       default:
         return item.tipo === 'TARJETA' ? (
-          <CreditCard className="w-5 h-5 text-slate-500 dark:text-slate-400" />
+          <CreditCard className="w-5 h-5 text-teal-600 dark:text-teal-400" />
         ) : (
-          <Banknote className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
+          <Banknote className="w-5 h-5 text-teal-600 dark:text-teal-400" />
         );
     }
   };
 
   const tipoLabel = () => {
     switch (clasificacionEfectiva) {
+      case 'PRESTAMO':
       case 'PRESTAMO_CUOTA':
         return item.tipo === 'PRESTAMO'
           ? 'Compromiso de Préstamo Bancario'
           : `Compra diferida en ${cuotasTot} cuotas`;
+      case 'CUOTA':
+        return `Compra diferida en ${cuotasTot} cuotas`;
       case 'FIJO':
         return esItemRecurrente(item.concepto, item.categoria)
           ? 'Costo Fijo / Suscripción Mensual'
@@ -339,7 +517,7 @@ export function ModalDetalleGasto({
         {/* CABECERA */}
         <div className="p-5 border-b border-border/60 bg-muted/30 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-muted border border-border">
+            <div className={`p-2.5 rounded-xl border ${estilo.badgeBg} ${estilo.badgeBorder}`}>
               {renderIconoTipo()}
             </div>
             <div>
@@ -347,7 +525,8 @@ export function ModalDetalleGasto({
                 <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider block">
                   {tipoLabel()}
                 </span>
-                <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-muted text-muted-foreground">
+                <span className={`text-[10px] px-2 py-0.5 rounded font-semibold border ${estilo.badgeBg} ${estilo.badgeText} ${estilo.badgeBorder} inline-flex items-center gap-1`}>
+                  <span className={`w-1.5 h-1.5 rounded-full ${estilo.dotColor}`} />
                   {estilo.badgeLabel}
                 </span>
               </div>
@@ -404,22 +583,20 @@ export function ModalDetalleGasto({
                     <button
                       type="button"
                       onClick={() => setModoEdicion('SOLES')}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
-                        modoEdicion === 'SOLES'
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${modoEdicion === 'SOLES'
                           ? 'bg-sky-500/20 text-sky-400 border border-sky-500/40 shadow-xs'
                           : 'text-muted-foreground hover:text-foreground'
-                      }`}
+                        }`}
                     >
                       Monto directo en Soles (S/)
                     </button>
                     <button
                       type="button"
                       onClick={() => setModoEdicion('DOLARES')}
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${
-                        modoEdicion === 'DOLARES'
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition ${modoEdicion === 'DOLARES'
                           ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40 shadow-xs'
                           : 'text-muted-foreground hover:text-foreground'
-                      }`}
+                        }`}
                     >
                       Calcular desde $ USD
                     </button>
@@ -553,13 +730,12 @@ export function ModalDetalleGasto({
                 Estado del Pago
               </span>
               <span
-                className={`text-xs font-extrabold px-3 py-1 rounded-full border inline-flex items-center gap-1.5 ${
-                  item.estado === 'PAGADO'
+                className={`text-xs font-extrabold px-3 py-1 rounded-full border inline-flex items-center gap-1.5 ${item.estado === 'PAGADO'
                     ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
                     : item.estado === 'ADELANTADO'
-                    ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
-                    : 'bg-sky-500/15 text-sky-400 border-sky-500/30'
-                }`}
+                      ? 'bg-amber-500/15 text-amber-400 border-amber-500/30'
+                      : 'bg-sky-500/15 text-sky-400 border-sky-500/30'
+                  }`}
               >
                 {item.estado === 'PAGADO' && (
                   <>
@@ -586,11 +762,10 @@ export function ModalDetalleGasto({
                   type="button"
                   disabled={updating}
                   onClick={() => handleEstado('PENDIENTE')}
-                  className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1 ${
-                    item.estado === 'PENDIENTE'
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1 ${item.estado === 'PENDIENTE'
                       ? 'bg-sky-500/20 text-sky-400 border-sky-500/40 shadow-sm'
                       : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   <Clock className="w-3 h-3" />
                   <span>Pendiente</span>
@@ -600,11 +775,10 @@ export function ModalDetalleGasto({
                   type="button"
                   disabled={updating}
                   onClick={() => handleEstado('ADELANTADO')}
-                  className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1 ${
-                    item.estado === 'ADELANTADO'
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1 ${item.estado === 'ADELANTADO'
                       ? 'bg-amber-500/20 text-amber-400 border-amber-500/40 shadow-sm'
                       : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   <FastForward className="w-3 h-3" />
                   <span>Adelantado ⚡</span>
@@ -614,11 +788,10 @@ export function ModalDetalleGasto({
                   type="button"
                   disabled={updating}
                   onClick={() => handleEstado('PAGADO')}
-                  className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1 ${
-                    item.estado === 'PAGADO'
+                  className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition flex items-center justify-center gap-1 ${item.estado === 'PAGADO'
                       ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40 shadow-sm'
                       : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   <CheckCircle2 className="w-3 h-3" />
                   <span>Pagado ✓</span>
@@ -695,19 +868,253 @@ export function ModalDetalleGasto({
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 pt-1 text-xs">
-                <div className="p-2.5 rounded-xl bg-secondary/40 border border-border">
-                  <span className="text-[10px] text-muted-foreground block">Cuotas restantes</span>
-                  <span className="font-bold text-foreground">{cuotasRestantes} cuotas por pagar</span>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 text-xs">
+                {/* 1. CUOTA ACTUAL / CUÁNTAS VOY PAGANDO */}
                 <div className="p-2.5 rounded-xl bg-secondary/40 border border-border">
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] text-muted-foreground block">Monto total del crédito</span>
+                    <span className="text-[10px] text-muted-foreground block font-medium">
+                      Voy pagando (Cuota actual)
+                    </span>
+                    {!editandoCuotaActual && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNuevaCuotaActual(cuotaAct.toString());
+                          setEditandoCuotaActual(true);
+                        }}
+                        className="text-muted-foreground hover:text-indigo-400 p-0.5 rounded transition"
+                        title="Modificar cuota que vas pagando"
+                        aria-label="Modificar cuota que vas pagando"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                  {editandoCuotaActual ? (
+                    <div className="space-y-1.5 mt-1">
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min="1"
+                          max="360"
+                          value={nuevaCuotaActual}
+                          onChange={(e) => setNuevaCuotaActual(e.target.value)}
+                          placeholder="ej. 23"
+                          className="w-full px-2 py-0.5 rounded bg-background border border-indigo-500/50 text-xs font-mono font-bold text-foreground outline-none focus:ring-1 focus:ring-indigo-500"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleGuardarCuotaActual();
+                            } else if (e.key === 'Escape') {
+                              setEditandoCuotaActual(false);
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleGuardarCuotaActual}
+                          disabled={savingCuotaActual}
+                          className="p-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white transition disabled:opacity-50"
+                          title="Guardar cuota actual"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditandoCuotaActual(false)}
+                          disabled={savingCuotaActual}
+                          className="p-1 rounded text-muted-foreground hover:text-foreground transition"
+                          title="Cancelar"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <span className="text-[9.5px] text-muted-foreground block leading-tight">
+                        Este mes pagas la cuota{' '}
+                        <strong className="text-indigo-400">{nuevaCuotaActual || cuotaAct}</strong> de {cuotasTot}
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mt-0.5 flex items-baseline gap-1.5">
+                      <span className="font-bold text-foreground text-sm">
+                        Cuota {cuotaAct}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        (de {cuotasTot})
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 2. TOTAL DE CUOTAS */}
+                <div className="p-2.5 rounded-xl bg-secondary/40 border border-border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground block font-medium">
+                      Total de cuotas
+                    </span>
+                    {!editandoCuotasTotales && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNuevasCuotasTotales(cuotasTot.toString());
+                          setEditandoCuotasTotales(true);
+                        }}
+                        className="text-muted-foreground hover:text-indigo-400 p-0.5 rounded transition"
+                        title="Modificar total de cuotas"
+                        aria-label="Modificar total de cuotas"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                  {editandoCuotasTotales ? (
+                    <div className="space-y-1.5 mt-1">
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min="1"
+                          max="360"
+                          value={nuevasCuotasTotales}
+                          onChange={(e) => setNuevasCuotasTotales(e.target.value)}
+                          placeholder="ej. 48"
+                          className="w-full px-2 py-0.5 rounded bg-background border border-indigo-500/50 text-xs font-mono font-bold text-foreground outline-none focus:ring-1 focus:ring-indigo-500"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleGuardarCuotasTotales();
+                            } else if (e.key === 'Escape') {
+                              setEditandoCuotasTotales(false);
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleGuardarCuotasTotales}
+                          disabled={savingCuotasTotales}
+                          className="p-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white transition disabled:opacity-50"
+                          title="Guardar cuotas totales"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditandoCuotasTotales(false)}
+                          disabled={savingCuotasTotales}
+                          className="p-1 rounded text-muted-foreground hover:text-foreground transition"
+                          title="Cancelar"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <span className="text-[9.5px] text-muted-foreground block leading-tight">
+                        Plazo pactado:{' '}
+                        <strong className="text-foreground">{nuevasCuotasTotales || cuotasTot}</strong> cuotas
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mt-0.5 flex items-baseline gap-1.5">
+                      <span className="font-bold text-foreground text-sm">
+                        {cuotasTot} cuotas
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        en total
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 3. CUOTAS RESTANTES */}
+                <div className="p-2.5 rounded-xl bg-secondary/40 border border-border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground block font-medium">Cuotas restantes</span>
+                    {!editandoCuotas && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setNuevasCuotasRestantes(cuotasRestantes.toString());
+                          setEditandoCuotas(true);
+                        }}
+                        className="text-muted-foreground hover:text-indigo-400 p-0.5 rounded transition"
+                        title="Modificar cuotas restantes"
+                        aria-label="Modificar cuotas restantes"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                    )}
+                  </div>
+                  {editandoCuotas ? (
+                    <div className="space-y-1.5 mt-1">
+                      <div className="flex items-center gap-1">
+                        <input
+                          type="number"
+                          min="0"
+                          max="360"
+                          value={nuevasCuotasRestantes}
+                          onChange={(e) => setNuevasCuotasRestantes(e.target.value)}
+                          placeholder="ej. 25"
+                          className="w-full px-2 py-0.5 rounded bg-background border border-indigo-500/50 text-xs font-mono font-bold text-foreground outline-none focus:ring-1 focus:ring-indigo-500"
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleGuardarCuotas();
+                            } else if (e.key === 'Escape') {
+                              setEditandoCuotas(false);
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleGuardarCuotas}
+                          disabled={savingCuotas}
+                          className="p-1 rounded bg-indigo-600 hover:bg-indigo-500 text-white transition disabled:opacity-50"
+                          title="Guardar cuotas"
+                          aria-label="Guardar cuotas"
+                        >
+                          <Check className="w-3 h-3" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setEditandoCuotas(false)}
+                          disabled={savingCuotas}
+                          className="p-1 rounded text-muted-foreground hover:text-foreground transition"
+                          title="Cancelar"
+                          aria-label="Cancelar edición"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <span className="text-[9.5px] text-muted-foreground block leading-tight">
+                        Total:{' '}
+                        <strong className="text-foreground">
+                          {cuotaAct + (parseInt(nuevasCuotasRestantes, 10) || 0)}
+                        </strong>{' '}
+                        cuotas ({cuotaAct} actual + {parseInt(nuevasCuotasRestantes, 10) || 0} por pagar)
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="mt-0.5 flex items-baseline gap-1.5">
+                      <span className="font-bold text-foreground text-sm">
+                        {cuotasRestantes} cuotas
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">
+                        por pagar
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* 4. MONTO TOTAL DEL CRÉDITO */}
+                <div className="p-2.5 rounded-xl bg-secondary/40 border border-border">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] text-muted-foreground block font-medium">Monto total del crédito</span>
                     {item.tipo === 'PRESTAMO' && item.prestamoId && !editandoMontoTotal && (
                       <button
                         type="button"
                         onClick={() => setEditandoMontoTotal(true)}
-                        className="text-muted-foreground hover:text-foreground p-0.5 rounded transition"
+                        className="text-muted-foreground hover:text-indigo-400 p-0.5 rounded transition"
                         title="Modificar monto total"
                         aria-label="Modificar monto total"
                       >
@@ -746,9 +1153,11 @@ export function ModalDetalleGasto({
                       </button>
                     </div>
                   ) : (
-                    <span className="font-bold text-foreground font-mono block mt-0.5">
-                      {formatMoney(item.montoTotal || item.monto * cuotasTot, monedaSimbolo)}
-                    </span>
+                    <div className="mt-0.5">
+                      <span className="font-bold text-foreground font-mono text-sm block">
+                        {formatMoney(item.montoTotal || item.monto * cuotasTot, monedaSimbolo)}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -814,13 +1223,12 @@ export function ModalDetalleGasto({
                   <div className="flex items-center justify-between p-3 rounded-xl bg-secondary/30 border border-border">
                     <div className="flex items-center gap-2.5">
                       <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${
-                          item.metodoPago === 'TARJETA_CREDITO'
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold ${item.metodoPago === 'TARJETA_CREDITO'
                             ? 'bg-indigo-500/10 text-indigo-400 border border-indigo-500/20'
                             : item.metodoPago === 'TRANSFERENCIA'
-                            ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
-                            : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                        }`}
+                              ? 'bg-cyan-500/10 text-cyan-400 border border-cyan-500/20'
+                              : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          }`}
                       >
                         {item.metodoPago === 'TARJETA_CREDITO' ? (
                           <CreditCard className="w-4 h-4" />
@@ -835,32 +1243,31 @@ export function ModalDetalleGasto({
                           {item.metodoPago === 'TARJETA_CREDITO'
                             ? (item.tarjetaNombre || 'Tarjeta de Crédito')
                             : item.metodoPago === 'TRANSFERENCIA'
-                            ? 'Transferencia Bancaria'
-                            : 'Efectivo / Débito'}
+                              ? 'Transferencia Bancaria'
+                              : 'Efectivo / Débito'}
                         </span>
                         <span className="text-[11px] text-muted-foreground block">
                           {item.metodoPago === 'TARJETA_CREDITO'
                             ? `Cargo mensual a tu tarjeta ${item.tarjetaBanco ? `(${item.tarjetaBanco})` : ''}`
                             : item.metodoPago === 'TRANSFERENCIA'
-                            ? 'Transferencia directa o débito en cuenta'
-                            : 'Pago en efectivo o saldo disponible'}
+                              ? 'Transferencia directa o débito en cuenta'
+                              : 'Pago en efectivo o saldo disponible'}
                         </span>
                       </div>
                     </div>
                     <span
-                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                        item.metodoPago === 'TARJETA_CREDITO'
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${item.metodoPago === 'TARJETA_CREDITO'
                           ? 'bg-indigo-500/10 text-indigo-400 border-indigo-500/30'
                           : item.metodoPago === 'TRANSFERENCIA'
-                          ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
-                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                      }`}
+                            ? 'bg-cyan-500/10 text-cyan-400 border-cyan-500/30'
+                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
+                        }`}
                     >
                       {item.metodoPago === 'TARJETA_CREDITO'
                         ? 'A la Tarjeta'
                         : item.metodoPago === 'TRANSFERENCIA'
-                        ? 'Transferencia'
-                        : 'Efectivo'}
+                          ? 'Transferencia'
+                          : 'Efectivo'}
                     </span>
                   </div>
                 ) : (
@@ -869,11 +1276,10 @@ export function ModalDetalleGasto({
                       <button
                         type="button"
                         onClick={() => setMetodoPagoSeleccionado('EFECTIVO_DEBITO')}
-                        className={`py-2 px-2 rounded-xl text-center font-bold border transition ${
-                          metodoPagoSeleccionado === 'EFECTIVO_DEBITO'
+                        className={`py-2 px-2 rounded-xl text-center font-bold border transition ${metodoPagoSeleccionado === 'EFECTIVO_DEBITO'
                             ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500 shadow-xs'
                             : 'bg-background/80 text-muted-foreground border-border hover:text-foreground'
-                        }`}
+                          }`}
                       >
                         <Banknote className="w-3.5 h-3.5 mx-auto mb-1" />
                         <span>Efectivo</span>
@@ -882,11 +1288,10 @@ export function ModalDetalleGasto({
                       <button
                         type="button"
                         onClick={() => setMetodoPagoSeleccionado('TRANSFERENCIA')}
-                        className={`py-2 px-2 rounded-xl text-center font-bold border transition ${
-                          metodoPagoSeleccionado === 'TRANSFERENCIA'
+                        className={`py-2 px-2 rounded-xl text-center font-bold border transition ${metodoPagoSeleccionado === 'TRANSFERENCIA'
                             ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500 shadow-xs'
                             : 'bg-background/80 text-muted-foreground border-border hover:text-foreground'
-                        }`}
+                          }`}
                       >
                         <Landmark className="w-3.5 h-3.5 mx-auto mb-1" />
                         <span>Transferencia</span>
@@ -895,11 +1300,10 @@ export function ModalDetalleGasto({
                       <button
                         type="button"
                         onClick={() => setMetodoPagoSeleccionado('TARJETA_CREDITO')}
-                        className={`py-2 px-2 rounded-xl text-center font-bold border transition ${
-                          metodoPagoSeleccionado === 'TARJETA_CREDITO'
+                        className={`py-2 px-2 rounded-xl text-center font-bold border transition ${metodoPagoSeleccionado === 'TARJETA_CREDITO'
                             ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500 shadow-xs'
                             : 'bg-background/80 text-muted-foreground border-border hover:text-foreground'
-                        }`}
+                          }`}
                       >
                         <CreditCard className="w-3.5 h-3.5 mx-auto mb-1" />
                         <span>Tarjeta</span>
@@ -996,8 +1400,11 @@ export function ModalDetalleGasto({
               {item.categoria && (
                 <div>
                   <span className="text-[10px] text-muted-foreground block">Categoría</span>
-                  <span className="font-semibold text-foreground flex items-center gap-1 mt-0.5">
-                    <Tag className="w-3 h-3 text-muted-foreground" />
+                  <span className="font-semibold text-foreground flex items-center gap-1.5 mt-0.5">
+                    <span
+                      className="inline-block w-2.5 h-2.5 rounded-full shrink-0"
+                      style={{ backgroundColor: item.categoriaColor || '#64748b' }}
+                    />
                     {item.categoria}
                   </span>
                 </div>
@@ -1045,20 +1452,34 @@ export function ModalDetalleGasto({
         </div>
 
         {/* PIE DE MODAL */}
-        <div className="p-4 sm:p-5 border-t border-border bg-secondary/30 flex items-center justify-between gap-3">
-          {(item.tipo === 'TARJETA' || item.tipo === 'DIRECTO') && onEliminarGasto ? (
-            <button
-              type="button"
-              disabled={updating}
-              onClick={handleEliminar}
-              className="text-xs text-rose-500 hover:text-rose-400 font-semibold flex items-center gap-1 px-3 py-2 rounded-xl hover:bg-rose-500/10 transition"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>Eliminar gasto</span>
-            </button>
-          ) : (
-            <div />
-          )}
+        <div className="p-4 sm:p-5 border-t border-border bg-secondary/30 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {(item.tipo === 'TARJETA' || item.tipo === 'DIRECTO') && onEliminarGasto && (
+              <button
+                type="button"
+                disabled={updating}
+                onClick={handleEliminar}
+                className="text-xs text-rose-500 hover:text-rose-400 font-semibold flex items-center gap-1 px-3 py-2 rounded-xl hover:bg-rose-500/10 transition"
+                title={tieneCuotas ? 'Eliminar únicamente la cuota de este mes' : 'Eliminar este gasto'}
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>{tieneCuotas ? 'Eliminar solo esta cuota' : 'Eliminar gasto'}</span>
+              </button>
+            )}
+
+            {(item.tipo === 'TARJETA' || item.tipo === 'DIRECTO') && tieneCuotas && (
+              <button
+                type="button"
+                disabled={updating}
+                onClick={handleEliminarCompraCompleta}
+                className="text-xs text-white bg-rose-600 hover:bg-rose-500 font-semibold flex items-center gap-1.5 px-3 py-2 rounded-xl shadow-xs transition"
+                title="Eliminar la compra completa y todas sus cuotas de todos los meses"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>Eliminar compra completa (todas las cuotas)</span>
+              </button>
+            )}
+          </div>
 
           <button
             type="button"

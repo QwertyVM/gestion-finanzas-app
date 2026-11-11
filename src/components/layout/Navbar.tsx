@@ -19,12 +19,14 @@ import {
   Moon,
   Sparkles,
   Calculator,
+  LogOut,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { UserMenu } from './UserMenu';
 
 export function Navbar() {
   const pathname = usePathname();
-  const { periodo, irMesAnterior, irMesSiguiente } = useFinanzas();
+  const { periodo, irMesAnterior, irMesSiguiente, usuarioActual, cerrarSesion } = useFinanzas();
   const { theme, setTheme } = useTheme();
 
   const navLinks = [
@@ -115,8 +117,21 @@ export function Navbar() {
             })}
           </nav>
 
-          {/* Alternar Tema */}
-          <div className="flex items-center gap-2">
+          {/* Usuario y Alternar Tema */}
+          <div className="flex items-center gap-1.5">
+            <UserMenu />
+
+            {usuarioActual && (
+              <button
+                onClick={cerrarSesion}
+                className="p-1.5 rounded-xl text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 transition"
+                title="Cerrar sesión"
+                aria-label="Cerrar sesión"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            )}
+
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
               className="p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition"

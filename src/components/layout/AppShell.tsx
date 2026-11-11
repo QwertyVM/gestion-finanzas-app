@@ -1,12 +1,27 @@
 'use client';
 
 import React from 'react';
+import { usePathname } from 'next/navigation';
 import { Sidebar } from './Sidebar';
 import { FloatingSumBar } from '../common/FloatingSumBar';
 import { DynamicRecordModal } from '../modals/DynamicRecordModal';
 import { MobileRecordFAB } from './MobileRecordFAB';
+import { ModalSelectorUsuario } from '../modals/ModalSelectorUsuario';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isLoginPage = pathname === '/login';
+
+  if (isLoginPage) {
+    return (
+      <div className="min-h-screen bg-background text-foreground antialiased selection:bg-foreground selection:text-background">
+        <main className="min-h-screen flex items-center justify-center p-4">
+          {children}
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background text-foreground antialiased selection:bg-foreground selection:text-background">
       {/* Barra Lateral Navegación */}
@@ -27,6 +42,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Modal Dinámico Global (Desktop + Mobile Sheet) */}
       <DynamicRecordModal />
+
+      {/* Modal Selector / Login de Usuario */}
+      <ModalSelectorUsuario />
     </div>
   );
 }

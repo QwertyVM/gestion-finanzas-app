@@ -3,110 +3,155 @@ import { PrismaClient, EstadoPago, MetodoPago, TipoIngreso } from '@prisma/clien
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Iniciando inyección de datos desde el Excel de Víctor...');
+  console.log('Iniciando inyección de datos con soporte multiusuario (Víctor y Jamile)...');
 
-  // 1. Configuración de Usuario con sueldo real
-  const config = await prisma.configuracionUsuario.findFirst();
-  if (config) {
-    await prisma.configuracionUsuario.update({
-      where: { id: config.id },
-      data: {
-        nombre: 'Víctor',
-        sueldoBaseMensual: 8200.00,
-        monedaSimbolo: 'S/',
-        diaPagoSueldo: 30,
-        tipoCambioUSD: 4.00,
-        metaAhorroMensual: 1000.00,
-      },
-    });
-  } else {
-    await prisma.configuracionUsuario.create({
-      data: {
-        nombre: 'Víctor',
-        sueldoBaseMensual: 8200.00,
-        monedaSimbolo: 'S/',
-        diaPagoSueldo: 30,
-        tipoCambioUSD: 4.00,
-        metaAhorroMensual: 1000.00,
-      },
-    });
-  }
-  console.log('✔ Sueldo base actualizado a S/ 8,200.00.');
-
-  // 2. Tarjetas de Crédito del Excel (BCP y CMR PAPÁ)
-  let tarjetaBcp = await prisma.tarjetaCredito.findFirst({
-    where: { banco: 'BCP' },
+  // 1. Usuarios: Víctor y Jamile
+  const usuarioVictor = await prisma.usuario.upsert({
+    where: { slug: 'victor' },
+    update: {
+      nombre: 'Víctor',
+      color: '#2563eb',
+      avatar: 'User',
+      sueldoBaseMensual: 8200.00,
+      diaPagoSueldo: 30,
+      tipoCambioUSD: 4.00,
+      metaAhorroMensual: 1000.00,
+    },
+    create: {
+      nombre: 'Víctor',
+      slug: 'victor',
+      color: '#2563eb',
+      avatar: 'User',
+      sueldoBaseMensual: 8200.00,
+      diaPagoSueldo: 30,
+      tipoCambioUSD: 4.00,
+      metaAhorroMensual: 1000.00,
+    },
   });
-  if (!tarjetaBcp) {
-    tarjetaBcp = await prisma.tarjetaCredito.create({
-      data: {
-        nombre: 'BCP Visa Signature',
-        banco: 'BCP',
-        diaCorte: 10,
-        diaPago: 30,
-        color: '#1d4ed8',
-      },
-    });
-  }
 
-  let tarjetaCmr = await prisma.tarjetaCredito.findFirst({
-    where: { nombre: 'CMR PAPÁ' },
+  const usuarioJamile = await prisma.usuario.upsert({
+    where: { slug: 'jamile' },
+    update: {
+      nombre: 'Jamile',
+      color: '#ec4899',
+      avatar: 'Heart',
+      sueldoBaseMensual: 5000.00,
+      diaPagoSueldo: 30,
+      tipoCambioUSD: 4.00,
+      metaAhorroMensual: 1000.00,
+    },
+    create: {
+      nombre: 'Jamile',
+      slug: 'jamile',
+      color: '#ec4899',
+      avatar: 'Heart',
+      sueldoBaseMensual: 5000.00,
+      diaPagoSueldo: 30,
+      tipoCambioUSD: 4.00,
+      metaAhorroMensual: 1000.00,
+    },
   });
-  if (!tarjetaCmr) {
-    tarjetaCmr = await prisma.tarjetaCredito.create({
-      data: {
-        nombre: 'CMR PAPÁ',
-        banco: 'Falabella',
-        diaCorte: 10,
-        diaPago: 30,
-        color: '#dc2626',
-      },
-    });
-  }
-  console.log('✔ Tarjetas BCP y CMR PAPÁ listas.');
 
-  // 3. Categorías
-  const categorias = [
-    { nombre: 'Casa la Molina', icono: 'Home', color: '#10b981', esFijo: true },
-    { nombre: 'Casa SJM', icono: 'Home', color: '#06b6d4', esFijo: true },
-    { nombre: 'Personal & Salud', icono: 'HeartPulse', color: '#ec4899', esFijo: true },
-    { nombre: 'Vehicular', icono: 'Car', color: '#f59e0b', esFijo: true },
-    { nombre: 'Suscripciones', icono: 'Tv', color: '#8b5cf6', esFijo: true },
-    { nombre: 'Préstamos & Créditos', icono: 'Landmark', color: '#6366f1', esFijo: true },
-    { nombre: 'Alimentación', icono: 'Utensils', color: '#eab308', esFijo: true },
-    { nombre: 'Compras Varias', icono: 'ShoppingCart', color: '#64748b', esFijo: false },
-  ];
+  console.log(`✔ Usuarios creados: ${usuarioVictor.nombre} y ${usuarioJamile.nombre}`);
 
-  for (const cat of categorias) {
-    await prisma.categoria.upsert({
-      where: { nombre: cat.nombre },
-      update: {},
-      create: cat,
-    });
-  }
-  const catLaMolina = await prisma.categoria.findUnique({ where: { nombre: 'Casa la Molina' } });
-  const catSjm = await prisma.categoria.findUnique({ where: { nombre: 'Casa SJM' } });
-  const catPersonal = await prisma.categoria.findUnique({ where: { nombre: 'Personal & Salud' } });
-  const catVehicular = await prisma.categoria.findUnique({ where: { nombre: 'Vehicular' } });
-  const catSuscrip = await prisma.categoria.findUnique({ where: { nombre: 'Suscripciones' } });
-  const catComida = await prisma.categoria.findUnique({ where: { nombre: 'Alimentación' } });
-  const catCompras = await prisma.categoria.findUnique({ where: { nombre: 'Compras Varias' } });
+  // Configuración fallback
+  await prisma.configuracionUsuario.deleteMany({});
+  await prisma.configuracionUsuario.create({
+    data: {
+      nombre: 'Víctor',
+      sueldoBaseMensual: 8200.00,
+      monedaSimbolo: 'S/',
+      diaPagoSueldo: 30,
+      tipoCambioUSD: 4.00,
+      metaAhorroMensual: 1000.00,
+    },
+  });
 
-  // 4. Limpiar registros anteriores para insertar los del Excel con total fidelidad
+  // Limpiar datos anteriores de finanzas para re-inyección limpia
   await prisma.registroCostoFijoMes.deleteMany({});
   await prisma.costoFijo.deleteMany({});
   await prisma.cuotaPrestamo.deleteMany({});
   await prisma.prestamo.deleteMany({});
   await prisma.gasto.deleteMany({});
   await prisma.ingresoMes.deleteMany({});
+  await prisma.tarjetaCredito.deleteMany({});
+  await prisma.categoria.deleteMany({});
 
+  // 2. Tarjetas de Crédito de Víctor
+  const tarjetaBcp = await prisma.tarjetaCredito.create({
+    data: {
+      usuarioId: usuarioVictor.id,
+      nombre: 'BCP Visa Signature',
+      banco: 'BCP',
+      diaCorte: 10,
+      diaPago: 30,
+      color: '#1d4ed8',
+    },
+  });
+
+  const tarjetaCmr = await prisma.tarjetaCredito.create({
+    data: {
+      usuarioId: usuarioVictor.id,
+      nombre: 'CMR PAPÁ',
+      banco: 'Falabella',
+      diaCorte: 10,
+      diaPago: 30,
+      color: '#dc2626',
+    },
+  });
+
+  console.log('✔ Tarjetas de Víctor creadas.');
+
+  // 3. Categorías de Víctor
+  const categoriasVictor = [
+    { nombre: 'Vivienda / Alquiler', icono: 'Home', color: '#10b981', esFijo: true },
+    { nombre: 'Servicios Básicos (Luz/Agua/Net)', icono: 'Zap', color: '#3b82f6', esFijo: true },
+    { nombre: 'Alimentación / Supermercado', icono: 'ShoppingCart', color: '#f59e0b', esFijo: true },
+    { nombre: 'Transporte & Vehicular', icono: 'Car', color: '#64748b', esFijo: false },
+    { nombre: 'Suscripciones / Streaming', icono: 'Tv', color: '#8b5cf6', esFijo: true },
+    { nombre: 'Salud & Cuidado Personal', icono: 'HeartPulse', color: '#ec4899', esFijo: false },
+    { nombre: 'Préstamos & Créditos', icono: 'Landmark', color: '#6366f1', esFijo: true },
+    { nombre: 'Compras Varias', icono: 'ShoppingCart', color: '#64748b', esFijo: false },
+    { nombre: 'Educación / Cursos', icono: 'GraduationCap', color: '#06b6d4', esFijo: false },
+    { nombre: 'Salidas & Ocio', icono: 'Coffee', color: '#f97316', esFijo: false },
+    { nombre: 'Familiar & Compromisos', icono: 'HeartPulse', color: '#f43f5e', esFijo: false },
+    { nombre: 'Otros / Imprevistos', icono: 'HelpCircle', color: '#6b7280', esFijo: false },
+  ];
+
+  for (const cat of categoriasVictor) {
+    await prisma.categoria.create({
+      data: {
+        ...cat,
+        usuarioId: usuarioVictor.id,
+      },
+    });
+  }
+
+  // Categorías base para Jamile
+  for (const cat of categoriasVictor) {
+    await prisma.categoria.create({
+      data: {
+        ...cat,
+        usuarioId: usuarioJamile.id,
+      },
+    });
+  }
+  console.log('✔ Categorías creadas para Víctor y Jamile.');
+
+  const catVivienda = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Vivienda / Alquiler' } });
+  const catServicios = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Servicios Básicos (Luz/Agua/Net)' } });
+  const catAlimentacion = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Alimentación / Supermercado' } });
+  const catTransporte = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Transporte & Vehicular' } });
+  const catSuscripciones = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Suscripciones / Streaming' } });
+  const catSalud = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Salud & Cuidado Personal' } });
+  const catCompras = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Compras Varias' } });
+
+  // 4. Ingresos de Víctor
   const meses = ['2026-10', '2026-11', '2026-12', '2027-01', '2027-02', '2027-03'];
-
-  // 5. Ingresos Mensuales
   for (const p of meses) {
-    // Sueldo regular: S/ 8,200.00
     await prisma.ingresoMes.create({
       data: {
+        usuarioId: usuarioVictor.id,
         periodo: p,
         tipo: TipoIngreso.SUELDO,
         concepto: 'Sueldo Mensual Planilla',
@@ -116,10 +161,10 @@ async function main() {
       },
     });
 
-    // Gratificación Diciembre: S/ 10,500.00
     if (p === '2026-12') {
       await prisma.ingresoMes.create({
         data: {
+          usuarioId: usuarioVictor.id,
           periodo: p,
           tipo: TipoIngreso.GRATIFICACION,
           concepto: 'Gratificación Diciembre (Navidad)',
@@ -130,10 +175,10 @@ async function main() {
       });
     }
 
-    // Utilidades Marzo: Estimado S/ 12,300.00 (1.5 sueldos)
     if (p === '2027-03') {
       await prisma.ingresoMes.create({
         data: {
+          usuarioId: usuarioVictor.id,
           periodo: p,
           tipo: TipoIngreso.UTILIDADES,
           concepto: 'Utilidades Anuales',
@@ -144,29 +189,25 @@ async function main() {
       });
     }
   }
-  console.log('✔ Ingresos mensuales y gratificación inyectados.');
 
-  // 6. Costos Fijos
+  // 5. Costos fijos de Víctor
   const costosFijosDef = [
-    // Casa la Molina
-    { concepto: 'Alquiler (Casa la Molina)', monto: 1100.00, categoriaId: catLaMolina?.id, dia: 30, activoEn2027: true, monto2027: 1100.00 },
-    { concepto: 'Luz y servicios (Casa la Molina)', monto: 75.00, categoriaId: catLaMolina?.id, dia: 20, activoEn2027: true, monto2027: 75.00 },
-    // Casa SJM
-    { concepto: 'Servicios (Casa SJM)', monto: 210.00, categoriaId: catSjm?.id, dia: 15, activoEn2027: true, monto2027: 244.00 },
-    { concepto: 'Teléfono (Casa SJM)', monto: 39.90, categoriaId: catSjm?.id, dia: 18, activoEn2027: false, monto2027: 0 },
-    // Vehicular
-    { concepto: 'Seguro vehicular', monto: 217.41, categoriaId: catVehicular?.id, dia: 22, activoEn2027: false, monto2027: 0 },
-    // Personal & Suscripciones
-    { concepto: 'Natación', monto: 320.00, categoriaId: catPersonal?.id, dia: 5, activoEn2027: false, monto2027: 0 },
-    { concepto: 'Netflix (BCP)', monto: 70.70, categoriaId: catSuscrip?.id, dia: 15, activoEn2027: false, monto2027: 0 },
-    { concepto: 'Comida mensual (BCP)', monto: 180.00, categoriaId: catComida?.id, dia: 30, activoEn2027: false, monto2027: 0 },
-    { concepto: 'iCloud (BCP $3.96)', monto: 13.46, categoriaId: catSuscrip?.id, dia: 10, activoEn2027: false, monto2027: 0 },
-    { concepto: 'YouTube Premium (BCP $6.60)', monto: 22.44, categoriaId: catSuscrip?.id, dia: 12, activoEn2027: false, monto2027: 0 },
+    { concepto: 'Alquiler (Casa la Molina)', monto: 1100.00, categoriaId: catVivienda?.id, dia: 30, activoEn2027: true, monto2027: 1100.00 },
+    { concepto: 'Luz y servicios (Casa la Molina)', monto: 75.00, categoriaId: catServicios?.id, dia: 20, activoEn2027: true, monto2027: 75.00 },
+    { concepto: 'Servicios (Casa SJM)', monto: 210.00, categoriaId: catServicios?.id, dia: 15, activoEn2027: true, monto2027: 244.00 },
+    { concepto: 'Teléfono (Casa SJM)', monto: 39.90, categoriaId: catServicios?.id, dia: 18, activoEn2027: false, monto2027: 0 },
+    { concepto: 'Seguro vehicular', monto: 217.41, categoriaId: catTransporte?.id, dia: 22, activoEn2027: false, monto2027: 0 },
+    { concepto: 'Natación', monto: 320.00, categoriaId: catSalud?.id, dia: 5, activoEn2027: false, monto2027: 0 },
+    { concepto: 'Netflix (BCP)', monto: 70.70, categoriaId: catSuscripciones?.id, dia: 15, activoEn2027: false, monto2027: 0 },
+    { concepto: 'Comida mensual (BCP)', monto: 180.00, categoriaId: catAlimentacion?.id, dia: 30, activoEn2027: false, monto2027: 0 },
+    { concepto: 'iCloud (BCP $3.96)', monto: 13.46, categoriaId: catSuscripciones?.id, dia: 10, activoEn2027: false, monto2027: 0 },
+    { concepto: 'YouTube Premium (BCP $6.60)', monto: 22.44, categoriaId: catSuscripciones?.id, dia: 12, activoEn2027: false, monto2027: 0 },
   ];
 
   for (const cfd of costosFijosDef) {
     const cf = await prisma.costoFijo.create({
       data: {
+        usuarioId: usuarioVictor.id,
         concepto: cfd.concepto,
         monto: cfd.monto,
         diaVencimiento: cfd.dia,
@@ -191,12 +232,11 @@ async function main() {
       });
     }
   }
-  console.log('✔ Costos fijos inyectados para Casa la Molina, SJM y servicios.');
 
-  // 7. Préstamos Bancarios y Deudas
-  // 7.1 Crédito Auto (S/ 2,065.21 en 2026, S/ 2,308.70 en 2027)
+  // 6. Préstamos de Víctor
   const prestamoAuto = await prisma.prestamo.create({
     data: {
+      usuarioId: usuarioVictor.id,
       banco: 'BCP',
       concepto: 'Crédito Auto',
       montoTotal: 65000.00,
@@ -222,9 +262,9 @@ async function main() {
     });
   }
 
-  // 7.2 Préstamo Personal - 24 cuotas (S/ 205.40/mes)
   const prestamoPersonal = await prisma.prestamo.create({
     data: {
+      usuarioId: usuarioVictor.id,
       banco: 'BCP',
       concepto: 'Préstamo Personal (LG, Tarjeta, Tributario)',
       montoTotal: 4930.00,
@@ -249,9 +289,9 @@ async function main() {
     });
   }
 
-  // 7.3 SUNAT Regularización - 36 meses (S/ 283.00/mes)
   const prestamoSunat = await prisma.prestamo.create({
     data: {
+      usuarioId: usuarioVictor.id,
       banco: 'SUNAT',
       concepto: 'SUNAT Regularización',
       montoTotal: 10188.00,
@@ -276,9 +316,9 @@ async function main() {
     });
   }
 
-  // 7.4 Préstamo Tía (Pagadero con Gratificación en Diciembre)
   const prestamoTia = await prisma.prestamo.create({
     data: {
+      usuarioId: usuarioVictor.id,
       banco: 'Familiar',
       concepto: 'Préstamo Tía ($900.00 USD)',
       montoTotal: 3060.00,
@@ -299,26 +339,25 @@ async function main() {
       estado: EstadoPago.PENDIENTE,
     },
   });
-  console.log('✔ Préstamos (Auto, Personal, SUNAT y Tía) inyectados.');
 
-  // 8. Gastos Específicos del Excel en Noviembre y Diciembre
-  // 8.1 Psicóloga: S/ 690.00 (BCP, Noviembre)
+  // 7. Gastos de Víctor
   await prisma.gasto.create({
     data: {
+      usuarioId: usuarioVictor.id,
       concepto: 'Psicóloga',
       monto: 690.00,
       fechaGasto: new Date('2026-11-04'),
       periodoPago: '2026-11',
       metodoPago: MetodoPago.TARJETA_CREDITO,
       tarjetaId: tarjetaBcp.id,
-      categoriaId: catPersonal?.id,
+      categoriaId: catSalud?.id,
       estado: EstadoPago.PENDIENTE,
     },
   });
 
-  // 8.2 TikTok: S/ 40.50 (BCP, Noviembre)
   await prisma.gasto.create({
     data: {
+      usuarioId: usuarioVictor.id,
       concepto: 'TikTok Promoción',
       monto: 40.50,
       fechaGasto: new Date('2026-11-06'),
@@ -330,23 +369,23 @@ async function main() {
     },
   });
 
-  // 8.3 Material pared: S/ 310.00 (CMR PAPÁ, Noviembre)
   await prisma.gasto.create({
     data: {
+      usuarioId: usuarioVictor.id,
       concepto: 'Material pared',
       monto: 310.00,
       fechaGasto: new Date('2026-11-05'),
       periodoPago: '2026-11',
       metodoPago: MetodoPago.TARJETA_CREDITO,
       tarjetaId: tarjetaCmr.id,
-      categoriaId: catLaMolina?.id,
+      categoriaId: catVivienda?.id,
       estado: EstadoPago.PENDIENTE,
     },
   });
 
-  // 8.4 iPhone: S/ 268.00 (BCP, Cuotas en Noviembre y Diciembre)
-  await prisma.gasto.create({
+  const gastoIphone1 = await prisma.gasto.create({
     data: {
+      usuarioId: usuarioVictor.id,
       concepto: 'iPhone (Cuota 1/2)',
       monto: 268.00,
       fechaGasto: new Date('2026-11-02'),
@@ -362,6 +401,7 @@ async function main() {
 
   await prisma.gasto.create({
     data: {
+      usuarioId: usuarioVictor.id,
       concepto: 'iPhone (Cuota 2/2)',
       monto: 268.00,
       fechaGasto: new Date('2026-11-02'),
@@ -372,11 +412,12 @@ async function main() {
       totalCuotas: 2,
       categoriaId: catCompras?.id,
       estado: EstadoPago.PENDIENTE,
+      gastoPadreId: gastoIphone1.id,
     },
   });
-  console.log('✔ Gastos de Psicóloga, TikTok, Material pared y iPhone inyectados.');
 
-  console.log('¡Inyección completa! Todos los datos del Google Sheet están sincronizados.');
+  console.log('✔ Todos los datos de Víctor inyectados exitosamente.');
+  console.log('✔ El perfil de Jamile está creado, limpio e independiente.');
 }
 
 main()

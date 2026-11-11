@@ -1,41 +1,50 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { NOMBRES_MESES } from '@/lib/utils';
+import { getAuthenticatedUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No autorizado. Debes iniciar sesión.' },
+        { status: 401 }
+      );
+    }
+
     const { searchParams } = new URL(request.url);
     const anio = parseInt(searchParams.get('anio') || '2026', 10);
     const anioPrefijo = `${anio}-`;
+    const uId = user.id;
+    const usuario = user;
 
     const [
-      config,
       ingresosYear,
       costosFijosActivos,
       registrosFijosYear,
       cuotasYear,
       gastosYear,
     ] = await Promise.all([
-      prisma.configuracionUsuario.findFirst(),
       prisma.ingresoMes.findMany({
-        where: { periodo: { startsWith: anioPrefijo } },
+        where: { periodo: { startsWith: anioPrefijo }, usuarioId: uId },
       }),
       prisma.costoFijo.findMany({
-        where: { activo: true },
+        where: { activo: true, usuarioId: uId },
       }),
       prisma.registroCostoFijoMes.findMany({
-        where: { periodo: { startsWith: anioPrefijo } },
+        where: { periodo: { startsWith: anioPrefijo }, costoFijo: { usuarioId: uId } },
       }),
       prisma.cuotaPrestamo.findMany({
-        where: { periodo: { startsWith: anioPrefijo } },
+        where: { periodo: { startsWith: anioPrefijo }, prestamo: { usuarioId: uId } },
       }),
       prisma.gasto.findMany({
-        where: { periodoPago: { startsWith: anioPrefijo } },
+        where: { periodoPago: { startsWith: anioPrefijo }, usuarioId: uId },
         select: { monto: true, periodoPago: true },
       }),
     ]);
 
-    const sueldoBase = Number(config?.sueldoBaseMensual || 8200);
+    const sueldoBase = Number(usuario?.sueldoBaseMensual || 8200);
     const resultado = [];
 
     for (let mes = 1; mes <= 12; mes++) {

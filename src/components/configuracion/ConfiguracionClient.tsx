@@ -7,6 +7,10 @@ import {
   Pencil,
   Plus,
   X,
+  Tag,
+  Lock,
+  KeyRound,
+  ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -16,15 +20,25 @@ interface CategoriaItem {
   icono: string | null;
   color: string | null;
   esFijo: boolean;
+  _count?: {
+    gastos: number;
+    costosFijos: number;
+  };
 }
 
 export function ConfiguracionClient() {
-  const { resumen, refresh } = useFinanzas();
+  const { resumen, refresh, usuarioActual } = useFinanzas();
   const [sueldoBase, setSueldoBase] = useState('6000');
   const [tipoCambio, setTipoCambio] = useState('4.00');
   const [metaAhorro, setMetaAhorro] = useState('1000');
   const [diaPago, setDiaPago] = useState('30');
   const [savingConfig, setSavingConfig] = useState(false);
+
+  // Seguridad / Credenciales
+  const [pinActual, setPinActual] = useState('');
+  const [nuevoPin, setNuevoPin] = useState('');
+  const [confirmarNuevoPin, setConfirmarNuevoPin] = useState('');
+  const [savingPin, setSavingPin] = useState(false);
 
   // Tarjetas
   const [nombreTarjeta, setNombreTarjeta] = useState('');
@@ -45,6 +59,7 @@ export function ConfiguracionClient() {
   const [esFijoCat, setEsFijoCat] = useState(false);
   const [savingCat, setSavingCat] = useState(false);
   const [deletingCatId, setDeletingCatId] = useState<string | null>(null);
+  const [editandoCat, setEditandoCat] = useState<CategoriaItem | null>(null);
 
   useEffect(() => {
     if (resumen?.config) {
@@ -95,6 +110,49 @@ export function ConfiguracionClient() {
       toast.error(err.message || 'Error al guardar');
     } finally {
       setSavingConfig(false);
+    }
+  };
+
+  const handleCambiarPin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!usuarioActual?.id) {
+      toast.error('No hay usuario activo');
+      return;
+    }
+    if (nuevoPin.length < 4) {
+      toast.error('El nuevo PIN debe tener al menos 4 dígitos');
+      return;
+    }
+    if (nuevoPin !== confirmarNuevoPin) {
+      toast.error('La confirmación del PIN no coincide');
+      return;
+    }
+
+    try {
+      setSavingPin(true);
+      const res = await fetch('/api/usuarios', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: usuarioActual.id,
+          pin: pinActual,
+          nuevoPin: nuevoPin,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Error al cambiar PIN');
+      }
+
+      toast.success(`PIN de ${usuarioActual.nombre} actualizado correctamente`);
+      setPinActual('');
+      setNuevoPin('');
+      setConfirmarNuevoPin('');
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar PIN');
+    } finally {
+      setSavingPin(false);
     }
   };
 
@@ -183,7 +241,21 @@ export function ConfiguracionClient() {
     }
   };
 
-  const handleCrearCategoria = async (e: React.FormEvent) => {
+  const handleEditarCategoria = (cat: CategoriaItem) => {
+    setEditandoCat(cat);
+    setNombreCat(cat.nombre);
+    setColorCat(cat.color || '#2563eb');
+    setEsFijoCat(cat.esFijo);
+  };
+
+  const handleCancelarEdicionCat = () => {
+    setEditandoCat(null);
+    setNombreCat('');
+    setColorCat('#2563eb');
+    setEsFijoCat(false);
+  };
+
+  const handleGuardarCategoria = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!nombreCat.trim()) {
       toast.error('Ingresa el nombre de la categoría');
@@ -192,21 +264,40 @@ export function ConfiguracionClient() {
 
     try {
       setSavingCat(true);
-      const res = await fetch('/api/categorias', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          nombre: nombreCat.trim(),
-          color: colorCat,
-          esFijo: esFijoCat,
-        }),
-      });
+      if (editandoCat) {
+        const res = await fetch('/api/categorias', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: editandoCat.id,
+            nombre: nombreCat.trim(),
+            color: colorCat,
+            esFijo: esFijoCat,
+          }),
+        });
+        if (!res.ok) throw new Error('Error al actualizar categoría');
+        toast.success(`Categoría actualizada`);
+        setEditandoCat(null);
+      } else {
+        const res = await fetch('/api/categorias', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            nombre: nombreCat.trim(),
+            color: colorCat,
+            esFijo: esFijoCat,
+          }),
+        });
 
-      if (!res.ok) throw new Error('Error al registrar categoría');
-      toast.success(`Categoría agregada`);
+        if (!res.ok) throw new Error('Error al registrar categoría');
+        toast.success(`Categoría agregada`);
+      }
+
       setNombreCat('');
+      setColorCat('#2563eb');
       setEsFijoCat(false);
       await cargarCategorias();
+      await refresh();
     } catch (err: any) {
       toast.error(err.message || 'Error al guardar categoría');
     } finally {
@@ -222,6 +313,7 @@ export function ConfiguracionClient() {
       if (!res.ok) throw new Error('Error al eliminar');
       toast.success(`Categoría eliminada`);
       await cargarCategorias();
+      await refresh();
     } catch (err: any) {
       toast.error(err.message || 'Error al eliminar');
     } finally {
@@ -313,6 +405,87 @@ export function ConfiguracionClient() {
               className="py-1.5 px-4 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition disabled:opacity-50"
             >
               {savingConfig ? 'Guardando...' : 'Guardar Parámetros'}
+            </button>
+          </div>
+        </form>
+      </div>
+
+      {/* SEGURIDAD & PIN DE ACCESO */}
+      <div className="bg-card border border-border/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-indigo-500/10 text-indigo-500">
+              <KeyRound className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
+                Seguridad & PIN de Acceso
+              </h2>
+              <p className="text-[11px] text-muted-foreground">
+                Credenciales personales para <strong className="text-foreground">{usuarioActual?.nombre || 'tu perfil'}</strong>. PIN inicial por defecto: <code className="font-mono bg-secondary px-1 py-0.5 rounded text-foreground">1234</code>.
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+            <ShieldCheck className="w-3 h-3" /> Protegido
+          </span>
+        </div>
+
+        <form onSubmit={handleCambiarPin} className="space-y-3 text-xs pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="space-y-1">
+              <label className="font-medium text-muted-foreground">
+                PIN Actual:
+              </label>
+              <input
+                type="password"
+                maxLength={6}
+                value={pinActual}
+                onChange={(e) => setPinActual(e.target.value.replace(/\D/g, ''))}
+                placeholder="Ej: 1234"
+                className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground font-mono text-center tracking-widest text-xs"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="font-medium text-muted-foreground">
+                Nuevo PIN (4 a 6 dígitos):
+              </label>
+              <input
+                type="password"
+                maxLength={6}
+                required
+                value={nuevoPin}
+                onChange={(e) => setNuevoPin(e.target.value.replace(/\D/g, ''))}
+                placeholder="••••"
+                className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground font-mono text-center tracking-widest text-xs"
+              />
+            </div>
+
+            <div className="space-y-1">
+              <label className="font-medium text-muted-foreground">
+                Confirmar Nuevo PIN:
+              </label>
+              <input
+                type="password"
+                maxLength={6}
+                required
+                value={confirmarNuevoPin}
+                onChange={(e) => setConfirmarNuevoPin(e.target.value.replace(/\D/g, ''))}
+                placeholder="••••"
+                className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground font-mono text-center tracking-widest text-xs"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-1">
+            <button
+              type="submit"
+              disabled={savingPin || !nuevoPin}
+              className="py-1.5 px-4 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition disabled:opacity-50 flex items-center gap-1.5"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>{savingPin ? 'Actualizando...' : 'Actualizar PIN de Acceso'}</span>
             </button>
           </div>
         </form>
@@ -505,9 +678,14 @@ export function ConfiguracionClient() {
 
       {/* 3. CATEGORÍAS */}
       <div className="space-y-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Catálogo de Categorías
-        </h2>
+        <div>
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Catálogo de Categorías / Tags
+          </h2>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Etiquetas generales para clasificar y organizar costos fijos, préstamos y compras.
+          </p>
+        </div>
 
         <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
@@ -516,48 +694,95 @@ export function ConfiguracionClient() {
                 <tr>
                   <th scope="col" className="py-2.5 px-3 font-medium">Categoría</th>
                   <th scope="col" className="py-2.5 px-3 font-medium">Tipo</th>
+                  <th scope="col" className="py-2.5 px-3 font-medium">Uso</th>
                   <th scope="col" className="py-2.5 px-3 text-center font-medium">Color</th>
-                  <th scope="col" className="py-2.5 px-3 text-center font-medium"><span className="sr-only">Acciones</span></th>
+                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
                 {loadingCategorias ? (
                   <tr>
-                    <td colSpan={4} className="py-6 text-center text-xs text-muted-foreground">
+                    <td colSpan={5} className="py-6 text-center text-xs text-muted-foreground">
                       Cargando categorías...
                     </td>
                   </tr>
                 ) : categorias.length > 0 ? (
-                  categorias.map((cat) => (
-                    <tr key={cat.id} className="hover:bg-muted/30 transition">
-                      <td className="py-2.5 px-3 font-medium text-foreground">
-                        {cat.nombre}
-                      </td>
-                      <td className="py-2.5 px-3 text-muted-foreground">
-                        {cat.esFijo ? 'Fijo / Recurrente' : 'Variable / Compra'}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <span
-                          className="inline-block w-3 h-3 rounded-full border border-border"
-                          style={{ backgroundColor: cat.color || '#2563eb' }}
-                        />
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <button
-                          type="button"
-                          onClick={() => handleEliminarCategoria(cat.id, cat.nombre)}
-                          disabled={deletingCatId === cat.id}
-                          className="p-1 rounded text-muted-foreground hover:text-rose-500 transition"
-                          title="Eliminar categoría"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
-                  ))
+                  categorias.map((cat) => {
+                    const totalUso = (cat._count?.costosFijos || 0) + (cat._count?.gastos || 0);
+
+                    return (
+                      <tr key={cat.id} className="hover:bg-muted/30 transition">
+                        <td className="py-2.5 px-3 font-medium text-foreground flex items-center gap-2">
+                          <span
+                            className="inline-block w-2.5 h-2.5 rounded-full border border-border/60 shrink-0"
+                            style={{ backgroundColor: cat.color || '#2563eb' }}
+                          />
+                          <span>{cat.nombre}</span>
+                        </td>
+                        <td className="py-2.5 px-3 text-muted-foreground">
+                          {cat.esFijo ? (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300 border border-sky-200/60 dark:border-sky-800/50">
+                              Fijo / Recurrente
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-100 dark:bg-zinc-800/60 text-zinc-600 dark:text-zinc-400 border border-zinc-200 dark:border-zinc-700/60">
+                              Variable / Compra
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-muted-foreground font-mono text-[11px]">
+                          {cat._count ? (
+                            <span title={`${cat._count.costosFijos} costos fijos, ${cat._count.gastos} gastos`}>
+                              {totalUso > 0 ? (
+                                <span className="text-foreground font-semibold">
+                                  {totalUso} <span className="font-normal text-muted-foreground">reg. ({cat._count.costosFijos}F / {cat._count.gastos}G)</span>
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground/60">0 reg.</span>
+                              )}
+                            </span>
+                          ) : (
+                            <span>-</span>
+                          )}
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <div className="flex items-center justify-center gap-1.5">
+                            <span
+                              className="inline-block w-3 h-3 rounded-full border border-border"
+                              style={{ backgroundColor: cat.color || '#2563eb' }}
+                            />
+                            <span className="font-mono text-[10px] text-muted-foreground hidden sm:inline">
+                              {cat.color}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 text-center">
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              type="button"
+                              onClick={() => handleEditarCategoria(cat)}
+                              className="p-1 rounded text-muted-foreground hover:text-foreground transition"
+                              title="Editar categoría"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleEliminarCategoria(cat.id, cat.nombre)}
+                              disabled={deletingCatId === cat.id}
+                              className="p-1 rounded text-muted-foreground hover:text-rose-500 transition"
+                              title="Eliminar categoría"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 ) : (
                   <tr>
-                    <td colSpan={4} className="py-6 text-center text-xs text-muted-foreground">
+                    <td colSpan={5} className="py-6 text-center text-xs text-muted-foreground">
                       No hay categorías registradas.
                     </td>
                   </tr>
@@ -569,10 +794,21 @@ export function ConfiguracionClient() {
 
         {/* Formulario Categoría */}
         <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs">
-          <form onSubmit={handleCrearCategoria} className="space-y-3 text-xs">
-            <span className="font-medium text-foreground text-xs block pb-1 border-b border-border/60">
-              Nueva Categoría
-            </span>
+          <form onSubmit={handleGuardarCategoria} className="space-y-3 text-xs">
+            <div className="flex items-center justify-between pb-1 border-b border-border/60">
+              <span className="font-medium text-foreground text-xs block">
+                {editandoCat ? `Editar Categoría "${editandoCat.nombre}"` : 'Nueva Categoría'}
+              </span>
+              {editandoCat && (
+                <button
+                  type="button"
+                  onClick={handleCancelarEdicionCat}
+                  className="text-muted-foreground hover:text-foreground text-[11px] flex items-center gap-1"
+                >
+                  <X className="w-3.5 h-3.5" /> Cancelar
+                </button>
+              )}
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
               <div className="space-y-1">
@@ -619,7 +855,7 @@ export function ConfiguracionClient() {
                 disabled={savingCat}
                 className="py-1.5 px-3.5 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition disabled:opacity-50"
               >
-                {savingCat ? 'Guardando...' : '+ Agregar Categoría'}
+                {savingCat ? 'Guardando...' : editandoCat ? 'Actualizar Categoría' : '+ Agregar Categoría'}
               </button>
             </div>
           </form>

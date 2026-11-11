@@ -1,9 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { EstadoPago, MetodoPago } from '@prisma/client';
+import { getAuthenticatedUser } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+    const body = await request.json();
     const {
       concepto,
       monto,
@@ -15,7 +20,9 @@ export async function POST(request: NextRequest) {
       notas,
       metodoPago,
       tarjetaId,
-    } = await request.json();
+    } = body;
+    const usuarioId = user.id;
+
     const startPeriodo = mesInicio || periodo || '2026-11';
     const montoFloat = parseFloat(monto);
     const finalMetodoPago = (metodoPago as MetodoPago) || MetodoPago.EFECTIVO_DEBITO;
@@ -23,6 +30,7 @@ export async function POST(request: NextRequest) {
 
     const costoFijo = await prisma.costoFijo.create({
       data: {
+        usuarioId: usuarioId || undefined,
         concepto,
         monto: montoFloat,
         diaVencimiento: parseInt(diaVencimiento, 10) || 30,

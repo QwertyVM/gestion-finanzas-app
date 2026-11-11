@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
 import {
   formatMoney,
@@ -11,6 +11,7 @@ import {
 } from '@/lib/utils';
 import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import { TableSkeleton } from '@/components/common/Skeleton';
+import { MonthYearPicker } from '@/components/common/MonthYearPicker';
 import {
   Home,
   Landmark,
@@ -38,6 +39,7 @@ import {
   CreditCard,
   Banknote,
   ChevronDown,
+  Layers,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -54,6 +56,7 @@ export function FijosClient() {
 
   const [modoVistaFijos, setModoVistaFijos] = useState<'TABLA' | 'TARJETAS'>('TABLA');
   const [modoVistaPrestamos, setModoVistaPrestamos] = useState<'TABLA' | 'TARJETAS'>('TABLA');
+  const [modoVistaCuotas, setModoVistaCuotas] = useState<'TABLA' | 'TARJETAS'>('TABLA');
 
   useEffect(() => {
     const savedFijos = localStorage.getItem('finanzapp_modoVista_fijos');
@@ -63,6 +66,10 @@ export function FijosClient() {
     const savedPrestamos = localStorage.getItem('finanzapp_modoVista_prestamos');
     if (savedPrestamos === 'TABLA' || savedPrestamos === 'TARJETAS') {
       setModoVistaPrestamos(savedPrestamos);
+    }
+    const savedCuotas = localStorage.getItem('finanzapp_modoVista_cuotas');
+    if (savedCuotas === 'TABLA' || savedCuotas === 'TARJETAS') {
+      setModoVistaCuotas(savedCuotas);
     }
   }, []);
 
@@ -74,6 +81,11 @@ export function FijosClient() {
   const handleCambiarModoVistaPrestamos = (modo: 'TABLA' | 'TARJETAS') => {
     setModoVistaPrestamos(modo);
     localStorage.setItem('finanzapp_modoVista_prestamos', modo);
+  };
+
+  const handleCambiarModoVistaCuotas = (modo: 'TABLA' | 'TARJETAS') => {
+    setModoVistaCuotas(modo);
+    localStorage.setItem('finanzapp_modoVista_cuotas', modo);
   };
 
   const configTc = resumen?.config?.tipoCambioUSD || 4.00;
@@ -121,6 +133,8 @@ export function FijosClient() {
   const [editPrestamoBanco, setEditPrestamoBanco] = useState('');
   const [editPrestamoConcepto, setEditPrestamoConcepto] = useState('');
   const [editPrestamoMontoTotal, setEditPrestamoMontoTotal] = useState('');
+  const [editPrestamoCuotasTotales, setEditPrestamoCuotasTotales] = useState('24');
+  const [editPrestamoCuotaActual, setEditPrestamoCuotaActual] = useState('1');
   const [editPrestamoMoneda, setEditPrestamoMoneda] = useState<'PEN' | 'USD'>('PEN');
   const [editPrestamoMontoCuota, setEditPrestamoMontoCuota] = useState('');
   const [editPrestamoCuotaUSD, setEditPrestamoCuotaUSD] = useState('');
@@ -133,6 +147,53 @@ export function FijosClient() {
   const costosFijos = resumen?.costosFijos || [];
   const prestamos = resumen?.prestamos || [];
   const tarjetas = resumen?.tarjetasCredito || [];
+
+  const cuotasTarjeta = useMemo(() => {
+    const list: any[] = [];
+    for (const t of tarjetas) {
+      for (const g of t.gastosPeriodo || []) {
+        if ((g.totalCuotas || 1) > 1) {
+          list.push({
+            ...g,
+            tarjetaNombre: t.nombre,
+            tarjetaColor: t.color,
+            tarjetaBanco: t.banco,
+            tarjetaDiaPago: t.diaPago,
+          });
+        }
+      }
+    }
+    return list;
+  }, [tarjetas]);
+
+  const totalCuotasTarjeta = useMemo(
+    () => cuotasTarjeta.reduce((sum, c) => sum + (c.monto || 0), 0),
+    [cuotasTarjeta]
+  );
+
+  // Alternar estado de Compra en Tarjeta en Cuotas
+  const handleToggleEstadoGasto = async (gastoId: string, nuevoEstado: string) => {
+    try {
+      setLoadingAction(`gasto-${gastoId}`);
+      const res = await fetch('/api/gastos/masivo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'cambiar_estado',
+          ids: [gastoId],
+          estado: nuevoEstado,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Error al actualizar compra en cuotas');
+      toast.success(`Cuota actualizada a ${nuevoEstado.toLowerCase()}`);
+      await refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar cuota');
+    } finally {
+      setLoadingAction(null);
+    }
+  };
 
   // Cuando se selecciona un Costo Fijo para editar base
   const abrirEdicionCostoFijo = (cf: any) => {
@@ -162,6 +223,8 @@ export function FijosClient() {
     setEditPrestamoBanco(p.banco);
     setEditPrestamoConcepto(p.concepto);
     setEditPrestamoMontoTotal(p.montoTotal ? p.montoTotal.toString() : '');
+    setEditPrestamoCuotasTotales(p.cuotasTotales ? p.cuotasTotales.toString() : '24');
+    setEditPrestamoCuotaActual(p.cuotaActual ? p.cuotaActual.toString() : '1');
     setEditPrestamoMontoCuota(p.montoCuota.toString());
     setEditPrestamoDiaPago(p.diaPago.toString());
     setEditPrestamoTea(p.tasaInteresAnual.toString());
@@ -240,6 +303,12 @@ export function FijosClient() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cuotaId: item.dbId, monto: nuevoMonto }),
         });
+      } else {
+        await fetch('/api/gastos', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: item.dbId, monto: nuevoMonto }),
+        });
       }
       setDetalleItem((prev) => (prev ? { ...prev, monto: nuevoMonto } : null));
       await refresh();
@@ -268,8 +337,8 @@ export function FijosClient() {
       const label = nuevoMetodo === 'TARJETA_CREDITO'
         ? (tarjetaNombre ? `Tarjeta (${tarjetaNombre})` : 'Tarjeta de Crédito')
         : nuevoMetodo === 'TRANSFERENCIA'
-        ? 'Transferencia'
-        : 'Efectivo / Débito';
+          ? 'Transferencia'
+          : 'Efectivo / Débito';
       toast.success(`Forma de pago actualizada a: ${label}`);
       await refresh();
     } catch (err: any) {
@@ -317,13 +386,13 @@ export function FijosClient() {
         setDetalleItem((prev) =>
           prev
             ? {
-                ...prev,
-                metodoPago: nuevoMetodo,
-                tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? (tarjetaId || null) : null,
-                tarjetaNombre: tObj?.nombre || null,
-                tarjetaBanco: tObj?.banco || null,
-                tarjetaColor: tObj?.color || null,
-              }
+              ...prev,
+              metodoPago: nuevoMetodo,
+              tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? (tarjetaId || null) : null,
+              tarjetaNombre: tObj?.nombre || null,
+              tarjetaBanco: tObj?.banco || null,
+              tarjetaColor: tObj?.color || null,
+            }
             : null
         );
         toast.success('Forma de pago actualizada');
@@ -339,6 +408,8 @@ export function FijosClient() {
       await handleToggleEstadoFijo(item.dbId, nuevoEstado);
     } else if (item.tipo === 'PRESTAMO') {
       await handleToggleEstadoCuota(item.dbId, nuevoEstado);
+    } else {
+      await handleToggleEstadoGasto(item.dbId, nuevoEstado);
     }
     setDetalleItem((prev) => (prev ? { ...prev, estado: nuevoEstado as any } : null));
   };
@@ -584,6 +655,8 @@ export function FijosClient() {
           concepto: conceptoFinal,
           banco: editPrestamoBanco.trim(),
           montoTotal: editPrestamoMontoTotal ? parseFloat(editPrestamoMontoTotal) : undefined,
+          cuotasTotales: parseInt(editPrestamoCuotasTotales, 10) || undefined,
+          cuotaActual: parseInt(editPrestamoCuotaActual, 10) || undefined,
           montoCuota: cuotaSoles,
           diaPago: parseInt(editPrestamoDiaPago, 10),
           tasaInteresAnual: parseFloat(editPrestamoTea),
@@ -661,11 +734,10 @@ export function FijosClient() {
               <button
                 type="button"
                 onClick={() => handleCambiarModoVistaFijos('TABLA')}
-                className={`p-1 rounded transition ${
-                  modoVistaFijos === 'TABLA'
+                className={`p-1 rounded transition ${modoVistaFijos === 'TABLA'
                     ? 'bg-card text-foreground shadow-xs'
                     : 'text-muted-foreground'
-                }`}
+                  }`}
                 title="Ver como Tabla"
                 aria-label="Ver costos fijos como tabla"
               >
@@ -674,11 +746,10 @@ export function FijosClient() {
               <button
                 type="button"
                 onClick={() => handleCambiarModoVistaFijos('TARJETAS')}
-                className={`p-1 rounded transition ${
-                  modoVistaFijos === 'TARJETAS'
+                className={`p-1 rounded transition ${modoVistaFijos === 'TARJETAS'
                     ? 'bg-card text-foreground shadow-xs'
                     : 'text-muted-foreground'
-                }`}
+                  }`}
                 title="Ver como Tarjetas"
                 aria-label="Ver costos fijos como tarjetas"
               >
@@ -752,13 +823,14 @@ export function FijosClient() {
                             tarjetaUltimosCuatro: cf.tarjetaUltimosCuatro,
                           })
                         }
-                        className="hover:bg-muted/30 transition cursor-pointer"
+                        className="hover:bg-muted/30 transition cursor-pointer border-l-[3px] border-l-sky-500"
                       >
                         <td className="py-2.5 px-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <span className="font-medium text-foreground text-xs">{cf.concepto}</span>
-                            <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-muted text-muted-foreground">
-                              {estilo.badgeLabel}
+                            <span className="text-[10px] px-2 py-0.5 rounded font-semibold border bg-sky-50 text-sky-700 border-sky-200/80 dark:bg-sky-950/50 dark:text-sky-300 dark:border-sky-800/60 inline-flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                              Fijo
                             </span>
                           </div>
                           {cf.monedaOriginal === 'USD' && cf.montoOriginal && (
@@ -769,7 +841,13 @@ export function FijosClient() {
                         </td>
 
                         <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
-                          {cf.categoria || 'General'}
+                          <div className="flex items-center gap-1.5">
+                            <span
+                              className="inline-block w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: (cf as any).categoriaColor || '#64748b' }}
+                            />
+                            <span>{cf.categoria || 'General'}</span>
+                          </div>
                         </td>
 
                         <td className="py-2.5 px-3 text-center text-muted-foreground whitespace-nowrap">
@@ -798,13 +876,12 @@ export function FijosClient() {
                                 }
                               }}
                               disabled={isLoading}
-                              className={`text-[11px] font-medium py-1 pl-2 pr-6 rounded-lg border appearance-none cursor-pointer outline-none transition bg-background ${
-                                cf.metodoPago === 'TARJETA_CREDITO'
+                              className={`text-[11px] font-medium py-1 pl-2 pr-6 rounded-lg border appearance-none cursor-pointer outline-none transition bg-background ${cf.metodoPago === 'TARJETA_CREDITO'
                                   ? 'text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/40 dark:bg-indigo-950/20 font-semibold'
                                   : cf.metodoPago === 'TRANSFERENCIA'
-                                  ? 'text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-900/50 bg-cyan-50/40 dark:bg-cyan-950/20 font-semibold'
-                                  : 'text-muted-foreground border-border hover:text-foreground'
-                              }`}
+                                    ? 'text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-900/50 bg-cyan-50/40 dark:bg-cyan-950/20 font-semibold'
+                                    : 'text-muted-foreground border-border hover:text-foreground'
+                                }`}
                               title="Cambiar forma de pago para este mes"
                             >
                               <option value="EFECTIVO_DEBITO">💵 Efectivo / Débito</option>
@@ -821,22 +898,20 @@ export function FijosClient() {
 
                         <td className="py-2.5 px-3 text-center whitespace-nowrap">
                           <span
-                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                              cf.estado === 'ADELANTADO'
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${cf.estado === 'ADELANTADO'
                                 ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
                                 : cf.estado === 'PAGADO'
-                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                                : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
-                            }`}
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                              }`}
                           >
                             <span
-                              className={`w-1.5 h-1.5 rounded-full ${
-                                cf.estado === 'ADELANTADO'
+                              className={`w-1.5 h-1.5 rounded-full ${cf.estado === 'ADELANTADO'
                                   ? 'bg-indigo-500'
                                   : cf.estado === 'PAGADO'
-                                  ? 'bg-emerald-500'
-                                  : 'bg-amber-500'
-                              }`}
+                                    ? 'bg-emerald-500'
+                                    : 'bg-amber-500'
+                                }`}
                             />
                             {cf.estado === 'ADELANTADO' ? 'Adelantado' : cf.estado === 'PAGADO' ? 'Pagado' : 'Pendiente'}
                           </span>
@@ -866,11 +941,10 @@ export function FijosClient() {
                                 )
                               }
                               disabled={isLoading}
-                              className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${
-                                cf.estado === 'PAGADO'
+                              className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${cf.estado === 'PAGADO'
                                   ? 'text-muted-foreground hover:bg-muted'
                                   : 'bg-foreground text-background hover:opacity-90'
-                              }`}
+                                }`}
                               title="Alternar Pagado"
                             >
                               {cf.estado === 'PAGADO' ? 'Pagado' : 'Pagar'}
@@ -906,195 +980,191 @@ export function FijosClient() {
           /* ======================================================== */
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {costosFijos.map((cf) => {
-            const Icon = getIconForConcepto(cf.concepto);
-            const isLoading = loadingAction === `fijo-${cf.id}`;
-            const clasificacion: ClasificacionEgreso = 'FIJO';
-            const estilo = ESTILOS_CLASIFICACION.FIJO;
+              const Icon = getIconForConcepto(cf.concepto);
+              const isLoading = loadingAction === `fijo-${cf.id}`;
+              const clasificacion: ClasificacionEgreso = 'FIJO';
+              const estilo = ESTILOS_CLASIFICACION.FIJO;
 
-            return (
-              <div
-                key={cf.id}
-                onClick={() =>
-                  setDetalleItem({
-                    id: `fijo-${cf.id}`,
-                    dbId: cf.id,
-                    tipo: 'FIJO',
-                    clasificacion,
-                    concepto: cf.concepto,
-                    categoria: cf.categoria,
-                    monto: cf.monto,
-                    diaVencimiento: cf.diaVencimiento,
-                    estado: cf.estado,
-                    fechaPagoReal: cf.fechaPagoReal,
-                    mesInicio: cf.mesInicio,
-                    mesFin: cf.mesFin,
-                    notas: cf.notas,
-                    monedaOriginal: cf.monedaOriginal,
-                    montoOriginal: cf.montoOriginal,
-                    tipoCambio: cf.tipoCambio,
-                    metodoPago: cf.metodoPago,
-                    tarjetaId: cf.tarjetaId,
-                    tarjetaNombre: cf.tarjetaNombre,
-                    tarjetaBanco: cf.tarjetaBanco,
-                    tarjetaColor: cf.tarjetaColor,
-                    tarjetaUltimosCuatro: cf.tarjetaUltimosCuatro,
-                  })
-                }
-                className={`group bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between border-l-4 ${estilo.borderColor} ${estilo.bgCardHover} hover:shadow-md transition cursor-pointer`}
-                title="Haz clic para ver características completas"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="p-2.5 rounded-xl bg-sky-500/10 text-sky-500">
-                      <Icon className="w-5 h-5" />
-                    </div>
+              return (
+                <div
+                  key={cf.id}
+                  onClick={() =>
+                    setDetalleItem({
+                      id: `fijo-${cf.id}`,
+                      dbId: cf.id,
+                      tipo: 'FIJO',
+                      clasificacion,
+                      concepto: cf.concepto,
+                      categoria: cf.categoria,
+                      monto: cf.monto,
+                      diaVencimiento: cf.diaVencimiento,
+                      estado: cf.estado,
+                      fechaPagoReal: cf.fechaPagoReal,
+                      mesInicio: cf.mesInicio,
+                      mesFin: cf.mesFin,
+                      notas: cf.notas,
+                      monedaOriginal: cf.monedaOriginal,
+                      montoOriginal: cf.montoOriginal,
+                      tipoCambio: cf.tipoCambio,
+                      metodoPago: cf.metodoPago,
+                      tarjetaId: cf.tarjetaId,
+                      tarjetaNombre: cf.tarjetaNombre,
+                      tarjetaBanco: cf.tarjetaBanco,
+                      tarjetaColor: cf.tarjetaColor,
+                      tarjetaUltimosCuatro: cf.tarjetaUltimosCuatro,
+                    })
+                  }
+                  className={`group bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 flex flex-col justify-between border-l-4 ${estilo.borderColor} ${estilo.bgCardHover} hover:shadow-md transition cursor-pointer`}
+                  title="Haz clic para ver características completas"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="p-2.5 rounded-xl bg-sky-500/10 text-sky-500">
+                        <Icon className="w-5 h-5" />
+                      </div>
 
-                    <div className="text-right">
-                      <span className="text-lg font-bold text-foreground block group-hover:text-sky-400 transition">
-                        {formatMoney(cf.monto, moneda)}
-                      </span>
-                      <div className="flex items-center justify-end gap-1.5 mt-0.5">
-                        {(cf.monedaOriginal === 'USD' || cf.concepto.includes('$')) && (
-                          <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-500/20">
-                            ${cf.montoOriginal ? cf.montoOriginal.toFixed(2) : (cf.concepto.match(/\$([0-9.]+)/)?.[1] || '')} USD
-                          </span>
-                        )}
-                        <span className="text-[11px] text-muted-foreground">
-                          Vence: Día {cf.diaVencimiento}
+                      <div className="text-right">
+                        <span className="text-lg font-bold text-foreground block group-hover:text-sky-400 transition">
+                          {formatMoney(cf.monto, moneda)}
                         </span>
+                        <div className="flex items-center justify-end gap-1.5 mt-0.5">
+                          {(cf.monedaOriginal === 'USD' || cf.concepto.includes('$')) && (
+                            <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 dark:bg-amber-950/40 px-1.5 py-0.5 rounded border border-amber-500/20">
+                              ${cf.montoOriginal ? cf.montoOriginal.toFixed(2) : (cf.concepto.match(/\$([0-9.]+)/)?.[1] || '')} USD
+                            </span>
+                          )}
+                          <span className="text-[11px] text-muted-foreground">
+                            Vence: Día {cf.diaVencimiento}
+                          </span>
+                        </div>
                       </div>
                     </div>
+
+                    <div>
+                      <div className="flex items-center justify-between">
+                        <h3 className="font-bold text-foreground text-sm group-hover:text-sky-400 transition flex items-center gap-1.5 flex-wrap">
+                          <span>{cf.concepto}</span>
+                          <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.2 rounded-md font-bold shrink-0 border ${estilo.badgeBg} ${estilo.badgeText} ${estilo.badgeBorder}`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${estilo.dotColor}`} />
+                            {estilo.badgeLabel}
+                          </span>
+                          <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
+                        </h3>
+                        {/* Botón Editar Base No Retroactivo */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            abrirEdicionCostoFijo(cf);
+                          }}
+                          className="text-[11px] text-sky-400 hover:text-sky-300 font-semibold inline-flex items-center gap-1 p-1 rounded hover:bg-secondary transition"
+                          title="Editar definición base (no retroactivo)"
+                        >
+                          <Pencil className="w-3 h-3" />
+                          <span>Editar</span>
+                        </button>
+                      </div>
+                      <span className="text-[11px] text-muted-foreground">{cf.categoria}</span>
+                    </div>
                   </div>
 
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-bold text-foreground text-sm group-hover:text-sky-400 transition flex items-center gap-1.5 flex-wrap">
-                        <span>{cf.concepto}</span>
-                        <span className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.2 rounded-md font-bold shrink-0 border ${estilo.badgeBg} ${estilo.badgeText} ${estilo.badgeBorder}`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${estilo.dotColor}`} />
-                          {estilo.badgeLabel}
+                  {/* Estado y Forma de Pago */}
+                  <div className="pt-3 border-t border-border space-y-2.5" onClick={(e) => e.stopPropagation()}>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Forma de pago:</span>
+                      <div className="relative inline-flex items-center">
+                        <select
+                          value={
+                            cf.metodoPago === 'TARJETA_CREDITO'
+                              ? `TARJETA:${cf.tarjetaId || ''}`
+                              : cf.metodoPago || 'EFECTIVO_DEBITO'
+                          }
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (val.startsWith('TARJETA:')) {
+                              const tId = val.replace('TARJETA:', '');
+                              handleCambiarMetodoPagoFijo(cf.id, 'TARJETA_CREDITO', tId || null);
+                            } else {
+                              handleCambiarMetodoPagoFijo(cf.id, val, null);
+                            }
+                          }}
+                          disabled={isLoading}
+                          className={`text-[11px] font-medium py-0.5 pl-2 pr-5 rounded-md border appearance-none cursor-pointer outline-none transition bg-background ${cf.metodoPago === 'TARJETA_CREDITO'
+                              ? 'text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/40 dark:bg-indigo-950/20 font-semibold'
+                              : cf.metodoPago === 'TRANSFERENCIA'
+                                ? 'text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-900/50 bg-cyan-50/40 dark:bg-cyan-950/20 font-semibold'
+                                : 'text-muted-foreground border-border hover:text-foreground'
+                            }`}
+                          title="Cambiar forma de pago para este mes"
+                        >
+                          <option value="EFECTIVO_DEBITO">💵 Efectivo / Débito</option>
+                          <option value="TRANSFERENCIA">🏦 Transferencia</option>
+                          {tarjetas.map((t) => (
+                            <option key={t.id} value={`TARJETA:${t.id}`}>
+                              💳 {t.nombre}
+                            </option>
+                          ))}
+                        </select>
+                        <ChevronDown className="w-3 h-3 absolute right-1 pointer-events-none text-muted-foreground" />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-muted-foreground">Estado este mes:</span>
+                      {cf.estado === 'ADELANTADO' ? (
+                        <span className="inline-flex items-center gap-1 font-bold text-amber-500 text-[11px]">
+                          <FastForward className="w-3.5 h-3.5" /> Adelantado
                         </span>
-                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
-                      </h3>
-                      {/* Botón Editar Base No Retroactivo */}
+                      ) : cf.estado === 'PAGADO' ? (
+                        <span className="inline-flex items-center gap-1 font-bold text-emerald-500 text-[11px]">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Pagado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 font-bold text-sky-500 text-[11px]">
+                          <Clock className="w-3.5 h-3.5" /> Pendiente
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-1.5 pt-1">
                       <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          abrirEdicionCostoFijo(cf);
-                        }}
-                        className="text-[11px] text-sky-400 hover:text-sky-300 font-semibold inline-flex items-center gap-1 p-1 rounded hover:bg-secondary transition"
-                        title="Editar definición base (no retroactivo)"
+                        onClick={() => handleToggleEstadoFijo(cf.id, 'PENDIENTE')}
+                        disabled={isLoading}
+                        className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold border text-center transition ${cf.estado === 'PENDIENTE'
+                            ? 'bg-sky-500/20 text-sky-400 border-sky-500/40'
+                            : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary'
+                          }`}
                       >
-                        <Pencil className="w-3 h-3" />
-                        <span>Editar</span>
+                        Pendiente
+                      </button>
+
+                      <button
+                        onClick={() => handleToggleEstadoFijo(cf.id, 'ADELANTADO')}
+                        disabled={isLoading}
+                        className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold border text-center transition ${cf.estado === 'ADELANTADO'
+                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                            : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary'
+                          }`}
+                      >
+                        Adelantado
+                      </button>
+
+                      <button
+                        onClick={() => handleToggleEstadoFijo(cf.id, 'PAGADO')}
+                        disabled={isLoading}
+                        className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold border text-center transition ${cf.estado === 'PAGADO'
+                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                            : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary'
+                          }`}
+                      >
+                        Pagado
                       </button>
                     </div>
-                    <span className="text-[11px] text-muted-foreground">{cf.categoria}</span>
                   </div>
                 </div>
-
-                {/* Estado y Forma de Pago */}
-                <div className="pt-3 border-t border-border space-y-2.5" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Forma de pago:</span>
-                    <div className="relative inline-flex items-center">
-                      <select
-                        value={
-                          cf.metodoPago === 'TARJETA_CREDITO'
-                            ? `TARJETA:${cf.tarjetaId || ''}`
-                            : cf.metodoPago || 'EFECTIVO_DEBITO'
-                        }
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (val.startsWith('TARJETA:')) {
-                            const tId = val.replace('TARJETA:', '');
-                            handleCambiarMetodoPagoFijo(cf.id, 'TARJETA_CREDITO', tId || null);
-                          } else {
-                            handleCambiarMetodoPagoFijo(cf.id, val, null);
-                          }
-                        }}
-                        disabled={isLoading}
-                        className={`text-[11px] font-medium py-0.5 pl-2 pr-5 rounded-md border appearance-none cursor-pointer outline-none transition bg-background ${
-                          cf.metodoPago === 'TARJETA_CREDITO'
-                            ? 'text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900/50 bg-indigo-50/40 dark:bg-indigo-950/20 font-semibold'
-                            : cf.metodoPago === 'TRANSFERENCIA'
-                            ? 'text-cyan-600 dark:text-cyan-400 border-cyan-200 dark:border-cyan-900/50 bg-cyan-50/40 dark:bg-cyan-950/20 font-semibold'
-                            : 'text-muted-foreground border-border hover:text-foreground'
-                        }`}
-                        title="Cambiar forma de pago para este mes"
-                      >
-                        <option value="EFECTIVO_DEBITO">💵 Efectivo / Débito</option>
-                        <option value="TRANSFERENCIA">🏦 Transferencia</option>
-                        {tarjetas.map((t) => (
-                          <option key={t.id} value={`TARJETA:${t.id}`}>
-                            💳 {t.nombre}
-                          </option>
-                        ))}
-                      </select>
-                      <ChevronDown className="w-3 h-3 absolute right-1 pointer-events-none text-muted-foreground" />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-muted-foreground">Estado este mes:</span>
-                    {cf.estado === 'ADELANTADO' ? (
-                      <span className="inline-flex items-center gap-1 font-bold text-amber-500 text-[11px]">
-                        <FastForward className="w-3.5 h-3.5" /> Adelantado
-                      </span>
-                    ) : cf.estado === 'PAGADO' ? (
-                      <span className="inline-flex items-center gap-1 font-bold text-emerald-500 text-[11px]">
-                        <CheckCircle2 className="w-3.5 h-3.5" /> Pagado
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 font-bold text-sky-500 text-[11px]">
-                        <Clock className="w-3.5 h-3.5" /> Pendiente
-                      </span>
-                    )}
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-1.5 pt-1">
-                    <button
-                      onClick={() => handleToggleEstadoFijo(cf.id, 'PENDIENTE')}
-                      disabled={isLoading}
-                      className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold border text-center transition ${
-                        cf.estado === 'PENDIENTE'
-                          ? 'bg-sky-500/20 text-sky-400 border-sky-500/40'
-                          : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary'
-                      }`}
-                    >
-                      Pendiente
-                    </button>
-
-                    <button
-                      onClick={() => handleToggleEstadoFijo(cf.id, 'ADELANTADO')}
-                      disabled={isLoading}
-                      className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold border text-center transition ${
-                        cf.estado === 'ADELANTADO'
-                          ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
-                          : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary'
-                      }`}
-                    >
-                      Adelantado
-                    </button>
-
-                    <button
-                      onClick={() => handleToggleEstadoFijo(cf.id, 'PAGADO')}
-                      disabled={isLoading}
-                      className={`py-1.5 px-2 rounded-lg text-[10px] font-semibold border text-center transition ${
-                        cf.estado === 'PAGADO'
-                          ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-                          : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary'
-                      }`}
-                    >
-                      Pagado
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
@@ -1115,11 +1185,10 @@ export function FijosClient() {
               <button
                 type="button"
                 onClick={() => handleCambiarModoVistaPrestamos('TABLA')}
-                className={`p-1 rounded transition ${
-                  modoVistaPrestamos === 'TABLA'
+                className={`p-1 rounded transition ${modoVistaPrestamos === 'TABLA'
                     ? 'bg-card text-foreground shadow-xs'
                     : 'text-muted-foreground'
-                }`}
+                  }`}
                 title="Ver como Tabla"
                 aria-label="Ver préstamos como tabla"
               >
@@ -1128,11 +1197,10 @@ export function FijosClient() {
               <button
                 type="button"
                 onClick={() => handleCambiarModoVistaPrestamos('TARJETAS')}
-                className={`p-1 rounded transition ${
-                  modoVistaPrestamos === 'TARJETAS'
+                className={`p-1 rounded transition ${modoVistaPrestamos === 'TARJETAS'
                     ? 'bg-card text-foreground shadow-xs'
                     : 'text-muted-foreground'
-                }`}
+                  }`}
                 title="Ver como Tarjetas"
                 aria-label="Ver préstamos como tarjetas"
               >
@@ -1208,11 +1276,12 @@ export function FijosClient() {
                             tipoCambio: p.tipoCambio,
                           })
                         }
-                        className="hover:bg-muted/30 transition cursor-pointer"
+                        className="hover:bg-muted/30 transition cursor-pointer border-l-[3px] border-l-purple-500"
                       >
                         <td className="py-2.5 px-3">
                           <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-muted text-muted-foreground">
+                            <span className="text-[10px] px-2 py-0.5 rounded font-semibold border bg-purple-50 text-purple-700 border-purple-200/80 dark:bg-purple-950/50 dark:text-purple-300 dark:border-purple-800/60 inline-flex items-center gap-1">
+                              <span className="w-1.5 h-1.5 rounded-full bg-purple-500" />
                               {p.banco}
                             </span>
                             <span className="font-medium text-foreground text-xs">{p.concepto}</span>
@@ -1266,22 +1335,20 @@ export function FijosClient() {
                             </span>
                           ) : (
                             <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                                p.estado === 'ADELANTADO'
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${p.estado === 'ADELANTADO'
                                   ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
                                   : p.estado === 'PAGADO'
-                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
-                              }`}
+                                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                    : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                                }`}
                             >
                               <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  p.estado === 'ADELANTADO'
+                                className={`w-1.5 h-1.5 rounded-full ${p.estado === 'ADELANTADO'
                                     ? 'bg-indigo-500'
                                     : p.estado === 'PAGADO'
-                                    ? 'bg-emerald-500'
-                                    : 'bg-amber-500'
-                                }`}
+                                      ? 'bg-emerald-500'
+                                      : 'bg-amber-500'
+                                  }`}
                               />
                               {p.estado === 'ADELANTADO' ? 'Adelantado' : p.estado === 'PAGADO' ? 'Pagado' : 'Pendiente'}
                             </span>
@@ -1313,11 +1380,10 @@ export function FijosClient() {
                                     )
                                   }
                                   disabled={isLoading}
-                                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${
-                                    p.estado === 'PAGADO'
+                                  className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${p.estado === 'PAGADO'
                                       ? 'text-muted-foreground hover:bg-muted'
                                       : 'bg-foreground text-background hover:opacity-90'
-                                  }`}
+                                    }`}
                                   title="Marcar Pagado"
                                 >
                                   {p.estado === 'PAGADO' ? 'Pagado' : 'Pagar'}
@@ -1494,11 +1560,10 @@ export function FijosClient() {
                             )
                           }
                           disabled={isLoading}
-                          className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                            p.estado === 'ADELANTADO'
+                          className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${p.estado === 'ADELANTADO'
                               ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
                               : 'bg-secondary text-muted-foreground border-border hover:bg-secondary/80'
-                          }`}
+                            }`}
                         >
                           ⚡ Adelantar
                         </button>
@@ -1511,11 +1576,10 @@ export function FijosClient() {
                             )
                           }
                           disabled={isLoading}
-                          className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${
-                            p.estado === 'PAGADO'
+                          className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${p.estado === 'PAGADO'
                               ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
                               : 'bg-secondary text-muted-foreground border-border hover:bg-secondary/80'
-                          }`}
+                            }`}
                         >
                           ✅ Pagado
                         </button>
@@ -1525,6 +1589,356 @@ export function FijosClient() {
                         {p.periodoInicio ? `Inicia: ${formatPeriodoLabel(p.periodoInicio)}` : 'Inactivo'}
                       </span>
                     )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* 3. SECCIÓN: COMPRAS EN TARJETA EN CUOTAS */}
+      <div className="space-y-4 pt-4 border-t border-border/60">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-semibold tracking-tight text-foreground">
+                Compras en Tarjeta en Cuotas
+              </h2>
+              <span className="text-[11px] font-medium text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md">
+                {cuotasTarjeta.length} cuotas · {formatMoney(totalCuotasTarjeta, moneda)}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              Compras diferidas y financiadas del mes con tarjeta de crédito.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg">
+              <button
+                type="button"
+                onClick={() => handleCambiarModoVistaCuotas('TABLA')}
+                className={`p-1 rounded transition ${modoVistaCuotas === 'TABLA'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground'
+                  }`}
+                title="Ver como Tabla"
+                aria-label="Ver compras en cuotas como tabla"
+              >
+                <Table className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={() => handleCambiarModoVistaCuotas('TARJETAS')}
+                className={`p-1 rounded transition ${modoVistaCuotas === 'TARJETAS'
+                    ? 'bg-card text-foreground shadow-xs'
+                    : 'text-muted-foreground'
+                  }`}
+                title="Ver como Tarjetas"
+                aria-label="Ver compras en cuotas como tarjetas"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {cuotasTarjeta.length === 0 ? (
+          <div className="p-8 text-center bg-card border border-border/80 rounded-xl">
+            <p className="text-xs text-muted-foreground">
+              No hay compras en cuotas con tarjeta registradas para este periodo.
+            </p>
+          </div>
+        ) : modoVistaCuotas === 'TABLA' ? (
+          <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs border-collapse">
+                <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
+                  <tr>
+                    <th scope="col" className="py-2.5 px-3 font-medium">Concepto</th>
+                    <th scope="col" className="py-2.5 px-3 font-medium">Tarjeta</th>
+                    <th scope="col" className="py-2.5 px-3 font-medium">Progreso</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-medium">Día Pago</th>
+                    <th scope="col" className="py-2.5 px-3 text-right font-medium">Cuota Mensual</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-medium">Estado</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-medium">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {cuotasTarjeta.map((c) => {
+                    const progreso = Math.round(((c.cuotaActual || 1) / (c.totalCuotas || 1)) * 100);
+                    const isLoading = loadingAction === `gasto-${c.id}`;
+
+                    return (
+                      <tr
+                        key={c.id}
+                        onClick={() =>
+                          setDetalleItem({
+                            id: c.id,
+                            dbId: c.id,
+                            tipo: 'TARJETA',
+                            clasificacion: 'CUOTA',
+                            concepto: c.concepto,
+                            categoria: c.categoria || 'Tarjeta',
+                            monto: c.monto,
+                            cuotaActual: c.cuotaActual,
+                            totalCuotas: c.totalCuotas,
+                            diaVencimiento: c.tarjetaDiaPago,
+                            estado: c.estado,
+                            fechaPagoReal: c.fechaPagoReal,
+                            monedaOriginal: c.monedaOriginal,
+                            montoOriginal: c.montoOriginal,
+                            tipoCambio: c.tipoCambio,
+                            tarjetaNombre: c.tarjetaNombre,
+                            tarjetaColor: c.tarjetaColor,
+                            tarjetaBanco: c.tarjetaBanco,
+                          })
+                        }
+                        className="hover:bg-muted/30 transition cursor-pointer border-l-[3px] border-l-indigo-500"
+                      >
+                        <td className="py-2.5 px-3">
+                          <div className="font-medium text-foreground text-xs">{c.concepto}</div>
+                          {c.monedaOriginal === 'USD' && c.montoOriginal && (
+                            <div className="text-[10px] text-muted-foreground mt-0.5">
+                              ${c.montoOriginal.toFixed(2)} USD
+                            </div>
+                          )}
+                        </td>
+
+                        <td className="py-2.5 px-3 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1.5 text-xs text-foreground font-medium">
+                            <span
+                              className="w-2 h-2 rounded-full shrink-0"
+                              style={{ backgroundColor: c.tarjetaColor || '#6366f1' }}
+                            />
+                            {c.tarjetaNombre}
+                          </span>
+                        </td>
+
+                        <td className="py-2.5 px-3">
+                          <div className="w-28 space-y-1">
+                            <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                              <span>Cuota {c.cuotaActual}/{c.totalCuotas}</span>
+                              <span>{progreso}%</span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-1 overflow-hidden">
+                              <div
+                                className="bg-indigo-500 h-full rounded-full transition-all"
+                                style={{ width: `${progreso}%` }}
+                              />
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="py-2.5 px-3 text-center text-muted-foreground whitespace-nowrap">
+                          Día {c.tarjetaDiaPago || '—'}
+                        </td>
+
+                        <td className="py-2.5 px-3 text-right font-mono font-medium text-foreground whitespace-nowrap">
+                          {formatMoney(c.monto, moneda)}
+                        </td>
+
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+                          <span
+                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${c.estado === 'ADELANTADO'
+                                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                : c.estado === 'PAGADO'
+                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                              }`}
+                          >
+                            <span
+                              className={`w-1.5 h-1.5 rounded-full ${c.estado === 'ADELANTADO'
+                                  ? 'bg-indigo-500'
+                                  : c.estado === 'PAGADO'
+                                    ? 'bg-emerald-500'
+                                    : 'bg-amber-500'
+                                }`}
+                            />
+                            {c.estado === 'ADELANTADO' ? 'Adelantado' : c.estado === 'PAGADO' ? 'Pagado' : 'Pendiente'}
+                          </span>
+                        </td>
+
+                        <td className="py-2.5 px-3 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-center gap-1">
+                            <button
+                              onClick={() =>
+                                handleToggleEstadoGasto(
+                                  c.id,
+                                  c.estado === 'ADELANTADO' ? 'PENDIENTE' : 'ADELANTADO'
+                                )
+                              }
+                              disabled={isLoading}
+                              className="px-2 py-0.5 rounded text-[11px] text-muted-foreground hover:text-foreground hover:bg-muted transition"
+                              title="Marcar Adelantado"
+                            >
+                              Adelantar
+                            </button>
+                            <button
+                              onClick={() =>
+                                handleToggleEstadoGasto(
+                                  c.id,
+                                  c.estado === 'PAGADO' ? 'PENDIENTE' : 'PAGADO'
+                                )
+                              }
+                              disabled={isLoading}
+                              className={`px-2 py-0.5 rounded text-[11px] font-medium transition ${c.estado === 'PAGADO'
+                                  ? 'text-muted-foreground hover:bg-muted'
+                                  : 'bg-foreground text-background hover:opacity-90'
+                                }`}
+                              title="Marcar Pagado"
+                            >
+                              {c.estado === 'PAGADO' ? 'Pagado' : 'Pagar'}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+                <tfoot className="bg-muted/20 border-t border-border/60 text-xs font-medium">
+                  <tr>
+                    <td colSpan={4} className="py-2.5 px-3 text-muted-foreground">
+                      Subtotal Compras en Tarjeta en Cuotas ({cuotasTarjeta.length} items)
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-mono font-semibold text-foreground whitespace-nowrap">
+                      {formatMoney(totalCuotasTarjeta, moneda)}
+                    </td>
+                    <td colSpan={2}></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {cuotasTarjeta.map((c) => {
+              const progreso = Math.round(((c.cuotaActual || 1) / (c.totalCuotas || 1)) * 100);
+              const isLoading = loadingAction === `gasto-${c.id}`;
+
+              return (
+                <div
+                  key={c.id}
+                  onClick={() =>
+                    setDetalleItem({
+                      id: c.id,
+                      dbId: c.id,
+                      tipo: 'TARJETA',
+                      clasificacion: 'CUOTA',
+                      concepto: c.concepto,
+                      categoria: c.categoria || 'Tarjeta',
+                      monto: c.monto,
+                      cuotaActual: c.cuotaActual,
+                      totalCuotas: c.totalCuotas,
+                      diaVencimiento: c.tarjetaDiaPago,
+                      estado: c.estado,
+                      fechaPagoReal: c.fechaPagoReal,
+                      monedaOriginal: c.monedaOriginal,
+                      montoOriginal: c.montoOriginal,
+                      tipoCambio: c.tipoCambio,
+                      tarjetaNombre: c.tarjetaNombre,
+                      tarjetaColor: c.tarjetaColor,
+                      tarjetaBanco: c.tarjetaBanco,
+                    })
+                  }
+                  className="group bg-card border border-border rounded-2xl p-5 shadow-sm space-y-4 border-l-4 border-l-indigo-500 dark:border-l-indigo-400 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-md transition cursor-pointer"
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-indigo-500/15 text-indigo-400 border border-indigo-500/30">
+                          {c.tarjetaNombre}
+                        </span>
+                        <span className="inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-md font-bold shrink-0 border bg-indigo-50 dark:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-500/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                          Cuota {c.cuotaActual}/{c.totalCuotas}
+                        </span>
+                      </div>
+                      <h3 className="text-base font-bold text-foreground group-hover:text-indigo-400 transition flex items-center gap-1.5">
+                        <span>{c.concepto}</span>
+                        <ChevronRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition" />
+                      </h3>
+                    </div>
+
+                    <div className="text-right">
+                      <span className="font-mono font-bold text-base text-foreground block">
+                        {formatMoney(c.monto, moneda)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground block">
+                        Vence: Día {c.tarjetaDiaPago || '—'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Barra de progreso */}
+                  <div className="space-y-1">
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                      <span>Progreso: Cuota {c.cuotaActual} de {c.totalCuotas}</span>
+                      <span className="font-mono">{progreso}%</span>
+                    </div>
+                    <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+                      <div
+                        className="bg-indigo-500 h-full rounded-full transition-all duration-500"
+                        style={{ width: `${progreso}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Acciones */}
+                  <div className="pt-3 border-t border-border flex items-center justify-between">
+                    <div>
+                      <span className="text-xs text-muted-foreground block">
+                        Estado:
+                      </span>
+                      {c.estado === 'ADELANTADO' ? (
+                        <span className="inline-flex items-center gap-1 font-bold text-amber-500 text-xs">
+                          <FastForward className="w-3.5 h-3.5" /> Adelantado
+                        </span>
+                      ) : c.estado === 'PAGADO' ? (
+                        <span className="inline-flex items-center gap-1 font-bold text-emerald-500 text-xs">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Pagado
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 font-bold text-sky-500 text-xs">
+                          <Clock className="w-3.5 h-3.5" /> Pendiente
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() =>
+                          handleToggleEstadoGasto(
+                            c.id,
+                            c.estado === 'ADELANTADO' ? 'PENDIENTE' : 'ADELANTADO'
+                          )
+                        }
+                        disabled={isLoading}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${c.estado === 'ADELANTADO'
+                            ? 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+                            : 'bg-secondary text-muted-foreground border-border hover:bg-secondary/80'
+                          }`}
+                      >
+                        ⚡ Adelantar
+                      </button>
+
+                      <button
+                        onClick={() =>
+                          handleToggleEstadoGasto(
+                            c.id,
+                            c.estado === 'PAGADO' ? 'PENDIENTE' : 'PAGADO'
+                          )
+                        }
+                        disabled={isLoading}
+                        className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition ${c.estado === 'PAGADO'
+                            ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                            : 'bg-secondary text-muted-foreground border-border hover:bg-secondary/80'
+                          }`}
+                      >
+                        ✅ Pagado
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
@@ -1579,22 +1993,20 @@ export function FijosClient() {
                   <button
                     type="button"
                     onClick={() => setNuevoFijoMoneda('PEN')}
-                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
-                      nuevoFijoMoneda === 'PEN'
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${nuevoFijoMoneda === 'PEN'
                         ? 'bg-sky-500/20 text-sky-400 border-sky-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     S/ Soles (PEN)
                   </button>
                   <button
                     type="button"
                     onClick={() => setNuevoFijoMoneda('USD')}
-                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
-                      nuevoFijoMoneda === 'USD'
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${nuevoFijoMoneda === 'USD'
                         ? 'bg-amber-500/20 text-amber-400 border-amber-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     $ Dólares (USD)
                   </button>
@@ -1695,17 +2107,16 @@ export function FijosClient() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="font-semibold text-foreground">
                     Mes de Inicio:
                   </label>
-                  <input
-                    type="text"
-                    placeholder="YYYY-MM (ej: 2026-11)"
+                  <MonthYearPicker
                     value={nuevoFijoMesInicio}
-                    onChange={(e) => setNuevoFijoMesInicio(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground"
+                    onChange={setNuevoFijoMesInicio}
+                    accentColor="sky"
+                    required
                   />
                 </div>
 
@@ -1713,12 +2124,11 @@ export function FijosClient() {
                   <label className="font-semibold text-foreground">
                     Mes de Fin (opcional):
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Opcional (ej: 2027-07)"
+                  <MonthYearPicker
                     value={nuevoFijoMesFin}
-                    onChange={(e) => setNuevoFijoMesFin(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground"
+                    onChange={setNuevoFijoMesFin}
+                    accentColor="sky"
+                    optional
                   />
                 </div>
               </div>
@@ -1732,22 +2142,20 @@ export function FijosClient() {
                   <button
                     type="button"
                     onClick={() => setNuevoFijoMetodoPago('EFECTIVO_DEBITO')}
-                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${
-                      nuevoFijoMetodoPago === 'EFECTIVO_DEBITO'
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${nuevoFijoMetodoPago === 'EFECTIVO_DEBITO'
                         ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     💵 Efectivo
                   </button>
                   <button
                     type="button"
                     onClick={() => setNuevoFijoMetodoPago('TRANSFERENCIA')}
-                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${
-                      nuevoFijoMetodoPago === 'TRANSFERENCIA'
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${nuevoFijoMetodoPago === 'TRANSFERENCIA'
                         ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     🏦 Transferencia
                   </button>
@@ -1759,11 +2167,10 @@ export function FijosClient() {
                         setNuevoFijoTarjetaId(tarjetas[0].id);
                       }
                     }}
-                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${
-                      nuevoFijoMetodoPago === 'TARJETA_CREDITO'
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${nuevoFijoMetodoPago === 'TARJETA_CREDITO'
                         ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     💳 Tarjeta
                   </button>
@@ -1870,22 +2277,20 @@ export function FijosClient() {
                   <button
                     type="button"
                     onClick={() => setEditFijoMoneda('PEN')}
-                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
-                      editFijoMoneda === 'PEN'
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${editFijoMoneda === 'PEN'
                         ? 'bg-sky-500/20 text-sky-400 border-sky-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     S/ Soles (PEN)
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditFijoMoneda('USD')}
-                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
-                      editFijoMoneda === 'USD'
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${editFijoMoneda === 'USD'
                         ? 'bg-amber-500/20 text-amber-400 border-amber-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     $ Dólares (USD)
                   </button>
@@ -1985,17 +2390,16 @@ export function FijosClient() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="font-semibold text-foreground">
                     Aplica desde este mes:
                   </label>
-                  <input
-                    type="text"
-                    required
+                  <MonthYearPicker
                     value={editFijoMesDesde}
-                    onChange={(e) => setEditFijoMesDesde(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground"
+                    onChange={setEditFijoMesDesde}
+                    accentColor="sky"
+                    required
                   />
                 </div>
 
@@ -2003,12 +2407,11 @@ export function FijosClient() {
                   <label className="font-semibold text-foreground">
                     Mes de Fin (opcional):
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Opcional"
+                  <MonthYearPicker
                     value={editFijoMesFin}
-                    onChange={(e) => setEditFijoMesFin(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground"
+                    onChange={setEditFijoMesFin}
+                    accentColor="sky"
+                    optional
                   />
                 </div>
               </div>
@@ -2022,22 +2425,20 @@ export function FijosClient() {
                   <button
                     type="button"
                     onClick={() => setEditFijoMetodoPago('EFECTIVO_DEBITO')}
-                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${
-                      editFijoMetodoPago === 'EFECTIVO_DEBITO'
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${editFijoMetodoPago === 'EFECTIVO_DEBITO'
                         ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     💵 Efectivo
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditFijoMetodoPago('TRANSFERENCIA')}
-                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${
-                      editFijoMetodoPago === 'TRANSFERENCIA'
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${editFijoMetodoPago === 'TRANSFERENCIA'
                         ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     🏦 Transferencia
                   </button>
@@ -2049,11 +2450,10 @@ export function FijosClient() {
                         setEditFijoTarjetaId(tarjetas[0].id);
                       }
                     }}
-                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${
-                      editFijoMetodoPago === 'TARJETA_CREDITO'
+                    className={`py-1.5 px-2 rounded-xl font-bold border transition text-center ${editFijoMetodoPago === 'TARJETA_CREDITO'
                         ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     💳 Tarjeta
                   </button>
@@ -2166,22 +2566,20 @@ export function FijosClient() {
                   <button
                     type="button"
                     onClick={() => setNuevoPrestamoMoneda('PEN')}
-                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
-                      nuevoPrestamoMoneda === 'PEN'
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${nuevoPrestamoMoneda === 'PEN'
                         ? 'bg-purple-500/20 text-purple-400 border-purple-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     S/ Soles (PEN)
                   </button>
                   <button
                     type="button"
                     onClick={() => setNuevoPrestamoMoneda('USD')}
-                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
-                      nuevoPrestamoMoneda === 'USD'
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${nuevoPrestamoMoneda === 'USD'
                         ? 'bg-amber-500/20 text-amber-400 border-amber-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     $ Dólares (USD)
                   </button>
@@ -2328,7 +2726,7 @@ export function FijosClient() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="font-semibold text-foreground">
                     Tasa TEA (% anual):
@@ -2347,13 +2745,11 @@ export function FijosClient() {
                   <label className="font-semibold text-foreground">
                     Mes en que empieza a pagar:
                   </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="YYYY-MM (ej: 2026-11)"
+                  <MonthYearPicker
                     value={nuevoPrestamoPeriodoInicio}
-                    onChange={(e) => setNuevoPrestamoPeriodoInicio(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground"
+                    onChange={setNuevoPrestamoPeriodoInicio}
+                    accentColor="purple"
+                    required
                   />
                 </div>
               </div>
@@ -2436,17 +2832,62 @@ export function FijosClient() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="font-semibold text-foreground">
+                    Monto Total del Préstamo (S/):
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editPrestamoMontoTotal}
+                    onChange={(e) => setEditPrestamoMontoTotal(e.target.value)}
+                    placeholder="ej. 55000"
+                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground font-mono font-medium"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="font-semibold text-foreground">
+                      Cuotas Totales:
+                    </label>
+                    <span className="text-[10px] text-purple-400 font-medium">
+                      {Math.max(0, (parseInt(editPrestamoCuotasTotales, 10) || 0) - (parseInt(editPrestamoCuotaActual, 10) || 1))} restantes
+                    </span>
+                  </div>
+                  <input
+                    type="number"
+                    min="1"
+                    max="360"
+                    required
+                    value={editPrestamoCuotasTotales}
+                    onChange={(e) => setEditPrestamoCuotasTotales(e.target.value)}
+                    placeholder="ej. 24"
+                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              {/* Cuota actual (cuántas voy pagando este mes) */}
               <div className="space-y-1.5">
-                <label className="font-semibold text-foreground">
-                  Monto Total del Préstamo (S/):
-                </label>
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-foreground">
+                    Cuota Actual (la que vas pagando este mes):
+                  </label>
+                  <span className="text-[10px] text-muted-foreground">
+                    Mes: {editPrestamoMesDesde}
+                  </span>
+                </div>
                 <input
                   type="number"
-                  step="0.01"
-                  value={editPrestamoMontoTotal}
-                  onChange={(e) => setEditPrestamoMontoTotal(e.target.value)}
-                  placeholder="ej. 55000"
-                  className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground font-mono font-medium"
+                  min="1"
+                  max={editPrestamoCuotasTotales || "360"}
+                  required
+                  value={editPrestamoCuotaActual}
+                  onChange={(e) => setEditPrestamoCuotaActual(e.target.value)}
+                  placeholder="ej. 23"
+                  className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground font-mono font-bold"
                 />
               </div>
 
@@ -2464,22 +2905,20 @@ export function FijosClient() {
                   <button
                     type="button"
                     onClick={() => setEditPrestamoMoneda('PEN')}
-                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
-                      editPrestamoMoneda === 'PEN'
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${editPrestamoMoneda === 'PEN'
                         ? 'bg-purple-500/20 text-purple-400 border-purple-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     S/ Soles (PEN)
                   </button>
                   <button
                     type="button"
                     onClick={() => setEditPrestamoMoneda('USD')}
-                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${
-                      editPrestamoMoneda === 'USD'
+                    className={`py-1.5 px-3 rounded-xl font-bold border transition ${editPrestamoMoneda === 'USD'
                         ? 'bg-amber-500/20 text-amber-400 border-amber-500 shadow-xs'
                         : 'bg-secondary/40 text-muted-foreground border-border'
-                    }`}
+                      }`}
                   >
                     $ Dólares (USD)
                   </button>
@@ -2579,7 +3018,7 @@ export function FijosClient() {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1.5">
                   <label className="font-semibold text-foreground">
                     Tasa TEA (%):
@@ -2598,12 +3037,11 @@ export function FijosClient() {
                   <label className="font-semibold text-foreground">
                     Aplica desde este mes:
                   </label>
-                  <input
-                    type="text"
-                    required
+                  <MonthYearPicker
                     value={editPrestamoMesDesde}
-                    onChange={(e) => setEditPrestamoMesDesde(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground"
+                    onChange={setEditPrestamoMesDesde}
+                    accentColor="purple"
+                    required
                   />
                 </div>
               </div>

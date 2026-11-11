@@ -1,14 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { EstadoPago, MetodoPago } from '@prisma/client';
+import { getAuthenticatedUser } from '@/lib/auth';
 
 // POST: Actualizar registro mensual específico (ej: cambiar monto de Octubre a S/ 220 o cambiar estado o método de pago)
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
     const { costoFijoId, periodo, estado, monto, notas, metodoPago, tarjetaId } = await request.json();
 
     const costoFijo = await prisma.costoFijo.findUnique({ where: { id: costoFijoId } });
-    if (!costoFijo) {
+    if (!costoFijo || costoFijo.usuarioId !== user.id) {
       return NextResponse.json({ error: 'Costo fijo no encontrado' }, { status: 404 });
     }
 
@@ -67,10 +71,13 @@ export async function POST(request: NextRequest) {
 // Los meses pasados y los que ya están PAGADOS o ADELANTADOS quedan 100% intactos.
 export async function PUT(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
     const { id, concepto, monto, diaVencimiento, mesDesde, mesFin, activo, metodoPago, tarjetaId } = await request.json();
 
     const costoFijo = await prisma.costoFijo.findUnique({ where: { id } });
-    if (!costoFijo) {
+    if (!costoFijo || costoFijo.usuarioId !== user.id) {
       return NextResponse.json({ error: 'Costo fijo no encontrado' }, { status: 404 });
     }
 
@@ -121,6 +128,9 @@ export async function PUT(request: NextRequest) {
 // DELETE: Eliminar costo fijo
 export async function DELETE(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -128,10 +138,13 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID es requerido' }, { status: 400 });
     }
 
-    // Al eliminar el CostoFijo, Prisma elimina en cascada sus registrosMes
-    await prisma.costoFijo.delete({
-      where: { id },
+    const res = await prisma.costoFijo.deleteMany({
+      where: { id, usuarioId: user.id },
     });
+
+    if (res.count === 0) {
+      return NextResponse.json({ error: 'Costo fijo no encontrado' }, { status: 404 });
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

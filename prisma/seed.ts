@@ -52,14 +52,16 @@ async function main() {
   // 3. Categorías
   const categoriasBase = [
     { nombre: 'Vivienda / Alquiler', icono: 'Home', color: '#10b981', esFijo: true },
-    { nombre: 'Alimentación / Supermercado', icono: 'ShoppingCart', color: '#f59e0b', esFijo: true },
-    { nombre: 'Suscripciones / Streaming', icono: 'Tv', color: '#ec4899', esFijo: true },
     { nombre: 'Servicios Básicos (Luz/Agua/Net)', icono: 'Zap', color: '#3b82f6', esFijo: true },
-    { nombre: 'Préstamos & Créditos', icono: 'Landmark', color: '#8b5cf6', esFijo: true },
-    { nombre: 'Salidas & Ocio', icono: 'Coffee', color: '#f97316', esFijo: false },
-    { nombre: 'Transporte & Movilidad', icono: 'Car', color: '#64748b', esFijo: false },
-    { nombre: 'Salud & Cuidado Personal', icono: 'HeartPulse', color: '#ef4444', esFijo: false },
+    { nombre: 'Alimentación / Supermercado', icono: 'ShoppingCart', color: '#f59e0b', esFijo: true },
+    { nombre: 'Transporte & Vehicular', icono: 'Car', color: '#64748b', esFijo: false },
+    { nombre: 'Suscripciones / Streaming', icono: 'Tv', color: '#8b5cf6', esFijo: true },
+    { nombre: 'Salud & Cuidado Personal', icono: 'HeartPulse', color: '#ec4899', esFijo: false },
+    { nombre: 'Préstamos & Créditos', icono: 'Landmark', color: '#6366f1', esFijo: true },
     { nombre: 'Educación / Cursos', icono: 'GraduationCap', color: '#06b6d4', esFijo: false },
+    { nombre: 'Salidas & Ocio', icono: 'Coffee', color: '#f97316', esFijo: false },
+    { nombre: 'Compras Varias', icono: 'ShoppingCart', color: '#64748b', esFijo: false },
+    { nombre: 'Familiar & Compromisos', icono: 'HeartPulse', color: '#f43f5e', esFijo: false },
     { nombre: 'Otros / Imprevistos', icono: 'HelpCircle', color: '#6b7280', esFijo: false },
   ];
 

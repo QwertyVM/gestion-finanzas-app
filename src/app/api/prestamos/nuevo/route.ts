@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { EstadoPago } from '@prisma/client';
+import { getAuthenticatedUser } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
     const body = await request.json();
     const {
       banco,
@@ -21,10 +25,12 @@ export async function POST(request: NextRequest) {
     const cuotaIniNum = parseInt(cuotaInicial, 10);
     const montoCuotaFloat = parseFloat(montoCuota);
     const montoTotalFloat = parseFloat(montoTotal);
+    const usuarioId = user.id;
 
     // 1. Crear Préstamo
     const prestamo = await prisma.prestamo.create({
       data: {
+        usuarioId: usuarioId || undefined,
         banco: banco.trim(),
         concepto: concepto.trim(),
         montoTotal: montoTotalFloat,
