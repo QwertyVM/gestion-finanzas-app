@@ -16,7 +16,6 @@ export async function POST(request: NextRequest) {
       montoCuota,
       cuotasTotales,
       cuotaInicial = 1,
-      diaPago = 25,
       tasaInteresAnual = 14.50,
       periodoInicio = '2026-11',
     } = body;
@@ -36,7 +35,7 @@ export async function POST(request: NextRequest) {
         montoTotal: montoTotalFloat,
         montoCuota: montoCuotaFloat,
         cuotasTotales: totalCuotasNum,
-        diaPago: parseInt(diaPago, 10),
+        diaPago: 30,
         tasaInteresAnual: parseFloat(tasaInteresAnual),
         fechaInicio: new Date(`${periodoInicio}-01`),
         activo: true,

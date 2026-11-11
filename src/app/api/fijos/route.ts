@@ -74,7 +74,7 @@ export async function PUT(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const { id, concepto, monto, diaVencimiento, mesDesde, mesFin, activo, metodoPago, tarjetaId } = await request.json();
+    const { id, concepto, monto, mesDesde, mesFin, activo, metodoPago, tarjetaId } = await request.json();
 
     const costoFijo = await prisma.costoFijo.findUnique({ where: { id } });
     if (!costoFijo || costoFijo.usuarioId !== user.id) {
@@ -82,7 +82,6 @@ export async function PUT(request: NextRequest) {
     }
 
     const montoNum = monto !== undefined ? parseFloat(monto) : Number(costoFijo.monto);
-    const diaNum = diaVencimiento !== undefined ? parseInt(diaVencimiento, 10) : costoFijo.diaVencimiento;
 
     // 1. Actualizar definición base
     await prisma.costoFijo.update({
@@ -90,7 +89,7 @@ export async function PUT(request: NextRequest) {
       data: {
         ...(concepto && { concepto }),
         ...(monto !== undefined && { monto: montoNum }),
-        ...(diaVencimiento !== undefined && { diaVencimiento: diaNum }),
+        diaVencimiento: 30,
         ...(mesFin !== undefined && { mesFin }),
         ...(activo !== undefined && { activo }),
         ...(metodoPago !== undefined && {

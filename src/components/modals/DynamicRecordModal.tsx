@@ -299,7 +299,7 @@ export function DynamicRecordModal() {
           body: JSON.stringify({
             concepto: concepto.trim(),
             monto: montoSoles,
-            diaVencimiento: parseInt(diaVencimientoFijo, 10) || 30,
+            diaVencimiento: 30,
             periodo,
             mesInicio: periodo,
             categoriaId: categoriaId || undefined,
@@ -327,7 +327,7 @@ export function DynamicRecordModal() {
             montoCuota: montoSoles,
             cuotasTotales: cuotasTotNum,
             cuotaInicial: parseInt(cuotaInicialPrestamo, 10) || 1,
-            diaPago: parseInt(diaPagoPrestamo, 10) || 25,
+            diaPago: 30,
             tasaInteresAnual: parseFloat(teaPrestamo) || 14.50,
             periodoInicio: periodo,
           }),
@@ -612,7 +612,7 @@ export function DynamicRecordModal() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-3 gap-2.5">
                 <div className="space-y-1">
                   <span className="text-[11px] font-medium text-muted-foreground">Cuotas Totales:</span>
                   <input
@@ -634,19 +634,6 @@ export function DynamicRecordModal() {
                     required
                     value={cuotaInicialPrestamo}
                     onChange={(e) => setCuotaInicialPrestamo(e.target.value)}
-                    className="w-full px-2.5 py-1.5 rounded-xl bg-background border border-border text-foreground text-xs outline-none focus:border-foreground"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <span className="text-[11px] font-medium text-muted-foreground">Día de Pago:</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="31"
-                    required
-                    value={diaPagoPrestamo}
-                    onChange={(e) => setDiaPagoPrestamo(e.target.value)}
                     className="w-full px-2.5 py-1.5 rounded-xl bg-background border border-border text-foreground text-xs outline-none focus:border-foreground"
                   />
                 </div>
@@ -932,19 +919,7 @@ export function DynamicRecordModal() {
                   </button>
                 </div>
               </div>
-            ) : (
-              <div className="space-y-1.5">
-                <label className="text-xs font-medium text-foreground">Día Vencimiento:</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={diaVencimientoFijo}
-                  onChange={(e) => setDiaVencimientoFijo(e.target.value)}
-                  className="w-full px-3 py-2 rounded-xl bg-background border border-border text-foreground text-xs outline-none focus:border-foreground"
-                />
-              </div>
-            )}
+            ) : null}
           </div>
 
           {/* NOTAS ADICIONALES (EXPANDIBLE) */}

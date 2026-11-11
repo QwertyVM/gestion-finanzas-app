@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     const {
       concepto,
       monto,
-      diaVencimiento,
+      // diaVencimiento ignorado — siempre fin de mes (30)
       periodo,
       mesInicio,
       mesFin,
@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
         usuarioId: usuarioId || undefined,
         concepto,
         monto: montoFloat,
-        diaVencimiento: parseInt(diaVencimiento, 10) || 30,
+        diaVencimiento: 30,
         mesInicio: startPeriodo,
         mesFin: mesFin || null,
         categoriaId: categoriaId || null,

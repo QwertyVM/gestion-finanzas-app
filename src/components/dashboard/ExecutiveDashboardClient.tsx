@@ -1079,7 +1079,7 @@ export function ExecutiveDashboardClient() {
                       <tr>
                         <th scope="col" className="py-2.5 px-3 font-medium">Clasificación</th>
                         <th scope="col" className="py-2.5 px-3 font-medium">Concepto</th>
-                        <th scope="col" className="py-2.5 px-3 font-medium">Detalle / Vencimiento</th>
+                        <th scope="col" className="py-2.5 px-3 font-medium">Detalle</th>
                         <th scope="col" className="py-2.5 px-3 text-right font-medium">Monto</th>
                         <th scope="col" className="py-2.5 px-3 text-center font-medium">Estado</th>
                       </tr>
@@ -1120,8 +1120,7 @@ export function ExecutiveDashboardClient() {
                             )}
                           </td>
                           <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap">
-                            {item.diaVencimiento ? `Día ${item.diaVencimiento}` : 'Fin de mes'}
-                            {item.tarjetaNombre && ` · ${item.tarjetaNombre}`}
+                            {item.tarjetaNombre ? `Tarjeta · ${item.tarjetaNombre}` : 'Fin de mes'}
                           </td>
                           <td className="py-2.5 px-3 text-right font-mono font-bold text-foreground whitespace-nowrap">
                             {formatMoney(item.monto, moneda)}
@@ -1542,7 +1541,6 @@ export function ExecutiveDashboardClient() {
                     <th scope="col" className="py-2.5 px-3 font-medium">Tag</th>
                     <th scope="col" className="py-2.5 px-3 font-medium">Categoría</th>
                     <th scope="col" className="py-2.5 px-3 font-medium">Concepto</th>
-                    <th scope="col" className="py-2.5 px-3 text-center font-medium">Vencimiento</th>
                     <th scope="col" className="py-2.5 px-3 text-right font-medium">Monto</th>
                     <th scope="col" className="py-2.5 px-3 text-center font-medium">Estado</th>
                   </tr>
@@ -1590,9 +1588,6 @@ export function ExecutiveDashboardClient() {
                         {item.subtexto && (
                           <div className="text-[11px] text-muted-foreground">{item.subtexto}</div>
                         )}
-                      </td>
-                      <td className="py-2.5 px-3 text-center text-muted-foreground whitespace-nowrap">
-                        {item.diaVencimiento ? `Día ${item.diaVencimiento}` : 'Fin de mes'}
                       </td>
                       <td className="py-2.5 px-3 text-right font-mono font-bold text-foreground whitespace-nowrap">
                         {formatMoney(item.monto, moneda)}

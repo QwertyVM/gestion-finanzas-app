@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const { id, concepto, banco, montoTotal, montoCuota, diaPago, tasaInteresAnual, mesDesde, activo, cuotasTotales, cuotaActual } = await request.json();
+    const { id, concepto, banco, montoTotal, montoCuota, tasaInteresAnual, mesDesde, activo, cuotasTotales, cuotaActual } = await request.json();
 
     const prestamo = await prisma.prestamo.findUnique({ where: { id } });
     if (!prestamo || prestamo.usuarioId !== user.id) {
@@ -65,7 +65,7 @@ export async function PUT(request: NextRequest) {
         ...(banco && { banco }),
         ...(montoTotalNum !== undefined && !isNaN(montoTotalNum) && { montoTotal: montoTotalNum }),
         ...(cuotaMontoNum !== undefined && !isNaN(cuotaMontoNum) && { montoCuota: cuotaMontoNum }),
-        ...(diaPago !== undefined && { diaPago: parseInt(diaPago, 10) }),
+        diaPago: 30,
         ...(tasaInteresAnual !== undefined && { tasaInteresAnual: parseFloat(tasaInteresAnual) }),
         ...(activo !== undefined && { activo }),
       },

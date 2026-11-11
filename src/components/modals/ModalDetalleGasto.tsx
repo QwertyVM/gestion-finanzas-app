@@ -816,7 +816,7 @@ export function ModalDetalleGasto({
                   <span>{item.tarjetaNombre || 'Tarjeta de Crédito'}</span>
                 </span>
                 <span className="text-muted-foreground">
-                  Corte: Día {diaCorte} · Pago: Día {item.tarjetaDiaPago || 30}
+                  Corte: Día {diaCorte} · Pago: Fin de mes
                 </span>
               </div>
 
@@ -1184,8 +1184,8 @@ export function ModalDetalleGasto({
                   </span>
                 </div>
                 <div className="p-2.5 rounded-xl bg-secondary/40 border border-border col-span-2 sm:col-span-1">
-                  <span className="text-[10px] text-muted-foreground block">Día de vencimiento</span>
-                  <span className="font-bold text-foreground">Día {item.diaVencimiento || 25} de cada mes</span>
+                  <span className="text-[10px] text-muted-foreground block">Vencimiento</span>
+                  <span className="font-bold text-foreground">Fin de mes</span>
                 </div>
               </div>
             </div>
@@ -1382,7 +1382,7 @@ export function ModalDetalleGasto({
                     </div>
                   ) : (
                     <div className="p-3 rounded-xl bg-secondary/40 border border-border text-[11px] text-muted-foreground">
-                      🔄 Costo mensual recurrente. Se factura todos los meses con vencimiento el día <strong className="text-foreground">{item.diaVencimiento || 30}</strong>.
+                      🔄 Costo mensual recurrente. Se liquida a <strong className="text-foreground">fin de mes</strong>.
                     </div>
                   )}
                 </div>
@@ -1432,9 +1432,9 @@ export function ModalDetalleGasto({
 
               {item.diaVencimiento && (
                 <div>
-                  <span className="text-[10px] text-muted-foreground block">Día de Pago/Cierre</span>
+                  <span className="text-[10px] text-muted-foreground block">Liquidación</span>
                   <span className="font-semibold text-foreground mt-0.5 block">
-                    Día {item.diaVencimiento} del mes
+                    Fin de mes
                   </span>
                 </div>
               )}

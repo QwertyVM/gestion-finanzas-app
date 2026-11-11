@@ -972,12 +972,12 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
       icono: 'Home',
       concepto: cf.concepto,
       subtexto: cf.metodoPago === MetodoPago.TARJETA_CREDITO
-        ? `${cf.tarjetaNombre || 'Tarjeta'} · Día ${cf.diaVencimiento}`
+        ? `${cf.tarjetaNombre || 'Tarjeta'} · Fin de mes`
         : cf.metodoPago === MetodoPago.TRANSFERENCIA
-        ? `Transferencia · Día ${cf.diaVencimiento}`
+        ? `Transferencia · Fin de mes`
         : esItemRecurrente(cf.concepto, cf.categoria)
-        ? `Suscripción · Día ${cf.diaVencimiento}`
-        : `Efectivo / Débito · Día ${cf.diaVencimiento}`,
+        ? `Suscripción · Fin de mes`
+        : `Efectivo / Débito · Fin de mes`,
       categoria: cf.categoria,
       categoriaColor: cf.categoriaColor,
       categoriaIcono: cf.categoriaIcono,
@@ -1017,7 +1017,7 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
       colorKey: p.colorKey,
       icono: 'Landmark',
       concepto: `${p.banco} - ${p.concepto}`,
-      subtexto: `Cuota ${p.cuotaActual}/${p.cuotasTotales} · Día ${p.diaPago}`,
+      subtexto: `Cuota ${p.cuotaActual}/${p.cuotasTotales} · Fin de mes`,
       categoria: p.categoria,
       categoriaColor: p.categoriaColor,
       categoriaIcono: p.categoriaIcono,
