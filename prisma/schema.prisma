@@ -13,6 +13,13 @@ enum EstadoPago {
   ADELANTADO
 }
 
+enum ClasificacionEgreso {
+  FIJO
+  PRESTAMO
+  CUOTA
+  VARIABLE
+}
+
 enum MetodoPago {
   EFECTIVO_DEBITO
   TARJETA_CREDITO
@@ -186,30 +193,31 @@ model CuotaPrestamo {
 }
 
 model Gasto {
-  id             String          @id @default(uuid())
-  usuarioId      String?
-  usuario        Usuario?        @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  concepto       String
-  monto          Decimal         @db.Decimal(12, 2) // En Soles
-  monedaOriginal String          @default("PEN")   // "PEN" o "USD"
-  montoOriginal  Decimal?        @db.Decimal(12, 2) // En moneda original si fue en USD
-  tipoCambio     Decimal         @default(4.00) @db.Decimal(6, 2)
-  fechaGasto     DateTime
-  periodoPago    String          // YYYY-MM en el que se liquida con el sueldo
-  metodoPago     MetodoPago
-  tarjetaId      String?
-  tarjeta        TarjetaCredito? @relation(fields: [tarjetaId], references: [id], onDelete: SetNull)
-  cuotaActual    Int             @default(1)
-  totalCuotas    Int             @default(1)
-  categoriaId    String?
-  categoria      Categoria?      @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
-  estado         EstadoPago      @default(PENDIENTE)
-  fechaPagoReal  DateTime?
-  gastoPadreId   String?         // Para agrupar compras en cuotas
-  orden          Int             @default(0)
-  notas          String?
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id              String               @id @default(uuid())
+  usuarioId       String?
+  usuario         Usuario?             @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  concepto        String
+  monto           Decimal              @db.Decimal(12, 2) // En Soles
+  monedaOriginal  String               @default("PEN")   // "PEN" o "USD"
+  montoOriginal   Decimal?             @db.Decimal(12, 2) // En moneda original si fue en USD
+  tipoCambio      Decimal              @default(4.00) @db.Decimal(6, 2)
+  fechaGasto      DateTime
+  periodoPago     String               // YYYY-MM en el que se liquida con el sueldo
+  metodoPago      MetodoPago
+  tarjetaId       String?
+  tarjeta         TarjetaCredito?      @relation(fields: [tarjetaId], references: [id], onDelete: SetNull)
+  cuotaActual     Int                  @default(1)
+  totalCuotas     Int                  @default(1)
+  clasificacion   ClasificacionEgreso  @default(VARIABLE) // Persiste la clasificación al momento del registro
+  categoriaId     String?
+  categoria       Categoria?           @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  estado          EstadoPago           @default(PENDIENTE)
+  fechaPagoReal   DateTime?
+  gastoPadreId    String?              // Para agrupar compras en cuotas
+  orden           Int                  @default(0)
+  notas           String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
 }
 
 model IngresoMes {

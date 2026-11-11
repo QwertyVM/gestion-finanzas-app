@@ -1,5 +1,5 @@
 import prisma from './prisma';
-import { EstadoPago, MetodoPago, TipoIngreso } from '@prisma/client';
+import { ClasificacionEgreso, EstadoPago, MetodoPago, TipoIngreso } from '@prisma/client';
 import { calcularPeriodoFacturacion, calcularCuotasPeriodos } from './billing-cycles';
 import { formatPeriodoLabel, esItemRecurrente } from './utils';
 
@@ -210,6 +210,8 @@ export function clasificarItemBackend(item: {
   concepto?: string;
   categoria?: string;
   totalCuotas?: number;
+  /** Clasificación persistida en BD — tiene prioridad sobre el cálculo en runtime */
+  clasificacionBD?: ClasificacionEgreso | null;
 }): {
   clasificacion: 'FIJO' | 'PRESTAMO' | 'CUOTA' | 'VARIABLE';
   badgeLabel: string;
@@ -218,6 +220,7 @@ export function clasificarItemBackend(item: {
   colorKey: 'sky' | 'purple' | 'indigo' | 'teal';
   icono: string;
 } {
+  // Los préstamos siempre son PRESTAMO (provienen de su propio modelo, no de Gasto)
   if (item.tipo === 'PRESTAMO') {
     return {
       clasificacion: 'PRESTAMO',
@@ -229,7 +232,27 @@ export function clasificarItemBackend(item: {
     };
   }
 
-  if (item.totalCuotas && item.totalCuotas > 1) {
+  // Los CostoFijo siempre son FIJO (provienen de su propio modelo, no de Gasto)
+  if (item.tipo === 'FIJO') {
+    return {
+      clasificacion: 'FIJO',
+      badgeLabel: 'Fijo',
+      tipoLabel: 'Costo Fijo',
+      colorHex: '#0284c7',
+      colorKey: 'sky',
+      icono: 'Home',
+    };
+  }
+
+  // Para gastos (TARJETA o DIRECTO): usar la clasificación persistida en BD como fuente de verdad
+  const clasificacion: 'FIJO' | 'PRESTAMO' | 'CUOTA' | 'VARIABLE' =
+    item.clasificacionBD ?? (
+      (item.totalCuotas && item.totalCuotas > 1) ? 'CUOTA' :
+      esItemRecurrente(item.concepto || '', item.categoria || '') ? 'FIJO' :
+      'VARIABLE'
+    );
+
+  if (clasificacion === 'CUOTA') {
     return {
       clasificacion: 'CUOTA',
       badgeLabel: 'Cuota',
@@ -240,7 +263,7 @@ export function clasificarItemBackend(item: {
     };
   }
 
-  if (item.tipo === 'FIJO' || esItemRecurrente(item.concepto || '', item.categoria || '')) {
+  if (clasificacion === 'FIJO') {
     return {
       clasificacion: 'FIJO',
       badgeLabel: 'Fijo',
@@ -752,6 +775,7 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
           concepto: g.concepto,
           categoria: gCatNombre,
           totalCuotas: g.totalCuotas,
+          clasificacionBD: g.clasificacion,
         });
 
         return {
@@ -791,6 +815,7 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
           concepto: g.concepto,
           categoria: gCatNombre,
           totalCuotas: g.totalCuotas,
+          clasificacionBD: g.clasificacion,
         });
 
         return {
@@ -829,6 +854,7 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
       tipo: 'DIRECTO',
       concepto: g.concepto,
       categoria: gdCatNombre,
+      clasificacionBD: g.clasificacion,
     });
 
     return {
@@ -1560,6 +1586,19 @@ export async function registrarNuevoGasto(params: {
 
   const fecha = typeof fechaGasto === 'string' ? new Date(fechaGasto) : fechaGasto;
 
+  // Calcular categoría para clasificación (necesaria para detectar recurrentes)
+  let catNombre = '';
+  if (categoriaId) {
+    const cat = await prisma.categoria.findUnique({ where: { id: categoriaId }, select: { nombre: true } });
+    catNombre = cat?.nombre || '';
+  }
+
+  // Determinar y persistir la clasificación al momento del registro
+  const clasificacion: ClasificacionEgreso =
+    totalCuotas > 1 ? 'CUOTA' :
+    esItemRecurrente(concepto, catNombre) ? 'FIJO' :
+    'VARIABLE';
+
   let periodoInicial = '';
 
   if (metodoPago === MetodoPago.TARJETA_CREDITO && tarjetaId) {
@@ -1597,6 +1636,7 @@ export async function registrarNuevoGasto(params: {
           tarjetaId,
           cuotaActual: i + 1,
           totalCuotas,
+          clasificacion,  // ← persistido en BD
           categoriaId,
           estado: i === 0 ? estado : EstadoPago.PENDIENTE,
           gastoPadreId: i === 0 ? null : padreId,
@@ -1621,6 +1661,7 @@ export async function registrarNuevoGasto(params: {
         tarjetaId: metodoPago === MetodoPago.TARJETA_CREDITO ? tarjetaId : null,
         cuotaActual: 1,
         totalCuotas: 1,
+        clasificacion,  // ← persistido en BD
         categoriaId,
         estado,
         fechaPagoReal: estado === EstadoPago.PAGADO || estado === EstadoPago.ADELANTADO ? new Date() : null,
