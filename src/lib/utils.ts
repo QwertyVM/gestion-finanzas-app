@@ -141,6 +141,7 @@ export function getEstiloClasificacion(clasificacion?: string | null): EstiloCla
 
 /**
  * Detecta si un concepto o categoría corresponde a una suscripción o servicio recurrente.
+ * Usa match exacto de palabra completa para evitar falsos positivos (ej: "Applecar" ≠ "apple tv").
  */
 export function esItemRecurrente(concepto: string = '', categoria: string = ''): boolean {
   const cat = (categoria || '').toLowerCase();
@@ -150,14 +151,33 @@ export function esItemRecurrente(concepto: string = '', categoria: string = ''):
     return true;
   }
 
-  const keywords = [
+  // Keywords que se evalúan como palabra completa (evita "applecar", "maxfit", "crunchbase", etc.)
+  const keywordsExactas = [
     'netflix', 'spotify', 'icloud', 'youtube', 'disney', 'prime video', 'amazon prime',
-    'apple', 'chatgpt', 'openai', 'natación', 'natacion', 'gym', 'gimnasio', 'smart fit',
-    'fit', 'crunch', 'hbo', 'max', 'crunchyroll', 'deezer', 'paramount', 'star+', 'duolingo',
-    'cloud', 'google storage', 'google one', 'dropbox'
+    'chatgpt', 'openai', 'natación', 'natacion', 'gimnasio', 'smart fit',
+    'crunchyroll', 'deezer', 'paramount', 'star+', 'duolingo',
+    'google storage', 'google one', 'dropbox',
+    // Apple como servicio específico
+    'apple tv', 'apple one', 'apple music', 'apple arcade', 'apple icloud',
+    // Plataformas de contenido (palabra completa)
+    'hbo max', 'max streaming',
   ];
 
-  return keywords.some((kw) => c.includes(kw));
+  // Keywords que requieren match de palabra completa para evitar substrings falsos
+  // Nota: 'fit' se retiró de aquí porque es ambiguo fuera del contexto "smart fit"
+  const keywordsWordBoundary = [
+    'gym', 'hbo', 'max', 'cloud', 'crunch',
+  ];
+
+  if (keywordsExactas.some((kw) => c.includes(kw))) {
+    return true;
+  }
+
+  // Match de palabra completa: la keyword debe estar rodeada de inicio/fin o caracteres no-letra
+  return keywordsWordBoundary.some((kw) => {
+    const regex = new RegExp(`(?<![a-záéíóúñ])${kw}(?![a-záéíóúñ])`, 'i');
+    return regex.test(c);
+  });
 }
 
 /**
