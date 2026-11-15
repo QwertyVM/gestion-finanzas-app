@@ -462,16 +462,16 @@ export function DashboardClient() {
       setDetalleItem((prev) =>
         prev
           ? {
-              ...prev,
-              tipo: nuevoMetodo === 'TARJETA_CREDITO' ? 'TARJETA' : 'DIRECTO',
-              metodoPago: nuevoMetodo,
-              tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? (tarjetaId || null) : null,
-              tarjetaNombre: tObj?.nombre || null,
-              tarjetaBanco: tObj?.banco || null,
-              tarjetaColor: tObj?.color || null,
-              tarjetaDiaCorte: tObj?.diaCorte,
-              tarjetaDiaPago: tObj?.diaPago,
-            }
+            ...prev,
+            tipo: nuevoMetodo === 'TARJETA_CREDITO' ? 'TARJETA' : 'DIRECTO',
+            metodoPago: nuevoMetodo,
+            tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? (tarjetaId || null) : null,
+            tarjetaNombre: tObj?.nombre || null,
+            tarjetaBanco: tObj?.banco || null,
+            tarjetaColor: tObj?.color || null,
+            tarjetaDiaCorte: tObj?.diaCorte,
+            tarjetaDiaPago: tObj?.diaPago,
+          }
           : null
       );
       toast.success('Forma de pago actualizada');
@@ -514,15 +514,15 @@ export function DashboardClient() {
       setDetalleItem((prev) =>
         prev
           ? {
-              ...prev,
-              dbId: (resData.tipo === 'CONVERTIDO_A_GASTO' && resData.nuevoGastoId)
-                ? resData.nuevoGastoId
-                : (resData.tipo === 'CONVERTIDO_A_FIJO' && resData.nuevoCostoFijoId)
+            ...prev,
+            dbId: (resData.tipo === 'CONVERTIDO_A_GASTO' && resData.nuevoGastoId)
+              ? resData.nuevoGastoId
+              : (resData.tipo === 'CONVERTIDO_A_FIJO' && resData.nuevoCostoFijoId)
                 ? resData.nuevoCostoFijoId
                 : prev.dbId,
-              clasificacion: nuevaClasificacion,
-              tipo: nuevaClasificacion === 'FIJO' ? 'FIJO' : 'DIRECTO',
-            }
+            clasificacion: nuevaClasificacion,
+            tipo: nuevaClasificacion === 'FIJO' ? 'FIJO' : 'DIRECTO',
+          }
           : null
       );
     } catch (err: any) {
@@ -631,6 +631,7 @@ export function DashboardClient() {
         moneda={moneda}
         esMesEspecial={esMesEspecial}
         labelEspecial={labelEspecial}
+        salud={resumen.saludFinanciera}
         openRecordModal={openRecordModal}
       />
 

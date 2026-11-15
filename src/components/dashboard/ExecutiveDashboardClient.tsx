@@ -44,6 +44,9 @@ import {
   Check,
 } from 'lucide-react';
 import { ExecutiveDashboardSkeleton } from '@/components/common/Skeleton';
+import { SaludFinancieraScorecard } from './SaludFinancieraScorecard';
+import { Regla503020Card } from './Regla503020Card';
+import { AlertasConsultorCategorias } from './AlertasConsultorCategorias';
 import {
   ResponsiveContainer,
   PieChart,
@@ -498,6 +501,9 @@ export function ExecutiveDashboardClient() {
             </div>
           </div>
 
+          {/* DIAGNÓSTICO DE SALUD FINANCIERA (RATIOS CONSULTORES) */}
+          <SaludFinancieraScorecard salud={resumen.saludFinanciera} moneda={moneda} />
+
           {/* GRÁFICOS: DISTRIBUCIÓN Y EVOLUCIÓN */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
             {/* DISTRIBUCIÓN DE EGRESOS */}
@@ -619,6 +625,9 @@ export function ExecutiveDashboardClient() {
               </div>
             </div>
           </div>
+
+          {/* DISTRIBUCIÓN REGLA 50 / 30 / 20 */}
+          <Regla503020Card regla={resumen.saludFinanciera?.regla503020} moneda={moneda} />
 
           {/* TABLA PRÉSTAMOS ACTIVOS */}
           <div className="bg-card border border-border/80 rounded-xl p-5 shadow-xs space-y-4">
@@ -845,6 +854,9 @@ export function ExecutiveDashboardClient() {
               </span>
             </div>
           </div>
+
+          {/* AUDITORÍA Y ALERTAS CONSULTORES DE CATEGORÍAS */}
+          <AlertasConsultorCategorias alertas={resumen.saludFinanciera?.alertasCategorias} moneda={moneda} />
 
           {/* GRÁFICOS DE CATEGORÍAS */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

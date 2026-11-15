@@ -171,6 +171,90 @@ export interface AnalisisCategoriasResumen {
   tarjetas: TarjetaAnalisisItem[];
 }
 
+export interface SaludFinancieraKPIs {
+  dti: {
+    porcentaje: number;
+    totalDeudas: number;
+    estado: 'OPTIMO' | 'PRECAUCION' | 'CRITICO';
+    label: string;
+    recomendacion: string;
+  };
+  rigidez: {
+    porcentaje: number;
+    totalComprometido: number;
+    totalFlexible: number;
+    estado: 'FLEXIBLE' | 'MODERADO' | 'CRITICO';
+    label: string;
+    recomendacion: string;
+  };
+  ahorro: {
+    tasaAhorro: number;
+    metaAhorro: number;
+    disponibleNeto: number;
+    cumplimientoMeta: number;
+    gap: number;
+    estado: 'SUPERAVIT' | 'CUMPLIDO' | 'DEFICIT';
+    recomendacion: string;
+  };
+  dependenciaCredito: {
+    porcentaje: number;
+    totalCredito: number;
+    totalDebitoEfectivo: number;
+    estado: 'SALUDABLE' | 'MODERADO' | 'ALTO';
+    label: string;
+  };
+  regla503020: {
+    necesidades: {
+      monto: number;
+      porcentaje: number;
+      objetivo: number;
+      desvio: number;
+      estado: 'OPTIMO' | 'EXCEDIDO' | 'BAJO';
+    };
+    deseos: {
+      monto: number;
+      porcentaje: number;
+      objetivo: number;
+      desvio: number;
+      estado: 'OPTIMO' | 'EXCEDIDO' | 'BAJO';
+    };
+    ahorroYDeuda: {
+      monto: number;
+      porcentaje: number;
+      objetivo: number;
+      desvio: number;
+      estado: 'OPTIMO' | 'EXCEDIDO' | 'DEFICIT';
+    };
+    diagnostico: string;
+  };
+  alertasCategorias: {
+    ratioVivienda: {
+      porcentaje: number;
+      monto: number;
+      estado: 'OPTIMO' | 'ALERTA';
+      aviso: string;
+    };
+    ratioAlimentacion: {
+      porcentaje: number;
+      monto: number;
+      estado: 'OPTIMO' | 'ALERTA';
+      aviso: string;
+    };
+    concentracionTop3: {
+      porcentaje: number;
+      nombres: string[];
+      aviso: string;
+    };
+    fugasHormiga: Array<{
+      categoria: string;
+      total: number;
+      conteo: number;
+      ticketPromedio: number;
+      aviso: string;
+    }>;
+  };
+}
+
 export function obtenerColorCategoriaBackend(nombre?: string | null): { color: string; icono: string } {
   if (!nombre) return { color: '#64748b', icono: 'Tag' };
   const n = nombre.toLowerCase();
@@ -413,6 +497,7 @@ export interface ResumenFinanciero {
   totalesPorClasificacion: TotalesPorClasificacion;
   seccionesCompromisos: Array<SeccionCompromiso>;
   analisisCategorias: AnalisisCategoriasResumen;
+  saludFinanciera: SaludFinancieraKPIs;
 }
 
 export async function getResumenMensual(periodo: string, usuarioId?: string): Promise<ResumenFinanciero> {
@@ -1274,6 +1359,16 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
   // Cálculo de Inteligencia Analítica: Categorías, Tags, Métodos de Pago y Flexibilidad
   const analisisCategorias = calcularAnalisisCategoriasYTags(egresosConsolidados, totalEgresos);
 
+  // Cálculo de Ratios Macro, Salud Financiera y Modelo Consultor 50/30/20
+  const saludFinanciera = calcularSaludFinancieraKPIs({
+    totalIngresos,
+    totalEgresos,
+    dineroDisponibleNeto,
+    metaAhorro,
+    egresosConsolidados,
+    analisisCategorias,
+  });
+
   return {
     periodo,
     config: {
@@ -1310,6 +1405,7 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
     totalesPorClasificacion,
     seccionesCompromisos,
     analisisCategorias,
+    saludFinanciera,
   };
 }
 
@@ -1551,6 +1647,309 @@ export function calcularAnalisisCategoriasYTags(
     clasificaciones,
     metodosPago,
     tarjetas,
+  };
+}
+
+export function calcularSaludFinancieraKPIs(params: {
+  totalIngresos: number;
+  totalEgresos: number;
+  dineroDisponibleNeto: number;
+  metaAhorro: number;
+  egresosConsolidados: EgresoConsolidado[];
+  analisisCategorias: AnalisisCategoriasResumen;
+}): SaludFinancieraKPIs {
+  const {
+    totalIngresos,
+    totalEgresos,
+    dineroDisponibleNeto,
+    metaAhorro,
+    egresosConsolidados,
+    analisisCategorias,
+  } = params;
+
+  // 1. DTI (Debt-to-Income / Ratio de Endeudamiento)
+  const totalDeudas = egresosConsolidados
+    .filter((e) => e.clasificacion === 'PRESTAMO' || e.clasificacion === 'CUOTA')
+    .reduce((acc, e) => acc + e.monto, 0);
+
+  const dtiPorcentaje = totalIngresos > 0 ? Number(((totalDeudas / totalIngresos) * 100).toFixed(1)) : 0;
+  let dtiEstado: 'OPTIMO' | 'PRECAUCION' | 'CRITICO' = 'OPTIMO';
+  let dtiLabel = 'Carga Saludable';
+  let dtiRec = 'Tu endeudamiento mensual está dentro del estándar recomendado (<30%).';
+
+  if (dtiPorcentaje > 40) {
+    dtiEstado = 'CRITICO';
+    dtiLabel = 'Endeudamiento Crítico';
+    dtiRec = 'Destinas más del 40% de tus ingresos a deudas. Prioriza amortizar cuotas.';
+  } else if (dtiPorcentaje >= 30) {
+    dtiEstado = 'PRECAUCION';
+    dtiLabel = 'Carga Moderada';
+    dtiRec = 'Endeudamiento entre 30% y 40%. Evita adquirir nuevos compromisos o cuotas.';
+  }
+
+  // 2. Rigidez Financiera (Compromiso Fijo)
+  const totalComprometido = egresosConsolidados
+    .filter((e) => e.clasificacion !== 'VARIABLE')
+    .reduce((acc, e) => acc + e.monto, 0);
+  const totalFlexible = egresosConsolidados
+    .filter((e) => e.clasificacion === 'VARIABLE')
+    .reduce((acc, e) => acc + e.monto, 0);
+
+  const rigidezPorcentaje = totalIngresos > 0 ? Number(((totalComprometido / totalIngresos) * 100).toFixed(1)) : 0;
+  let rigidezEstado: 'FLEXIBLE' | 'MODERADO' | 'CRITICO' = 'FLEXIBLE';
+  let rigidezLabel = 'Presupuesto Flexible';
+  let rigidezRec = 'Excelente colchón operativo para responder ante cualquier imprevisto.';
+
+  if (rigidezPorcentaje > 80) {
+    rigidezEstado = 'CRITICO';
+    rigidezLabel = 'Presupuesto Inflexible';
+    rigidezRec = 'Más del 80% de tus ingresos ya está comprometido antes de salir de casa.';
+  } else if (rigidezPorcentaje >= 65) {
+    rigidezEstado = 'MODERADO';
+    rigidezLabel = 'Presupuesto Ajustado';
+    rigidezRec = 'Compromiso moderado (65%-80%). Vigila de cerca las compras variables.';
+  }
+
+  // 3. Tasa de Ahorro y Cumplimiento de Meta
+  const tasaAhorro = totalIngresos > 0 ? Number(((dineroDisponibleNeto / totalIngresos) * 100).toFixed(1)) : 0;
+  const cumplimientoMeta = metaAhorro > 0 ? Number(((dineroDisponibleNeto / metaAhorro) * 100).toFixed(1)) : (dineroDisponibleNeto > 0 ? 100 : 0);
+  const gap = Number((dineroDisponibleNeto - metaAhorro).toFixed(2));
+
+  let ahorroEstado: 'SUPERAVIT' | 'CUMPLIDO' | 'DEFICIT' = 'CUMPLIDO';
+  let ahorroRec = 'Meta mensual de ahorro cubierta según lo programado.';
+
+  if (dineroDisponibleNeto >= metaAhorro) {
+    if (gap >= 500) {
+      ahorroEstado = 'SUPERAVIT';
+      ahorroRec = 'Excelente: superas con creces tu meta mensual de ahorro proyectada.';
+    } else {
+      ahorroEstado = 'CUMPLIDO';
+    }
+  } else if (dineroDisponibleNeto > 0) {
+    ahorroEstado = 'DEFICIT';
+    ahorroRec = `Generas saldo libre pero quedas a S/ ${Math.abs(gap).toFixed(2)} de tu meta de ahorro.`;
+  } else {
+    ahorroEstado = 'DEFICIT';
+    ahorroRec = 'Déficit en el periodo: los compromisos superan los ingresos disponibles.';
+  }
+
+  // 4. Dependencia de Tarjeta de Crédito
+  const totalCredito = egresosConsolidados
+    .filter((e) => e.metodoPago === MetodoPago.TARJETA_CREDITO)
+    .reduce((acc, e) => acc + e.monto, 0);
+  const totalDebitoEfectivo = Number(Math.max(0, totalEgresos - totalCredito).toFixed(2));
+  const dependenciaPorcentaje = totalEgresos > 0 ? Number(((totalCredito / totalEgresos) * 100).toFixed(1)) : 0;
+
+  let depEstado: 'SALUDABLE' | 'MODERADO' | 'ALTO' = 'SALUDABLE';
+  let depLabel = 'Uso Controlado';
+  if (dependenciaPorcentaje > 70) {
+    depEstado = 'ALTO';
+    depLabel = 'Alta Dependencia';
+  } else if (dependenciaPorcentaje > 40) {
+    depEstado = 'MODERADO';
+    depLabel = 'Uso Moderado';
+  }
+
+  // 5. Regla 50 / 30 / 20
+  // Necesidades (50%): Vivienda, Servicios, Supermercado/Alimentación, Salud, Educación
+  // Deseos (30%): Ocio, Streaming, Compras Varias, Variables discrecionales
+  // Ahorro y Deuda (20%): Amortización capital (Préstamos + Cuotas) + Disponible Neto
+  let montoNecesidades = 0;
+  let montoDeseos = 0;
+  const montoAhorroDeuda = totalDeudas + Math.max(0, dineroDisponibleNeto);
+
+  for (const item of egresosConsolidados) {
+    if (item.clasificacion === 'PRESTAMO' || item.clasificacion === 'CUOTA') {
+      continue;
+    }
+    const cat = (item.categoria || '').toLowerCase();
+    const conc = (item.concepto || '').toLowerCase();
+    const esNecesidad =
+      cat.includes('vivienda') ||
+      cat.includes('alquiler') ||
+      cat.includes('depa') ||
+      cat.includes('servicio') ||
+      cat.includes('luz') ||
+      cat.includes('agua') ||
+      cat.includes('net') ||
+      cat.includes('gas') ||
+      cat.includes('alimen') ||
+      cat.includes('super') ||
+      cat.includes('mercado') ||
+      cat.includes('salud') ||
+      cat.includes('medic') ||
+      cat.includes('educa') ||
+      conc.includes('alquiler') ||
+      conc.includes('luz') ||
+      conc.includes('agua') ||
+      conc.includes('mantenimiento');
+
+    if (esNecesidad) {
+      montoNecesidades += item.monto;
+    } else {
+      montoDeseos += item.monto;
+    }
+  }
+
+  const base503020 = totalIngresos > 0 ? totalIngresos : Math.max(1, totalEgresos);
+  const pctNec = Number(((montoNecesidades / base503020) * 100).toFixed(1));
+  const pctDes = Number(((montoDeseos / base503020) * 100).toFixed(1));
+  const pctAho = Number(((montoAhorroDeuda / base503020) * 100).toFixed(1));
+
+  let estadoNec: 'OPTIMO' | 'EXCEDIDO' | 'BAJO' = 'OPTIMO';
+  if (pctNec > 55) estadoNec = 'EXCEDIDO';
+  else if (pctNec < 40) estadoNec = 'BAJO';
+
+  let estadoDes: 'OPTIMO' | 'EXCEDIDO' | 'BAJO' = 'OPTIMO';
+  if (pctDes > 35) estadoDes = 'EXCEDIDO';
+  else if (pctDes < 15) estadoDes = 'BAJO';
+
+  let estadoAho: 'OPTIMO' | 'EXCEDIDO' | 'DEFICIT' = 'OPTIMO';
+  if (pctAho < 15) estadoAho = 'DEFICIT';
+  else if (pctAho >= 20) estadoAho = 'OPTIMO';
+
+  let diagnostico503020 = 'Estructura financiera balanceada conforme al estándar consultor 50/30/20.';
+  if (pctNec > 55) {
+    diagnostico503020 = 'Tus necesidades básicas sobrepasan el 50% ideal. Conviene revisar costos fijos y servicios.';
+  } else if (pctDes > 35) {
+    diagnostico503020 = 'El estilo de vida y ocio supera el 30% ideal. Aquí reside tu mayor potencial de ahorro inmediato.';
+  } else if (pctAho >= 20) {
+    diagnostico503020 = 'Excelente disciplina: destinas al menos el 20% de tu flujo a amortizar deuda y consolidar ahorro.';
+  }
+
+  // 6. Alertas de Categorías (Vivienda, Alimentación, Concentración Pareto, Fugas)
+  const cats = analisisCategorias.categorias;
+  const catViv = cats.find(
+    (c) => c.nombre.toLowerCase().includes('vivienda') || c.nombre.toLowerCase().includes('alquiler')
+  );
+  const montoViv = catViv?.totalMonto || 0;
+  const pctViv = totalIngresos > 0 ? Number(((montoViv / totalIngresos) * 100).toFixed(1)) : 0;
+  const ratioVivienda = {
+    porcentaje: pctViv,
+    monto: montoViv,
+    estado: (pctViv > 30 ? 'ALERTA' : 'OPTIMO') as 'OPTIMO' | 'ALERTA',
+    aviso:
+      pctViv > 30
+        ? 'El gasto en vivienda supera el 30% de tus ingresos (regla prudencial).'
+        : 'Costo habitacional saludable dentro del límite del 30%.',
+  };
+
+  const catAlim = cats.find(
+    (c) =>
+      c.nombre.toLowerCase().includes('alimen') ||
+      c.nombre.toLowerCase().includes('super') ||
+      c.nombre.toLowerCase().includes('mercado')
+  );
+  const montoAlim = catAlim?.totalMonto || 0;
+  const pctAlim = totalIngresos > 0 ? Number(((montoAlim / totalIngresos) * 100).toFixed(1)) : 0;
+  const ratioAlimentacion = {
+    porcentaje: pctAlim,
+    monto: montoAlim,
+    estado: (pctAlim > 22 ? 'ALERTA' : 'OPTIMO') as 'OPTIMO' | 'ALERTA',
+    aviso:
+      pctAlim > 22
+        ? 'Alimentación absorbe más del 22% del ingreso mensual.'
+        : 'Gasto de alimentación en rango adecuado (12% - 20%).',
+  };
+
+  const top3Cats = cats.slice(0, 3);
+  const montoTop3 = top3Cats.reduce((acc, c) => acc + c.totalMonto, 0);
+  const pctTop3 = totalEgresos > 0 ? Number(((montoTop3 / totalEgresos) * 100).toFixed(1)) : 0;
+  const concentracionTop3 = {
+    porcentaje: pctTop3,
+    nombres: top3Cats.map((c) => c.nombre),
+    aviso: `Tus 3 categorías principales concentran el ${pctTop3}% del gasto mensual.`,
+  };
+
+  const fugasHormiga: Array<{
+    categoria: string;
+    total: number;
+    conteo: number;
+    ticketPromedio: number;
+    aviso: string;
+  }> = [];
+
+  for (const c of cats) {
+    const n = c.nombre.toLowerCase();
+    const esDiscrecional =
+      n.includes('ocio') ||
+      n.includes('salida') ||
+      n.includes('compra') ||
+      n.includes('imprevisto') ||
+      n.includes('otros');
+    if (esDiscrecional && c.conteoItems >= 3) {
+      fugasHormiga.push({
+        categoria: c.nombre,
+        total: c.totalMonto,
+        conteo: c.conteoItems,
+        ticketPromedio: Number((c.totalMonto / c.conteoItems).toFixed(2)),
+        aviso: `${c.conteoItems} microtransacciones sumaron S/ ${(c.totalMonto).toFixed(2)}.`,
+      });
+    }
+  }
+
+  return {
+    dti: {
+      porcentaje: dtiPorcentaje,
+      totalDeudas: Number(totalDeudas.toFixed(2)),
+      estado: dtiEstado,
+      label: dtiLabel,
+      recomendacion: dtiRec,
+    },
+    rigidez: {
+      porcentaje: rigidezPorcentaje,
+      totalComprometido: Number(totalComprometido.toFixed(2)),
+      totalFlexible: Number(totalFlexible.toFixed(2)),
+      estado: rigidezEstado,
+      label: rigidezLabel,
+      recomendacion: rigidezRec,
+    },
+    ahorro: {
+      tasaAhorro,
+      metaAhorro,
+      disponibleNeto: Number(dineroDisponibleNeto.toFixed(2)),
+      cumplimientoMeta,
+      gap,
+      estado: ahorroEstado,
+      recomendacion: ahorroRec,
+    },
+    dependenciaCredito: {
+      porcentaje: dependenciaPorcentaje,
+      totalCredito: Number(totalCredito.toFixed(2)),
+      totalDebitoEfectivo,
+      estado: depEstado,
+      label: depLabel,
+    },
+    regla503020: {
+      necesidades: {
+        monto: Number(montoNecesidades.toFixed(2)),
+        porcentaje: pctNec,
+        objetivo: 50,
+        desvio: Number((pctNec - 50).toFixed(1)),
+        estado: estadoNec,
+      },
+      deseos: {
+        monto: Number(montoDeseos.toFixed(2)),
+        porcentaje: pctDes,
+        objetivo: 30,
+        desvio: Number((pctDes - 30).toFixed(1)),
+        estado: estadoDes,
+      },
+      ahorroYDeuda: {
+        monto: Number(montoAhorroDeuda.toFixed(2)),
+        porcentaje: pctAho,
+        objetivo: 20,
+        desvio: Number((pctAho - 20).toFixed(1)),
+        estado: estadoAho,
+      },
+      diagnostico: diagnostico503020,
+    },
+    alertasCategorias: {
+      ratioVivienda,
+      ratioAlimentacion,
+      concentracionTop3,
+      fugasHormiga,
+    },
   };
 }
 
