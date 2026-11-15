@@ -49,16 +49,15 @@ export async function GET(request: NextRequest) {
 
     for (let mes = 1; mes <= 12; mes++) {
       const periodo = `${anio}-${String(mes).padStart(2, '0')}`;
-      const esGrati = mes === 7 || mes === 12;
-      const esUtilidad = mes === 3;
 
       // Ingresos del mes
       const ingresosMes = ingresosYear.filter((i) => i.periodo === periodo);
       let totalIngresos = ingresosMes.reduce((acc, curr) => acc + Number(curr.monto), 0);
+      const tieneGrati = ingresosMes.some((i) => i.tipo === 'GRATIFICACION');
+      const tieneUtilidad = ingresosMes.some((i) => i.tipo === 'UTILIDADES');
+
       if (totalIngresos === 0) {
         totalIngresos += sueldoBase;
-        if (esGrati) totalIngresos += sueldoBase * 1.09;
-        if (esUtilidad) totalIngresos += sueldoBase * 1.5;
       }
 
       // Costos fijos
@@ -101,8 +100,8 @@ export async function GET(request: NextRequest) {
         gastos: totalGastos,
         totalEgresos,
         disponible,
-        esGrati,
-        esUtilidad,
+        esGrati: tieneGrati,
+        esUtilidad: tieneUtilidad,
       });
     }
 

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { formatMoney } from '@/lib/utils';
-import { CheckCircle2, Trash2 } from 'lucide-react';
+import { CheckCircle2, Trash2, Edit2 } from 'lucide-react';
 
 export interface IngresoItem {
   id: string;
@@ -21,6 +21,7 @@ interface IngresoCardMobileProps {
   moneda: string;
   onToggleRecibido: (ingreso: IngresoItem) => void;
   onEliminarIngreso: (id: string) => void;
+  onEditarSueldo?: (montoActual: number) => void;
 }
 
 export function IngresoCardMobile({
@@ -28,6 +29,7 @@ export function IngresoCardMobile({
   moneda,
   onToggleRecibido,
   onEliminarIngreso,
+  onEditarSueldo,
 }: IngresoCardMobileProps) {
   const fechaObj = new Date(ingreso.fechaEsperada);
   const fechaLabel = !isNaN(fechaObj.getTime())
@@ -93,17 +95,31 @@ export function IngresoCardMobile({
           <span>{ingreso.recibido ? 'Recibido' : 'Por recibir'}</span>
         </button>
 
-        {ingreso.tipo === 'EXTRA' && (
-          <button
-            type="button"
-            onClick={() => onEliminarIngreso(ingreso.id)}
-            className="p-1 rounded-md text-muted-foreground hover:text-rose-500 transition"
-            title="Eliminar ingreso extra"
-            aria-label="Eliminar ingreso extra"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        )}
+        <div className="flex items-center gap-1">
+          {ingreso.tipo === 'SUELDO' && onEditarSueldo && (
+            <button
+              type="button"
+              onClick={() => onEditarSueldo(ingreso.monto)}
+              className="p-1 rounded-md text-muted-foreground hover:text-indigo-500 transition"
+              title="Modificar sueldo"
+              aria-label="Modificar sueldo"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {ingreso.tipo !== 'SUELDO' && (
+            <button
+              type="button"
+              onClick={() => onEliminarIngreso(ingreso.id)}
+              className="p-1 rounded-md text-muted-foreground hover:text-rose-500 transition"
+              title="Eliminar ingreso"
+              aria-label="Eliminar ingreso"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );

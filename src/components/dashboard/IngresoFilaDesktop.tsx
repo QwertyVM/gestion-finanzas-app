@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { formatMoney } from '@/lib/utils';
-import { CheckCircle2, Trash2 } from 'lucide-react';
+import { CheckCircle2, Trash2, Edit2 } from 'lucide-react';
 import type { IngresoItem } from './IngresoCardMobile';
 
 interface IngresoFilaDesktopProps {
@@ -10,6 +10,7 @@ interface IngresoFilaDesktopProps {
   moneda: string;
   onToggleRecibido: (ingreso: IngresoItem) => void;
   onEliminarIngreso: (id: string) => void;
+  onEditarSueldo?: (montoActual: number) => void;
 }
 
 export function IngresoFilaDesktop({
@@ -17,6 +18,7 @@ export function IngresoFilaDesktop({
   moneda,
   onToggleRecibido,
   onEliminarIngreso,
+  onEditarSueldo,
 }: IngresoFilaDesktopProps) {
   const fechaObj = new Date(ing.fechaEsperada);
   const fechaLabel = !isNaN(fechaObj.getTime())
@@ -101,7 +103,18 @@ export function IngresoFilaDesktop({
             />
           </button>
 
-          {ing.tipo === 'EXTRA' && (
+          {ing.tipo === 'SUELDO' && onEditarSueldo && (
+            <button
+              type="button"
+              onClick={() => onEditarSueldo(ing.monto)}
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-indigo-500 transition"
+              title="Modificar sueldo"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </button>
+          )}
+
+          {ing.tipo !== 'SUELDO' && (
             <button
               type="button"
               onClick={() => onEliminarIngreso(ing.id)}
