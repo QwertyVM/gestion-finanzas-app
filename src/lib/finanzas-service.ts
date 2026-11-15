@@ -626,7 +626,56 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
     metaAhorroMensual: Number(usuario.metaAhorroMensual ?? 0),
   };
 
-  // 1. Ingresos
+  // 1. Carga automática de sueldo si no existe en el periodo
+  const sueldoExistente = ingresosDbRaw.find((i) => i.tipo === 'SUELDO');
+  if (!sueldoExistente && config.sueldoBaseMensual > 0) {
+    const ultimoSueldo = await prisma.ingresoMes.findFirst({
+      where: {
+        usuarioId: uId,
+        tipo: 'SUELDO',
+        periodo: { lte: periodo },
+      },
+      orderBy: { periodo: 'desc' },
+    });
+    const montoAutoSueldo = ultimoSueldo ? Number(ultimoSueldo.monto) : config.sueldoBaseMensual;
+
+    const dia = config.diaPagoSueldo || 30;
+    const [yr, mn] = periodo.split('-').map(Number);
+    const maxDia = new Date(yr, mn, 0).getDate();
+    const diaEfectivo = Math.min(dia, maxDia);
+    const fechaEsperada = new Date(Date.UTC(yr, mn - 1, diaEfectivo, 12, 0, 0));
+
+    try {
+      const nuevoSueldo = await prisma.ingresoMes.upsert({
+        where: {
+          usuarioId_periodo_tipo_concepto: {
+            usuarioId: uId,
+            periodo,
+            tipo: 'SUELDO',
+            concepto: 'Sueldo Mensual Planilla',
+          },
+        },
+        update: {},
+        create: {
+          usuarioId: uId,
+          periodo,
+          tipo: 'SUELDO',
+          concepto: 'Sueldo Mensual Planilla',
+          monto: montoAutoSueldo,
+          fechaEsperada,
+          recibido: false,
+        },
+      });
+      ingresosDbRaw.push(nuevoSueldo);
+    } catch {
+      const sueldoReintento = await prisma.ingresoMes.findFirst({
+        where: { usuarioId: uId, periodo, tipo: 'SUELDO' },
+      });
+      if (sueldoReintento) ingresosDbRaw.push(sueldoReintento);
+    }
+  }
+
+  // 2. Ingresos
   const ingresos = ingresosDbRaw.map((i) => ({
     id: i.id,
     periodo: i.periodo,
@@ -699,6 +748,7 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
       monto: montoNum,
       diaVencimiento: cf.diaVencimiento,
       categoria: catNombre,
+      categoriaId: cf.categoriaId || null,
       categoriaColor: catColor,
       categoriaIcono: catIcono,
       clasificacion: clasif.clasificacion,
@@ -874,6 +924,7 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
           fechaGasto: g.fechaGasto.toISOString(),
           periodoPago: g.periodoPago,
           categoria: gCatNombre,
+          categoriaId: g.categoriaId || null,
           categoriaColor: gCatColor,
           categoriaIcono: gCatIcono,
           clasificacion: gClasif.clasificacion,
@@ -914,6 +965,7 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
           fechaGasto: g.fechaGasto.toISOString(),
           periodoPago: g.periodoPago,
           categoria: gCatNombre,
+          categoriaId: g.categoriaId || null,
           categoriaColor: gCatColor,
           categoriaIcono: gCatIcono,
           clasificacion: gClasif.clasificacion,
@@ -954,6 +1006,7 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
       periodoPago: g.periodoPago,
       metodoPago: g.metodoPago,
       categoria: gdCatNombre,
+      categoriaId: g.categoriaId || null,
       categoriaColor: gdCatColor,
       categoriaIcono: gdCatIcono,
       clasificacion: gdClasif.clasificacion,
@@ -1012,30 +1065,27 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
   const sueldoBaseNum = Number(config.sueldoBaseMensual ?? 0);
 
   const proyeccionMultiMes = periodos12.map((p, idx) => {
-    const [, monthStr] = p.split('-');
-    const mesNum = parseInt(monthStr, 10);
-    const esGrati = mesNum === 7 || mesNum === 12;
-    const esUtilidad = mesNum === 3;
-
     // Para el mes seleccionado (idx 0), usar los totales exactos calculados
     if (idx === 0) {
+      const esGratiMes0 = ingresos.some((i) => i.tipo === 'GRATIFICACION');
+      const esUtilidadMes0 = ingresos.some((i) => i.tipo === 'UTILIDADES');
       return {
         periodo: p,
         ingresos: totalIngresos,
         egresos: totalEgresos,
         disponible: dineroDisponibleNeto,
-        esGrati,
-        esUtilidad,
+        esGrati: esGratiMes0,
+        esUtilidad: esUtilidadMes0,
       };
     }
 
     // Ingresos
     const ingMes = ingresosMulti.filter((i) => i.periodo === p);
     let totalIng = ingMes.reduce((acc, curr) => acc + Number(curr.monto), 0);
+    const tieneGrati = ingMes.some((i) => i.tipo === 'GRATIFICACION');
+    const tieneUtilidad = ingMes.some((i) => i.tipo === 'UTILIDADES');
     if (totalIng === 0) {
       totalIng += sueldoBaseNum;
-      if (esGrati) totalIng += sueldoBaseNum * 1.09;
-      if (esUtilidad) totalIng += sueldoBaseNum * 1.5;
     }
 
     // Costos fijos
@@ -1066,8 +1116,8 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
       ingresos: totalIng,
       egresos: totalEgr,
       disponible: disp,
-      esGrati,
-      esUtilidad,
+      esGrati: tieneGrati,
+      esUtilidad: tieneUtilidad,
     };
   });
 

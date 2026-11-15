@@ -24,6 +24,7 @@ import { IngresosMesTabla } from './IngresosMesTabla';
 import { DiferenciacionEgresosBar } from './DiferenciacionEgresosBar';
 import { FiltrosEstadoBar } from './FiltrosEstadoBar';
 import { SeccionEgresosTabla } from './SeccionEgresosTabla';
+import { ModalEditarSueldo } from '@/components/modals/ModalEditarSueldo';
 
 export function DashboardClient() {
   const {
@@ -48,6 +49,8 @@ export function DashboardClient() {
   const [itemsOrdenados, setItemsOrdenados] = useState<Array<any>>([]);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [modalSueldoOpen, setModalSueldoOpen] = useState(false);
+  const [sueldoParaEditar, setSueldoParaEditar] = useState(0);
 
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
   const mesActual = parseInt(periodo.split('-')[1], 10);
@@ -530,6 +533,35 @@ export function DashboardClient() {
     }
   };
 
+  const handleCambiarCategoriaModal = async (
+    item: DetalleItemData,
+    nuevaCategoriaId: string,
+    aplicarSerie?: boolean
+  ) => {
+    try {
+      const id = item.dbId || item.id.replace('fijo-', '');
+      if (item.tipo === 'FIJO') {
+        const res = await fetch('/api/fijos', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, categoriaId: nuevaCategoriaId }),
+        });
+        if (!res.ok) throw new Error('Error al actualizar categoría');
+      } else {
+        const res = await fetch('/api/gastos', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, categoriaId: nuevaCategoriaId, actualizarSerie: aplicarSerie }),
+        });
+        if (!res.ok) throw new Error('Error al actualizar categoría');
+      }
+      toast.success('Categoría actualizada');
+      await refresh();
+    } catch {
+      toast.error('Error al actualizar categoría');
+    }
+  };
+
   const handleGuardarConceptoModal = async (item: DetalleItemData, nuevoConcepto: string) => {
     try {
       if (item.tipo === 'FIJO') {
@@ -643,6 +675,10 @@ export function DashboardClient() {
         openRecordModal={openRecordModal}
         onToggleRecibido={handleToggleRecibidoIngreso}
         onEliminarIngreso={handleEliminarIngreso}
+        onEditarSueldo={(monto) => {
+          setSueldoParaEditar(monto);
+          setModalSueldoOpen(true);
+        }}
       />
 
       {/* 3. SECCIÓN: EGRESOS & COMPROMISOS DEL MES */}
@@ -761,9 +797,19 @@ export function DashboardClient() {
         onEliminarGasto={handleEliminarGastoModal}
         onCambiarMetodoPago={handleCambiarMetodoPagoModal}
         onCambiarClasificacion={handleCambiarClasificacionModal}
+        onCambiarCategoria={handleCambiarCategoriaModal}
         onGuardarConcepto={handleGuardarConceptoModal}
         onGuardarNotas={handleGuardarNotasModal}
         tarjetas={resumen.tarjetasCredito}
+        monedaSimbolo={moneda}
+      />
+
+      {/* MODAL EDITAR SUELDO */}
+      <ModalEditarSueldo
+        isOpen={modalSueldoOpen}
+        onClose={() => setModalSueldoOpen(false)}
+        sueldoActual={sueldoParaEditar || resumen.config?.sueldoBaseMensual || 0}
+        periodoActual={periodo}
         monedaSimbolo={moneda}
       />
     </div>

@@ -8,7 +8,7 @@ import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
 
 export function PerfilClient() {
-  const { usuarioActual, refresh } = useFinanzas();
+  const { usuarioActual, refresh, periodo } = useFinanzas();
 
   const [nombre, setNombre] = useState('');
   const [sueldoBase, setSueldoBase] = useState('0');
@@ -17,7 +17,13 @@ export function PerfilClient() {
   const [tipoCambio, setTipoCambio] = useState('3.40');
   const [moneda, setMoneda] = useState('S/');
   const [color, setColor] = useState('#2563eb');
+  const [modoVigencia, setModoVigencia] = useState<'ACTUAL' | 'PROXIMO' | 'PERSONALIZADO'>('ACTUAL');
+  const [periodoPersonalizado, setPeriodoPersonalizado] = useState(periodo || '2026-11');
   const [guardando, setGuardando] = useState(false);
+
+  useEffect(() => {
+    if (periodo) setPeriodoPersonalizado(periodo);
+  }, [periodo]);
 
   useEffect(() => {
     if (usuarioActual) {
@@ -40,6 +46,15 @@ export function PerfilClient() {
       const parsedSueldo = parseFloat(sueldoBase);
       const parsedMeta = parseFloat(metaAhorro);
 
+      let periodoDesde = periodo || '2026-11';
+      if (modoVigencia === 'PROXIMO') {
+        const [y, m] = periodoDesde.split('-').map(Number);
+        const nextDate = new Date(y, m, 1);
+        periodoDesde = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
+      } else if (modoVigencia === 'PERSONALIZADO') {
+        periodoDesde = periodoPersonalizado || periodoDesde;
+      }
+
       const res = await fetch('/api/usuarios', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -52,6 +67,7 @@ export function PerfilClient() {
           tipoCambioUSD: parseFloat(tipoCambio) || 3.4,
           monedaSimbolo: moneda,
           color,
+          periodoDesde,
         }),
       });
 
@@ -103,6 +119,9 @@ export function PerfilClient() {
         moneda={moneda}
         color={color}
         guardando={guardando}
+        modoVigencia={modoVigencia}
+        periodoPersonalizado={periodoPersonalizado}
+        periodoActual={periodo}
         onNombreChange={setNombre}
         onSueldoBaseChange={setSueldoBase}
         onDiaPagoChange={setDiaPago}
@@ -110,6 +129,8 @@ export function PerfilClient() {
         onTipoCambioChange={setTipoCambio}
         onMonedaChange={setMoneda}
         onColorChange={setColor}
+        onModoVigenciaChange={setModoVigencia}
+        onPeriodoPersonalizadoChange={setPeriodoPersonalizado}
         onSubmit={handleSubmit}
       />
     </div>

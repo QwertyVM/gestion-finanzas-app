@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Loader2, Save, DollarSign, Calendar, Target, RefreshCw } from 'lucide-react';
+import { formatPeriodoLabel } from '@/lib/utils';
 
 interface PerfilParametrosFormProps {
   nombre: string;
@@ -12,6 +13,9 @@ interface PerfilParametrosFormProps {
   moneda: string;
   color: string;
   guardando: boolean;
+  modoVigencia?: 'ACTUAL' | 'PROXIMO' | 'PERSONALIZADO';
+  periodoPersonalizado?: string;
+  periodoActual?: string;
   onNombreChange: (val: string) => void;
   onSueldoBaseChange: (val: string) => void;
   onDiaPagoChange: (val: string) => void;
@@ -19,6 +23,8 @@ interface PerfilParametrosFormProps {
   onTipoCambioChange: (val: string) => void;
   onMonedaChange: (val: string) => void;
   onColorChange: (val: string) => void;
+  onModoVigenciaChange?: (val: 'ACTUAL' | 'PROXIMO' | 'PERSONALIZADO') => void;
+  onPeriodoPersonalizadoChange?: (val: string) => void;
   onSubmit: (e: React.FormEvent) => void;
 }
 
@@ -33,6 +39,9 @@ export function PerfilParametrosForm({
   moneda,
   color,
   guardando,
+  modoVigencia = 'ACTUAL',
+  periodoPersonalizado = '',
+  periodoActual = '',
   onNombreChange,
   onSueldoBaseChange,
   onDiaPagoChange,
@@ -40,8 +49,13 @@ export function PerfilParametrosForm({
   onTipoCambioChange,
   onMonedaChange,
   onColorChange,
+  onModoVigenciaChange,
+  onPeriodoPersonalizadoChange,
   onSubmit,
 }: PerfilParametrosFormProps) {
+  const [y, m] = (periodoActual || '2026-11').split('-').map(Number);
+  const nextDate = new Date(y, m, 1);
+  const proximoPeriodo = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
   const inputClass = 'w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-indigo-500 transition';
   const monoClass = 'w-full px-3.5 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-indigo-500 transition';
 
@@ -66,12 +80,42 @@ export function PerfilParametrosForm({
           </select>
         </div>
 
-        <div>
-          <label className="text-xs font-bold text-foreground block mb-1 flex items-center gap-1.5">
-            <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
-            <span>Sueldo Base Mensual ({moneda})</span>
-          </label>
-          <input type="number" step="0.01" min="0" inputMode="decimal" required value={sueldoBase} onChange={(e) => onSueldoBaseChange(e.target.value)} className={monoClass} />
+        <div className="space-y-2">
+          <div>
+            <label className="text-xs font-bold text-foreground block mb-1 flex items-center gap-1.5">
+              <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
+              <span>Sueldo Base Mensual ({moneda})</span>
+            </label>
+            <input type="number" step="0.01" min="0" inputMode="decimal" required value={sueldoBase} onChange={(e) => onSueldoBaseChange(e.target.value)} className={monoClass} />
+          </div>
+
+          {onModoVigenciaChange && (
+            <div className="pt-1">
+              <label className="text-[11px] font-semibold text-muted-foreground block mb-1">
+                ¿A partir de qué mes aplica el cambio?
+              </label>
+              <select
+                value={modoVigencia}
+                onChange={(e) => onModoVigenciaChange(e.target.value as any)}
+                className="w-full px-2.5 py-1.5 rounded-lg border border-border bg-background text-foreground text-xs font-medium focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+              >
+                <option value="ACTUAL">A partir del mes actual ({formatPeriodoLabel(periodoActual)})</option>
+                <option value="PROXIMO">A partir del próximo mes ({formatPeriodoLabel(proximoPeriodo)})</option>
+                <option value="PERSONALIZADO">Personalizado (elegir mes)</option>
+              </select>
+
+              {modoVigencia === 'PERSONALIZADO' && onPeriodoPersonalizadoChange && (
+                <div className="mt-1.5">
+                  <input
+                    type="month"
+                    value={periodoPersonalizado}
+                    onChange={(e) => onPeriodoPersonalizadoChange(e.target.value)}
+                    className="w-full px-2.5 py-1.5 rounded-lg border border-border bg-background text-foreground text-xs font-medium focus:ring-1 focus:ring-indigo-500 focus:outline-none"
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div>

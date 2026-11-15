@@ -39,6 +39,19 @@ export async function POST(request: NextRequest) {
       },
     });
 
+    if (body.sueldoBaseMensual !== undefined && body.periodoDesde) {
+      await prisma.ingresoMes.updateMany({
+        where: {
+          usuarioId: user.id,
+          tipo: 'SUELDO',
+          periodo: { gte: body.periodoDesde },
+        },
+        data: {
+          monto: parseFloat(body.sueldoBaseMensual),
+        },
+      });
+    }
+
     return NextResponse.json(usuario);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

@@ -35,6 +35,7 @@ export async function PUT(request: NextRequest) {
       metaAhorroMensual,
       tipoCambioUSD,
       monedaSimbolo,
+      periodoDesde,
     } = body;
 
     const usuario = await prisma.usuario.findUnique({
@@ -66,6 +67,17 @@ export async function PUT(request: NextRequest) {
       where: { id: authenticatedUser.id },
       data: updateData,
     });
+
+    if (sueldoBaseMensual !== undefined && periodoDesde) {
+      await prisma.ingresoMes.updateMany({
+        where: {
+          usuarioId: authenticatedUser.id,
+          tipo: 'SUELDO',
+          periodo: { gte: periodoDesde },
+        },
+        data: { monto: parseFloat(sueldoBaseMensual) },
+      });
+    }
 
     return NextResponse.json({ success: true, usuario: updated });
   } catch (error: any) {

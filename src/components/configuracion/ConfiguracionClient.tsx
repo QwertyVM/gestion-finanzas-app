@@ -13,6 +13,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { formatPeriodoLabel } from '@/lib/utils';
 import { TarjetasConfigSection } from './TarjetasConfigSection';
 
 interface CategoriaItem {
@@ -28,8 +29,10 @@ interface CategoriaItem {
 }
 
 export function ConfiguracionClient() {
-  const { resumen, refresh, usuarioActual } = useFinanzas();
+  const { resumen, refresh, usuarioActual, periodo } = useFinanzas();
   const [sueldoBase, setSueldoBase] = useState('6000');
+  const [modoSueldoVigencia, setModoSueldoVigencia] = useState<'ACTUAL' | 'PROXIMO' | 'PERSONALIZADO'>('ACTUAL');
+  const [periodoPersonalizado, setPeriodoPersonalizado] = useState(periodo || '2026-11');
   const [tipoCambio, setTipoCambio] = useState('4.00');
   const [metaAhorro, setMetaAhorro] = useState('1000');
   const [diaPago, setDiaPago] = useState('30');
@@ -82,11 +85,22 @@ export function ConfiguracionClient() {
     e.preventDefault();
     try {
       setSavingConfig(true);
+
+      let periodoDesde = periodo || '2026-11';
+      if (modoSueldoVigencia === 'PROXIMO') {
+        const [y, m] = periodoDesde.split('-').map(Number);
+        const nextDate = new Date(y, m, 1);
+        periodoDesde = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
+      } else if (modoSueldoVigencia === 'PERSONALIZADO') {
+        periodoDesde = periodoPersonalizado || periodoDesde;
+      }
+
       const res = await fetch('/api/configuracion', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           sueldoBaseMensual: parseFloat(sueldoBase),
+          periodoDesde,
           tipoCambioUSD: parseFloat(tipoCambio),
           metaAhorroMensual: parseFloat(metaAhorro),
           diaPagoSueldo: parseInt(diaPago, 10),
@@ -257,6 +271,28 @@ export function ConfiguracionClient() {
                 onChange={(e) => setSueldoBase(e.target.value)}
                 className="w-full px-3 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground font-mono font-medium text-xs"
               />
+              <div className="pt-1 space-y-1">
+                <label className="text-[10px] text-muted-foreground block">
+                  Aplica a partir de:
+                </label>
+                <select
+                  value={modoSueldoVigencia}
+                  onChange={(e) => setModoSueldoVigencia(e.target.value as any)}
+                  className="w-full px-2 py-1 rounded bg-background border border-border text-[11px] text-foreground focus:outline-none"
+                >
+                  <option value="ACTUAL">Mes actual ({formatPeriodoLabel(periodo)})</option>
+                  <option value="PROXIMO">Próximo mes</option>
+                  <option value="PERSONALIZADO">Personalizado...</option>
+                </select>
+                {modoSueldoVigencia === 'PERSONALIZADO' && (
+                  <input
+                    type="month"
+                    value={periodoPersonalizado}
+                    onChange={(e) => setPeriodoPersonalizado(e.target.value)}
+                    className="w-full px-2 py-1 rounded bg-background border border-border text-[11px] text-foreground focus:outline-none"
+                  />
+                )}
+              </div>
             </div>
 
             <div className="space-y-1">

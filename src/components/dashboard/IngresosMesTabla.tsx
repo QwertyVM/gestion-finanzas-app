@@ -12,6 +12,7 @@ interface IngresosMesTablaProps {
   openRecordModal: (tipo: 'INGRESO') => void;
   onToggleRecibido: (ingreso: IngresoItem) => void;
   onEliminarIngreso: (id: string) => void;
+  onEditarSueldo?: (montoActual: number) => void;
 }
 
 export function IngresosMesTabla({
@@ -20,6 +21,7 @@ export function IngresosMesTabla({
   openRecordModal,
   onToggleRecibido,
   onEliminarIngreso,
+  onEditarSueldo,
 }: IngresosMesTablaProps) {
   return (
     <div className="space-y-3">
@@ -63,6 +65,7 @@ export function IngresosMesTabla({
                   moneda={moneda}
                   onToggleRecibido={onToggleRecibido}
                   onEliminarIngreso={onEliminarIngreso}
+                  onEditarSueldo={onEditarSueldo}
                 />
               ))}
             </div>
@@ -88,6 +91,7 @@ export function IngresosMesTabla({
                       moneda={moneda}
                       onToggleRecibido={onToggleRecibido}
                       onEliminarIngreso={onEliminarIngreso}
+                      onEditarSueldo={onEditarSueldo}
                     />
                   ))}
                 </tbody>
