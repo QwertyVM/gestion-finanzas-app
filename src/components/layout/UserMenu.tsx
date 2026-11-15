@@ -1,11 +1,13 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import Link from 'next/link';
 import { useFinanzas } from '@/context/FinanzasContext';
-import { User, Heart, ChevronDown, Check, LogOut, RefreshCw, Sparkles } from 'lucide-react';
+import { User, ChevronDown, LogOut, Settings, UserCheck } from 'lucide-react';
+import Image from 'next/image';
 
 export function UserMenu() {
-  const { usuarioActual, usuarios, cambiarUsuario, cerrarSesion, openSelectorUsuario } = useFinanzas();
+  const { usuarioActual, cerrarSesion } = useFinanzas();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -21,18 +23,20 @@ export function UserMenu() {
 
   if (!usuarioActual) {
     return (
-      <button
-        onClick={openSelectorUsuario}
+      <Link
+        href="/login"
         className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-foreground text-background text-xs font-bold hover:opacity-90 transition shadow-xs"
       >
         <User className="w-3.5 h-3.5" />
         <span>Iniciar sesión</span>
-      </button>
+      </Link>
     );
   }
 
-  const isVictor = usuarioActual.slug === 'victor';
-  const otroUsuario = usuarios.find((u) => u.id !== usuarioActual.id);
+  const isImageAvatar = Boolean(
+    usuarioActual.avatar &&
+      (usuarioActual.avatar.startsWith('http://') || usuarioActual.avatar.startsWith('https://'))
+  );
 
   return (
     <div className="relative" ref={menuRef}>
@@ -44,18 +48,35 @@ export function UserMenu() {
         aria-label="Menú de usuario"
       >
         {/* Avatar Mini */}
-        <div
-          className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shadow-xs shrink-0"
-          style={{ backgroundColor: usuarioActual.color || (isVictor ? '#2563eb' : '#ec4899') }}
-        >
-          {isVictor ? <User className="w-3.5 h-3.5" /> : <Heart className="w-3.5 h-3.5" />}
-        </div>
+        {isImageAvatar ? (
+          <div className="w-6 h-6 rounded-lg overflow-hidden border border-indigo-500/40 shrink-0">
+            <Image
+              src={usuarioActual.avatar!}
+              alt={usuarioActual.nombre}
+              width={24}
+              height={24}
+              className="w-full h-full object-cover"
+              unoptimized
+            />
+          </div>
+        ) : (
+          <div
+            className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-[11px] font-bold shadow-xs shrink-0"
+            style={{ backgroundColor: usuarioActual.color || '#2563eb' }}
+          >
+            <User className="w-3.5 h-3.5" />
+          </div>
+        )}
 
         <span className="text-xs font-bold text-foreground tracking-tight">
           {usuarioActual.nombre}
         </span>
 
-        <ChevronDown className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown
+          className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 ${
+            open ? 'rotate-180' : ''
+          }`}
+        />
       </button>
 
       {/* Menú Desplegable */}
@@ -64,57 +85,43 @@ export function UserMenu() {
           {/* Header con información de perfil */}
           <div className="p-2.5 rounded-xl bg-secondary/40 border border-border/40">
             <span className="text-[10px] font-semibold text-muted-foreground block">
-              Perfil Activo
+              Cuenta Conectada
             </span>
             <div className="flex items-center justify-between mt-0.5">
-              <span className="font-extrabold text-sm text-foreground">
+              <span className="font-extrabold text-sm text-foreground truncate max-w-[170px]">
                 {usuarioActual.nombre}
               </span>
               <span
-                className="w-2.5 h-2.5 rounded-full"
+                className="w-2.5 h-2.5 rounded-full shrink-0"
                 style={{ backgroundColor: usuarioActual.color || '#2563eb' }}
               />
             </div>
-            <span className="text-[10px] text-muted-foreground block mt-0.5">
-              Sueldo base: S/ {usuarioActual.sueldoBaseMensual.toLocaleString('es-PE', { minimumFractionDigits: 2 })}
-            </span>
+            {usuarioActual.email && (
+              <span className="text-[10px] text-muted-foreground block mt-0.5 truncate max-w-[180px]">
+                {usuarioActual.email}
+              </span>
+            )}
           </div>
 
-          {/* Cambio con credenciales al otro usuario */}
-          {otroUsuario && (
-            <button
-              type="button"
-              onClick={() => {
-                openSelectorUsuario();
-                setOpen(false);
-              }}
-              className="w-full flex items-center justify-between p-2 rounded-xl text-xs font-bold text-foreground hover:bg-secondary transition text-left group"
-            >
-              <div className="flex items-center gap-2">
-                <div
-                  className="w-6 h-6 rounded-lg flex items-center justify-center text-white text-xs shrink-0"
-                  style={{ backgroundColor: otroUsuario.color || '#ec4899' }}
-                >
-                  {otroUsuario.slug === 'victor' ? <User className="w-3.5 h-3.5" /> : <Heart className="w-3.5 h-3.5" />}
-                </div>
-                <span>Acceder como {otroUsuario.nombre}</span>
-              </div>
-              <RefreshCw className="w-3.5 h-3.5 text-muted-foreground group-hover:rotate-180 transition-transform" />
-            </button>
-          )}
-
-          {/* Abrir Selector de Perfil completo */}
-          <button
-            type="button"
-            onClick={() => {
-              openSelectorUsuario();
-              setOpen(false);
-            }}
+          {/* Enlace directo a Mi Perfil */}
+          <Link
+            href="/perfil"
+            onClick={() => setOpen(false)}
             className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-medium text-foreground hover:bg-secondary transition text-left"
           >
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span>Ver todos los perfiles</span>
-          </button>
+            <UserCheck className="w-3.5 h-3.5 text-indigo-500" />
+            <span>Mi Perfil Financiero</span>
+          </Link>
+
+          {/* Enlace directo a Configuración */}
+          <Link
+            href="/configuracion"
+            onClick={() => setOpen(false)}
+            className="w-full flex items-center gap-2 p-2 rounded-xl text-xs font-medium text-foreground hover:bg-secondary transition text-left"
+          >
+            <Settings className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>Configuración General</span>
+          </Link>
 
           <div className="h-px bg-border my-1" />
 
@@ -135,4 +142,3 @@ export function UserMenu() {
     </div>
   );
 }
-

@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, pin, nuevoPin, nombre, color, avatar, sueldoBaseMensual, diaPagoSueldo, metaAhorroMensual } = body;
+    const { id, pin, nuevoPin, nombre, color, avatar, sueldoBaseMensual, diaPagoSueldo, metaAhorroMensual, tipoCambioUSD, monedaSimbolo } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID de usuario requerido' }, { status: 400 });
@@ -95,6 +95,8 @@ export async function PUT(request: NextRequest) {
     if (sueldoBaseMensual !== undefined) updateData.sueldoBaseMensual = parseFloat(sueldoBaseMensual);
     if (diaPagoSueldo !== undefined) updateData.diaPagoSueldo = parseInt(diaPagoSueldo, 10);
     if (metaAhorroMensual !== undefined) updateData.metaAhorroMensual = parseFloat(metaAhorroMensual);
+    if (tipoCambioUSD !== undefined) updateData.tipoCambioUSD = parseFloat(tipoCambioUSD);
+    if (monedaSimbolo !== undefined) updateData.monedaSimbolo = monedaSimbolo;
 
     const updated = await prisma.usuario.update({
       where: { id },

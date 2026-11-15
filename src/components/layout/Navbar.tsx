@@ -20,6 +20,7 @@ import {
   Sparkles,
   Calculator,
   LogOut,
+  UserCheck,
 } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { UserMenu } from './UserMenu';
@@ -36,6 +37,7 @@ export function Navbar() {
     { href: '/fijos-y-prestamos', label: 'Fijos & Préstamos', icon: Landmark },
     { href: '/flujo-anual', label: 'Flujo Anual', icon: CalendarDays },
     { href: '/simulador-prestamos', label: 'Simulador', icon: Calculator },
+    { href: '/perfil', label: 'Mi Perfil', icon: UserCheck },
     { href: '/configuracion', label: 'Ajustes', icon: Settings },
   ];
 

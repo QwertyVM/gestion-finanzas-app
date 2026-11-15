@@ -23,6 +23,7 @@ import {
   X,
   Plus,
   LogOut,
+  UserCheck,
 } from 'lucide-react';
 import { UserMenu } from './UserMenu';
 
@@ -83,6 +84,11 @@ export function Sidebar() {
     {
       title: 'Ajustes',
       links: [
+        {
+          href: '/perfil',
+          label: 'Mi Perfil',
+          icon: UserCheck,
+        },
         {
           href: '/configuracion',
           label: 'Configuración',
