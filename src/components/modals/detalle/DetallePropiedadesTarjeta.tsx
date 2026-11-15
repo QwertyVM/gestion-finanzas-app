@@ -3,6 +3,7 @@
 import React from 'react';
 import { CreditCard, Calendar, Sparkles } from 'lucide-react';
 import { formatPeriodoLabel } from '@/lib/utils';
+import { DetalleCategoriaSelector } from './DetalleCategoriaSelector';
 
 interface DetallePropiedadesTarjetaProps {
   tarjetaNombre?: string | null;
@@ -11,7 +12,10 @@ interface DetallePropiedadesTarjetaProps {
   fechaGasto?: string;
   periodoPago?: string;
   categoria?: string;
+  categoriaId?: string | null;
   categoriaColor?: string;
+  tieneCuotas?: boolean;
+  onCambiarCategoria?: (categoriaId: string, aplicarSerie?: boolean) => Promise<void>;
 }
 
 export function DetallePropiedadesTarjeta({
@@ -21,7 +25,10 @@ export function DetallePropiedadesTarjeta({
   fechaGasto,
   periodoPago,
   categoria,
+  categoriaId,
   categoriaColor,
+  tieneCuotas = false,
+  onCambiarCategoria,
 }: DetallePropiedadesTarjetaProps) {
   const diaConsumo = fechaGasto ? new Date(fechaGasto).getUTCDate() : null;
   const esAntesDeCorte = diaConsumo !== null ? diaConsumo <= tarjetaDiaCorte : true;
@@ -79,6 +86,15 @@ export function DetallePropiedadesTarjeta({
           </div>
         )}
       </div>
+
+      {/* CATEGORÍA */}
+      <DetalleCategoriaSelector
+        categoriaNombre={categoria}
+        categoriaId={categoriaId}
+        categoriaColor={categoriaColor}
+        tieneCuotas={tieneCuotas}
+        onCambiarCategoria={onCambiarCategoria || (async () => {})}
+      />
     </div>
   );
 }

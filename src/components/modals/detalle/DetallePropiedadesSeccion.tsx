@@ -20,12 +20,16 @@ interface DetallePropiedadesSeccionProps {
     diaCorte?: number;
     diaPago?: number;
   }>;
+  categoriaNombre?: string;
+  categoriaColor?: string;
+  categoriaId?: string | null;
   onCambiarMetodoPago?: (
     item: DetalleItemData,
     nuevoMetodo: string,
     tarjetaId?: string | null,
     aplicarFuturos?: boolean
   ) => Promise<void>;
+  onCambiarCategoria?: (categoriaId: string, aplicarSerie?: boolean) => Promise<void>;
   onGuardarNotas: (nuevasNotas: string) => Promise<void>;
 }
 
@@ -34,9 +38,18 @@ export function DetallePropiedadesSeccion({
   item,
   notasLocal,
   tarjetas,
+  categoriaNombre,
+  categoriaColor,
+  categoriaId,
   onCambiarMetodoPago,
+  onCambiarCategoria,
   onGuardarNotas,
 }: DetallePropiedadesSeccionProps) {
+  const tieneCuotas = Boolean((item.totalCuotas || 1) > 1);
+  const catNombreFinal = categoriaNombre || item.categoria;
+  const catColorFinal = categoriaColor || item.categoriaColor;
+  const catIdFinal = categoriaId !== undefined ? categoriaId : item.categoriaId;
+
   if (clasificacionLocal === 'FIJO') {
     return (
       <DetallePropiedadesFijo
@@ -44,8 +57,9 @@ export function DetallePropiedadesSeccion({
         tarjetaId={item.tarjetaId}
         tarjetaNombre={item.tarjetaNombre}
         tarjetaBanco={item.tarjetaBanco}
-        categoria={item.categoria}
-        categoriaColor={item.categoriaColor}
+        categoria={catNombreFinal}
+        categoriaId={catIdFinal}
+        categoriaColor={catColorFinal}
         mesInicio={item.mesInicio}
         mesFin={item.mesFin}
         notas={notasLocal}
@@ -53,6 +67,7 @@ export function DetallePropiedadesSeccion({
         onCambiarMetodoPago={
           onCambiarMetodoPago ? (m, t, f) => onCambiarMetodoPago(item, m, t, f) : undefined
         }
+        onCambiarCategoria={onCambiarCategoria ? (cId) => onCambiarCategoria(cId, false) : undefined}
         onGuardarNotas={onGuardarNotas}
       />
     );
@@ -68,13 +83,16 @@ export function DetallePropiedadesSeccion({
         tarjetaDiaCorte={item.tarjetaDiaCorte}
         fechaGasto={item.fechaGasto}
         periodoPago={item.periodoPago}
-        categoria={item.categoria}
-        categoriaColor={item.categoriaColor}
+        categoria={catNombreFinal}
+        categoriaId={catIdFinal}
+        categoriaColor={catColorFinal}
+        tieneCuotas={tieneCuotas}
         notas={notasLocal}
         tarjetas={tarjetas}
         onCambiarMetodoPago={
           onCambiarMetodoPago ? (m, t) => onCambiarMetodoPago(item, m, t, false) : undefined
         }
+        onCambiarCategoria={onCambiarCategoria}
         onGuardarNotas={onGuardarNotas}
       />
     );
@@ -88,8 +106,11 @@ export function DetallePropiedadesSeccion({
         tarjetaDiaCorte={item.tarjetaDiaCorte}
         fechaGasto={item.fechaGasto}
         periodoPago={item.periodoPago}
-        categoria={item.categoria}
-        categoriaColor={item.categoriaColor}
+        categoria={catNombreFinal}
+        categoriaId={catIdFinal}
+        categoriaColor={catColorFinal}
+        tieneCuotas={tieneCuotas}
+        onCambiarCategoria={onCambiarCategoria}
       />
     );
   }

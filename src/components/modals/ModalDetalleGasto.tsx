@@ -22,6 +22,7 @@ export function ModalDetalleGasto({
   onEliminarGasto,
   onCambiarMetodoPago,
   onCambiarClasificacion,
+  onCambiarCategoria,
   onGuardarConcepto,
   onGuardarNotas,
   monedaSimbolo = 'S/',
@@ -34,6 +35,7 @@ export function ModalDetalleGasto({
     onGuardarMonto,
     onEliminarGasto,
     onCambiarClasificacion,
+    onCambiarCategoria,
     onGuardarConcepto,
     onGuardarNotas,
     monedaSimbolo
@@ -119,6 +121,10 @@ export function ModalDetalleGasto({
             tarjetas={tarjetas}
             onCambiarMetodoPago={onCambiarMetodoPago}
             onGuardarNotas={d.handleGuardarNotas}
+            categoriaNombre={d.categoriaNombreLocal}
+            categoriaColor={d.categoriaColorLocal}
+            categoriaId={d.categoriaIdLocal}
+            onCambiarCategoria={d.handleCambiarCategoria}
           />
 
           {tieneCuotas && (

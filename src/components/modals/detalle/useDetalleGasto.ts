@@ -13,6 +13,7 @@ export function useDetalleGasto(
   onGuardarMonto?: (item: DetalleItemData, nuevoMonto: number) => Promise<void>,
   onEliminarGasto?: (item: DetalleItemData) => Promise<void>,
   onCambiarClasificacion?: (item: DetalleItemData, nuevaClasificacion: 'FIJO' | 'VARIABLE') => Promise<void>,
+  onCambiarCategoria?: (item: DetalleItemData, nuevaCategoriaId: string, aplicarSerie?: boolean) => Promise<void>,
   onGuardarConcepto?: (item: DetalleItemData, nuevoConcepto: string) => Promise<void>,
   onGuardarNotas?: (item: DetalleItemData, nuevasNotas: string) => Promise<void>,
   monedaSimbolo = 'S/'
@@ -43,8 +44,16 @@ export function useDetalleGasto(
   );
   const [updatingClasificacion, setUpdatingClasificacion] = useState(false);
 
+  // Categoría
+  const [categoriaNombreLocal, setCategoriaNombreLocal] = useState(item?.categoria || '');
+  const [categoriaColorLocal, setCategoriaColorLocal] = useState(item?.categoriaColor || '');
+  const [categoriaIdLocal, setCategoriaIdLocal] = useState<string | null>(item?.categoriaId || null);
+
   useEffect(() => {
     if (item) {
+      setCategoriaNombreLocal(item.categoria || '');
+      setCategoriaColorLocal(item.categoriaColor || '');
+      setCategoriaIdLocal(item.categoriaId || null);
       setClasificacionLocal(item.clasificacion || obtenerClasificacionEgreso(item));
       setMontoEditInput(item.monto.toString());
       setEditandoMonto(false);
@@ -95,6 +104,55 @@ export function useDetalleGasto(
       toast.error(err.message || 'Error al cambiar clasificación');
     } finally {
       setUpdatingClasificacion(false);
+    }
+  };
+
+  const handleCambiarCategoria = async (nuevaCategoriaId: string, aplicarSerie?: boolean) => {
+    if (!item) return;
+    try {
+      if (onCambiarCategoria) {
+        await onCambiarCategoria(item, nuevaCategoriaId, aplicarSerie);
+      } else {
+        const id = item.dbId || item.id.replace('fijo-', '');
+        if (item.tipo === 'FIJO') {
+          const res = await fetch('/api/fijos', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, categoriaId: nuevaCategoriaId }),
+          });
+          if (!res.ok) throw new Error('Error al actualizar categoría');
+        } else {
+          const res = await fetch('/api/gastos', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, categoriaId: nuevaCategoriaId, actualizarSerie: aplicarSerie }),
+          });
+          if (!res.ok) throw new Error('Error al actualizar categoría');
+        }
+        toast.success('Categoría actualizada');
+        await refresh();
+      }
+      setCategoriaIdLocal(nuevaCategoriaId);
+
+      try {
+        const catRes = await fetch('/api/categorias');
+        if (catRes.ok) {
+          const cats = await catRes.json();
+          const match = cats.find((c: any) => c.id === nuevaCategoriaId);
+          if (match) {
+            setCategoriaNombreLocal(match.nombre);
+            if (match.color) setCategoriaColorLocal(match.color);
+            item.categoria = match.nombre;
+            item.categoriaColor = match.color;
+            item.categoriaId = match.id;
+          }
+        }
+      } catch {
+        // ignore
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar categoría');
+      throw err;
     }
   };
 
@@ -295,6 +353,10 @@ export function useDetalleGasto(
     clasificacionLocal,
     updatingClasificacion,
     handleClasificacionChange,
+    categoriaNombreLocal,
+    categoriaColorLocal,
+    categoriaIdLocal,
+    handleCambiarCategoria,
     conceptoLocal,
     editandoConcepto,
     setEditandoConcepto,

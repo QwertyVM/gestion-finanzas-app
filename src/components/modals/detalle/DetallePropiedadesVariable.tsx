@@ -5,6 +5,7 @@ import { Calendar } from 'lucide-react';
 import { formatPeriodoLabel } from '@/lib/utils';
 import { VariableFormaPagoBox } from './VariableFormaPagoBox';
 import { VariableNotasBox } from './VariableNotasBox';
+import { DetalleCategoriaSelector } from './DetalleCategoriaSelector';
 
 interface DetallePropiedadesVariableProps {
   metodoPago?: string;
@@ -15,7 +16,9 @@ interface DetallePropiedadesVariableProps {
   fechaGasto?: string;
   periodoPago?: string;
   categoria?: string;
+  categoriaId?: string | null;
   categoriaColor?: string;
+  tieneCuotas?: boolean;
   notas?: string | null;
   tarjetas?: Array<{
     id: string;
@@ -26,6 +29,7 @@ interface DetallePropiedadesVariableProps {
     diaPago?: number;
   }>;
   onCambiarMetodoPago?: (nuevoMetodo: string, tarjetaId?: string | null) => Promise<void>;
+  onCambiarCategoria?: (categoriaId: string, aplicarSerie?: boolean) => Promise<void>;
   onGuardarNotas?: (nuevasNotas: string) => Promise<void>;
 }
 
@@ -38,10 +42,13 @@ export function DetallePropiedadesVariable({
   fechaGasto,
   periodoPago,
   categoria,
+  categoriaId,
   categoriaColor,
+  tieneCuotas = false,
   notas,
   tarjetas = [],
   onCambiarMetodoPago,
+  onCambiarCategoria,
   onGuardarNotas,
 }: DetallePropiedadesVariableProps) {
   const [editandoMetodo, setEditandoMetodo] = useState(false);
@@ -135,15 +142,13 @@ export function DetallePropiedadesVariable({
       </div>
 
       {/* 3. CATEGORÍA */}
-      {categoria && (
-        <div className="p-3 rounded-xl bg-card border border-border/70">
-          <span className="text-[10px] text-muted-foreground block mb-0.5">Categoría</span>
-          <span className="font-medium text-foreground flex items-center gap-1.5 truncate">
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: categoriaColor || '#64748b' }} />
-            <span className="truncate">{categoria}</span>
-          </span>
-        </div>
-      )}
+      <DetalleCategoriaSelector
+        categoriaNombre={categoria}
+        categoriaId={categoriaId}
+        categoriaColor={categoriaColor}
+        tieneCuotas={tieneCuotas}
+        onCambiarCategoria={onCambiarCategoria || (async () => {})}
+      />
 
       {/* 4. NOTAS */}
       <VariableNotasBox

@@ -7,6 +7,7 @@ export interface DetalleItemData {
   clasificacion?: ClasificacionEgreso;
   concepto: string;
   categoria?: string;
+  categoriaId?: string | null;
   categoriaColor?: string;
   categoriaIcono?: string;
   monto: number;
@@ -63,6 +64,11 @@ export interface ModalDetalleGastoProps {
   onCambiarClasificacion?: (
     item: DetalleItemData,
     nuevaClasificacion: 'FIJO' | 'VARIABLE'
+  ) => Promise<void>;
+  onCambiarCategoria?: (
+    item: DetalleItemData,
+    nuevaCategoriaId: string,
+    aplicarSerie?: boolean
   ) => Promise<void>;
   onGuardarConcepto?: (item: DetalleItemData, nuevoConcepto: string) => Promise<void>;
   onGuardarNotas?: (item: DetalleItemData, nuevasNotas: string) => Promise<void>;

@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import { CreditCard, Landmark, Banknote, Pencil } from 'lucide-react';
 import { formatPeriodoLabel } from '@/lib/utils';
 import { DetalleMetodoPagoEditor } from './DetalleMetodoPagoEditor';
+import { DetalleCategoriaSelector } from './DetalleCategoriaSelector';
+import { VariableNotasBox } from './VariableNotasBox';
 
 interface DetallePropiedadesFijoProps {
   metodoPago?: string;
@@ -11,12 +13,14 @@ interface DetallePropiedadesFijoProps {
   tarjetaNombre?: string | null;
   tarjetaBanco?: string | null;
   categoria?: string;
+  categoriaId?: string | null;
   categoriaColor?: string;
   mesInicio?: string | null;
   mesFin?: string | null;
   notas?: string | null;
   tarjetas?: Array<{ id: string; nombre: string; banco: string }>;
   onCambiarMetodoPago?: (nuevoMetodo: string, tarjetaId?: string | null, aplicarFuturos?: boolean) => Promise<void>;
+  onCambiarCategoria?: (categoriaId: string) => Promise<void>;
   onGuardarNotas?: (nuevasNotas: string) => Promise<void>;
 }
 
@@ -26,12 +30,14 @@ export function DetallePropiedadesFijo({
   tarjetaNombre,
   tarjetaBanco,
   categoria,
+  categoriaId,
   categoriaColor,
   mesInicio,
   mesFin,
   notas,
   tarjetas = [],
   onCambiarMetodoPago,
+  onCambiarCategoria,
   onGuardarNotas,
 }: DetallePropiedadesFijoProps) {
   const [editandoMetodo, setEditandoMetodo] = useState(false);
@@ -119,75 +125,35 @@ export function DetallePropiedadesFijo({
         )}
       </div>
 
-      {/* 2. VIGENCIA Y CATEGORÍA */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="p-3 rounded-xl bg-card border border-border/70">
-          <span className="text-[10px] text-muted-foreground block mb-0.5">Vigencia</span>
-          <span className="font-medium text-foreground block truncate">
-            {mesFin ? `${formatPeriodoLabel(mesInicio || '2026-11')} – ${formatPeriodoLabel(mesFin)}` : 'Mensual recurrente'}
-          </span>
-        </div>
-
-        <div className="p-3 rounded-xl bg-card border border-border/70">
-          <span className="text-[10px] text-muted-foreground block mb-0.5">Categoría</span>
-          <span className="font-medium text-foreground flex items-center gap-1.5 truncate">
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: categoriaColor || '#64748b' }} />
-            <span className="truncate">{categoria || 'General'}</span>
-          </span>
-        </div>
+      {/* 2. VIGENCIA */}
+      <div className="p-3 rounded-xl bg-card border border-border/70">
+        <span className="text-[10px] text-muted-foreground block mb-0.5">Vigencia</span>
+        <span className="font-medium text-foreground block truncate">
+          {mesFin ? `${formatPeriodoLabel(mesInicio || '2026-11')} – ${formatPeriodoLabel(mesFin)}` : 'Mensual recurrente'}
+        </span>
       </div>
 
-      {/* 3. NOTAS */}
-      <div className="p-3 rounded-xl bg-card border border-border/70 space-y-1">
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] text-muted-foreground block">Notas / Observaciones</span>
-          {!editandoNotas && onGuardarNotas && (
-            <button
-              type="button"
-              onClick={() => { setNotasInput(notas || ''); setEditandoNotas(true); }}
-              className="text-[10px] text-muted-foreground hover:text-foreground inline-flex items-center gap-1"
-            >
-              <Pencil className="w-2.5 h-2.5" />
-              <span>{notas ? 'Editar' : 'Agregar'}</span>
-            </button>
-          )}
-        </div>
+      {/* 3. CATEGORÍA */}
+      <DetalleCategoriaSelector
+        categoriaNombre={categoria}
+        categoriaId={categoriaId}
+        categoriaColor={categoriaColor}
+        tieneCuotas={false}
+        onCambiarCategoria={onCambiarCategoria || (async () => {})}
+      />
 
-        {!editandoNotas ? (
-          <p className="text-xs text-foreground italic">
-            {notas ? `"${notas}"` : <span className="text-muted-foreground/60 not-italic">Sin observaciones</span>}
-          </p>
-        ) : (
-          <div className="space-y-1.5 pt-1">
-            <textarea
-              value={notasInput}
-              onChange={(e) => setNotasInput(e.target.value)}
-              disabled={savingNotas}
-              placeholder="Escribe una observación..."
-              rows={2}
-              className="w-full text-xs p-2 rounded-md border border-border bg-background text-foreground outline-none focus:ring-1 focus:ring-primary"
-              autoFocus
-            />
-            <div className="flex items-center justify-end gap-1.5">
-              <button
-                type="button"
-                onClick={() => setEditandoNotas(false)}
-                className="px-2 py-0.5 rounded text-[11px] text-muted-foreground hover:text-foreground"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={savingNotas}
-                onClick={handleSaveNotas}
-                className="px-2.5 py-0.5 rounded bg-foreground text-background text-[11px] font-semibold hover:opacity-90 disabled:opacity-50"
-              >
-                {savingNotas ? 'Guardando...' : 'Guardar'}
-              </button>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* 4. NOTAS */}
+      <VariableNotasBox
+        notas={notas}
+        editandoNotas={editandoNotas}
+        notasInput={notasInput}
+        savingNotas={savingNotas}
+        permitirEditar={Boolean(onGuardarNotas)}
+        onStartEdit={() => { setNotasInput(notas || ''); setEditandoNotas(true); }}
+        onCancelEdit={() => setEditandoNotas(false)}
+        onChangeNotasInput={setNotasInput}
+        onSaveNotas={handleSaveNotas}
+      />
     </div>
   );
 }

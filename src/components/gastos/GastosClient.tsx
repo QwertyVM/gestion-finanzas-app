@@ -389,6 +389,20 @@ export function GastosClient() {
           toast.success('Descripción actualizada');
           await refresh();
         }}
+        onCambiarCategoria={async (item, nuevaCategoriaId, aplicarSerie) => {
+          try {
+            const res = await fetch('/api/gastos', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ id: item.dbId || item.id, categoriaId: nuevaCategoriaId, actualizarSerie: aplicarSerie }),
+            });
+            if (!res.ok) throw new Error('Error al actualizar categoría');
+            toast.success('Categoría actualizada');
+            await refresh();
+          } catch (err: any) {
+            toast.error(err.message || 'Error al actualizar categoría');
+          }
+        }}
         onGuardarNotas={async (item, nuevasNotas) => {
           const res = await fetch('/api/gastos', {
             method: 'PATCH',

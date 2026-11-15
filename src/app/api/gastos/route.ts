@@ -73,7 +73,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { id, monto, concepto, estado, notas, clasificacion, metodoPago, tarjetaId, periodoPago } = await request.json();
+    const { id, monto, concepto, estado, notas, clasificacion, metodoPago, tarjetaId, periodoPago, categoriaId, actualizarSerie } = await request.json();
     const updateData: any = {};
     if (monto !== undefined) updateData.monto = parseFloat(monto);
     if (concepto !== undefined) updateData.concepto = concepto;
@@ -84,6 +84,24 @@ export async function PATCH(request: NextRequest) {
     if (notas !== undefined) updateData.notas = notas;
     if (clasificacion !== undefined) {
       updateData.clasificacion = clasificacion;
+    }
+    if (categoriaId !== undefined) {
+      updateData.categoriaId = categoriaId || null;
+      if (actualizarSerie) {
+        const gastoActual = await prisma.gasto.findFirst({
+          where: { id, usuarioId: user.id },
+        });
+        if (gastoActual) {
+          const pId = gastoActual.gastoPadreId || gastoActual.id;
+          await prisma.gasto.updateMany({
+            where: {
+              usuarioId: user.id,
+              OR: [{ id: pId }, { gastoPadreId: pId }],
+            },
+            data: { categoriaId: categoriaId || null },
+          });
+        }
+      }
     }
 
     if (metodoPago !== undefined) {
