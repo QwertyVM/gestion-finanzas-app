@@ -109,7 +109,7 @@ export async function getAuthenticatedUser(request: NextRequest) {
         ...sesion.usuario,
         sueldoBaseMensual: Number(sesion.usuario.sueldoBaseMensual),
         tipoCambioUSD: Number(sesion.usuario.tipoCambioUSD || 4.0),
-        metaAhorroMensual: Number(sesion.usuario.metaAhorroMensual || 1000.0),
+        metaAhorroMensual: Number(sesion.usuario.metaAhorroMensual ?? 0),
         sessionId: sesion.id,
       };
     }

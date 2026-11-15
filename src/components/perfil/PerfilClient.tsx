@@ -11,9 +11,9 @@ export function PerfilClient() {
   const { usuarioActual, refresh } = useFinanzas();
 
   const [nombre, setNombre] = useState('');
-  const [sueldoBase, setSueldoBase] = useState('5000');
+  const [sueldoBase, setSueldoBase] = useState('0');
   const [diaPago, setDiaPago] = useState('30');
-  const [metaAhorro, setMetaAhorro] = useState('1000');
+  const [metaAhorro, setMetaAhorro] = useState('0');
   const [tipoCambio, setTipoCambio] = useState('3.40');
   const [moneda, setMoneda] = useState('S/');
   const [color, setColor] = useState('#2563eb');
@@ -22,9 +22,9 @@ export function PerfilClient() {
   useEffect(() => {
     if (usuarioActual) {
       setNombre(usuarioActual.nombre || '');
-      setSueldoBase(String(usuarioActual.sueldoBaseMensual || 5000));
+      setSueldoBase(String(usuarioActual.sueldoBaseMensual ?? 0));
       setDiaPago(String(usuarioActual.diaPagoSueldo || 30));
-      setMetaAhorro(String(usuarioActual.metaAhorroMensual || 1000));
+      setMetaAhorro(String(usuarioActual.metaAhorroMensual ?? 0));
       setTipoCambio(String(usuarioActual.tipoCambioUSD || 3.4));
       setMoneda(usuarioActual.monedaSimbolo || 'S/');
       setColor(usuarioActual.color || '#2563eb');
@@ -37,15 +37,18 @@ export function PerfilClient() {
 
     try {
       setGuardando(true);
+      const parsedSueldo = parseFloat(sueldoBase);
+      const parsedMeta = parseFloat(metaAhorro);
+
       const res = await fetch('/api/usuarios', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: usuarioActual.id,
           nombre: nombre.trim(),
-          sueldoBaseMensual: parseFloat(sueldoBase) || 5000,
+          sueldoBaseMensual: isNaN(parsedSueldo) ? 0 : parsedSueldo,
           diaPagoSueldo: parseInt(diaPago, 10) || 30,
-          metaAhorroMensual: parseFloat(metaAhorro) || 1000,
+          metaAhorroMensual: isNaN(parsedMeta) ? 0 : parsedMeta,
           tipoCambioUSD: parseFloat(tipoCambio) || 3.4,
           monedaSimbolo: moneda,
           color,

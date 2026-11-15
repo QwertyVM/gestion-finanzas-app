@@ -76,8 +76,8 @@ export function ResumenHeroKpis({
               )}
             </div>
 
-            <div className="flex items-baseline gap-3">
-              <span className="text-3xl sm:text-4xl font-semibold tracking-tight text-foreground font-mono">
+            <div className="flex items-baseline gap-2.5 sm:gap-3 flex-wrap">
+              <span className="text-2xl sm:text-4xl font-semibold tracking-tight text-foreground font-mono">
                 {formatMoney(disponibleNeto, moneda)}
               </span>
               <span
@@ -99,7 +99,7 @@ export function ResumenHeroKpis({
           <div className="flex items-center gap-2 w-full sm:w-auto">
             <button
               onClick={() => openRecordModal('INGRESO')}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-98 shadow-xs"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 sm:py-2 rounded-xl sm:rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-98 shadow-xs"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Ingreso</span>
@@ -107,7 +107,7 @@ export function ResumenHeroKpis({
 
             <button
               onClick={() => openRecordModal('GASTO')}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-background hover:bg-muted text-foreground border border-border font-medium text-xs transition active:scale-98 shadow-xs"
+              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 sm:py-2 rounded-xl sm:rounded-lg bg-background hover:bg-muted text-foreground border border-border font-medium text-xs transition active:scale-98 shadow-xs"
             >
               <Minus className="w-3.5 h-3.5 text-muted-foreground" />
               <span>Gasto</span>
@@ -116,27 +116,27 @@ export function ResumenHeroKpis({
         </div>
 
         {/* Métricas clave en fila */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-          <div className="p-3.5 rounded-xl bg-muted/40 border border-border/40">
-            <span className="text-xs text-muted-foreground block font-medium">Total Ingresos</span>
-            <span className="text-xl font-bold text-foreground font-mono mt-0.5 block">
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-4">
+          <div className="p-3 sm:p-3.5 rounded-xl bg-muted/40 border border-border/40">
+            <span className="text-[11px] sm:text-xs text-muted-foreground block font-medium">Total Ingresos</span>
+            <span className="text-base sm:text-xl font-bold text-foreground font-mono mt-0.5 block truncate">
               {formatMoney(totalIngresos, moneda)}
             </span>
-            <span className="text-xs text-muted-foreground">
+            <span className="text-[10px] sm:text-xs text-muted-foreground">
               {cantidadIngresos} {cantidadIngresos === 1 ? 'fuente' : 'fuentes'}
             </span>
           </div>
 
-          <div className="p-3.5 rounded-xl bg-muted/40 border border-border/40">
-            <span className="text-xs text-muted-foreground block font-medium">Total Egresos</span>
-            <span className="text-xl font-bold text-foreground font-mono mt-0.5 block">
+          <div className="p-3 sm:p-3.5 rounded-xl bg-muted/40 border border-border/40">
+            <span className="text-[11px] sm:text-xs text-muted-foreground block font-medium">Total Egresos</span>
+            <span className="text-base sm:text-xl font-bold text-foreground font-mono mt-0.5 block truncate">
               {formatMoney(totalEgresos, moneda)}
             </span>
-            <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap mt-0.5">
+            <div className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 sm:gap-1.5 flex-wrap mt-0.5">
               <span>{formatMoney(totalPendiente, moneda)} pendientes</span>
               {totalAdelantado > 0 && (
                 <span className="text-amber-600 dark:text-amber-400 font-semibold inline-flex items-center gap-0.5">
-                  · ⚡ {formatMoney(totalAdelantado, moneda)} con otro dinero
+                  · ⚡ {formatMoney(totalAdelantado, moneda)}
                 </span>
               )}
             </div>

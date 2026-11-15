@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
-    const sueldoBase = Number(usuario?.sueldoBaseMensual || 8200);
+    const sueldoBase = Number(usuario?.sueldoBaseMensual ?? 0);
     const resultado = [];
 
     for (let mes = 1; mes <= 12; mes++) {

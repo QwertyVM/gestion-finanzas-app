@@ -287,7 +287,7 @@ export function Sidebar() {
           )}
           <button
             onClick={() => openRecordModal('GASTO')}
-            className="p-1.5 rounded-lg bg-foreground text-background hover:opacity-90 active:scale-95 transition"
+            className="hidden min-[400px]:inline-flex p-1.5 rounded-lg bg-foreground text-background hover:opacity-90 active:scale-95 transition"
             title="Nuevo Registro"
             aria-label="Nuevo Registro"
           >

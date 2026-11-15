@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { formatMoney } from '@/lib/utils';
 import { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import { FijoFila } from './FijoFila';
+import { FijoCardMobile } from './FijoCardMobile';
 
 interface FijosTablaProps {
   costosFijos: any[];
@@ -53,7 +54,40 @@ export function FijosTabla({
 
   return (
     <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-2xs">
-      <div className="overflow-x-auto">
+      {/* Vista Móvil: Tarjetas táctiles */}
+      <div className="md:hidden divide-y divide-border/40">
+        {costosFijos.map((cf) => (
+          <FijoCardMobile
+            key={`m-fijo-${cf.id}`}
+            cf={cf}
+            tarjetas={tarjetas}
+            moneda={moneda}
+            isLoading={loadingAction === `fijo-${cf.id}`}
+            onSelect={onSelect}
+            onToggleEstado={onToggleEstado}
+            onCambiarMetodoPago={onCambiarMetodoPago}
+            onEditarBase={onEditarBase}
+            onEliminar={onEliminar}
+          />
+        ))}
+
+        {/* Resumen Móvil al pie */}
+        <div className="p-3 bg-muted/20 border-t border-border/60 flex items-center justify-between text-xs">
+          <div className="text-[11px] text-muted-foreground">
+            <span>{stats.total} fijos</span>
+            <span className="mx-1 opacity-40">·</span>
+            <span className="text-emerald-600 dark:text-emerald-400 font-medium">{stats.pagados} pag.</span>
+            <span className="mx-1 opacity-40">·</span>
+            <span className="text-amber-600 dark:text-amber-400 font-medium">{stats.pendientes} pend.</span>
+          </div>
+          <div className="font-mono font-bold text-xs text-foreground tabular-nums">
+            {formatMoney(totalMonto, moneda)}
+          </div>
+        </div>
+      </div>
+
+      {/* Vista Desktop: Tabla completa optimizada */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left text-sm border-collapse">
           <thead className="bg-muted/40 text-muted-foreground text-[11px] font-semibold border-b border-border/60 uppercase tracking-wider">
             <tr>

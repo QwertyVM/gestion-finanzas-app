@@ -63,13 +63,13 @@ export function FloatingSumBar() {
   };
 
   return (
-    <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[95vw] bg-zinc-950/90 text-zinc-100 backdrop-blur-md border border-zinc-800 shadow-xl rounded-xl px-4 py-2.5 flex items-center gap-4 transition-all animate-in fade-in slide-in-from-bottom-3">
+    <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[96vw] bg-zinc-950/95 text-zinc-100 backdrop-blur-md border border-zinc-800 shadow-2xl rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 sm:gap-4 transition-all animate-in fade-in slide-in-from-bottom-3">
       {/* Información de Sumatoria */}
-      <div className="flex items-center gap-2.5 text-xs whitespace-nowrap">
-        <span className="text-zinc-400">
+      <div className="flex items-center gap-1.5 sm:gap-2.5 text-xs whitespace-nowrap">
+        <span className="text-zinc-400 text-[11px] sm:text-xs">
           {selectedGastoIds.length} {selectedGastoIds.length === 1 ? 'ítem' : 'ítems'}:
         </span>
-        <span className="font-semibold text-white tracking-tight font-mono text-sm">
+        <span className="font-semibold text-white tracking-tight font-mono text-xs sm:text-sm">
           {formatMoney(sumaSeleccionada, moneda)}
         </span>
       </div>
@@ -77,50 +77,52 @@ export function FloatingSumBar() {
       <div className="h-4 w-px bg-zinc-800" />
 
       {/* Botones de Acción */}
-      <div className="flex items-center gap-1.5 whitespace-nowrap">
+      <div className="flex items-center gap-1 sm:gap-1.5 whitespace-nowrap overflow-x-auto no-scrollbar">
         <button
           onClick={() => handleCambiarEstado('PAGADO')}
           disabled={loading}
-          className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition disabled:opacity-50"
+          className="px-2 sm:px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-[11px] sm:text-xs font-medium flex items-center gap-1 sm:gap-1.5 transition disabled:opacity-50"
           title="Marcar como pagado"
         >
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Pagado</span>
+          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+          <span className="hidden min-[420px]:inline">Pagado</span>
         </button>
 
         <button
           onClick={() => handleCambiarEstado('ADELANTADO')}
           disabled={loading}
-          className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition disabled:opacity-50"
+          className="px-2 sm:px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-[11px] sm:text-xs font-medium flex items-center gap-1 sm:gap-1.5 transition disabled:opacity-50"
           title="Marcar como adelantado"
         >
-          <FastForward className="w-3.5 h-3.5 text-indigo-400" />
-          <span>Adelantado</span>
+          <FastForward className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+          <span className="hidden min-[420px]:inline">Adelantado</span>
         </button>
 
         <button
           onClick={() => handleCambiarEstado('PENDIENTE')}
           disabled={loading}
-          className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-xs font-medium flex items-center gap-1.5 transition disabled:opacity-50"
+          className="px-2 sm:px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-[11px] sm:text-xs font-medium flex items-center gap-1 sm:gap-1.5 transition disabled:opacity-50"
           title="Marcar como pendiente"
         >
-          <Clock className="w-3.5 h-3.5 text-amber-400" />
-          <span>Pendiente</span>
+          <Clock className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+          <span className="hidden min-[420px]:inline">Pendiente</span>
         </button>
 
         <button
           onClick={handleEliminar}
           disabled={loading}
-          className="p-1 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 rounded-lg text-xs transition disabled:opacity-50"
+          className="p-1 sm:p-1.5 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 rounded-lg text-xs transition disabled:opacity-50"
           title="Eliminar seleccionados"
+          aria-label="Eliminar seleccionados"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
 
         <button
           onClick={clearSelection}
-          className="p-1 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs transition"
+          className="p-1 sm:p-1.5 hover:bg-zinc-800 text-zinc-400 hover:text-white rounded-lg text-xs transition"
           title="Cerrar selección"
+          aria-label="Cerrar selección"
         >
           <X className="w-3.5 h-3.5" />
         </button>

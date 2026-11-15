@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import { formatMoney } from '@/lib/utils';
 import { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import { PrestamoFila } from './PrestamoFila';
+import { PrestamoCardMobile } from './PrestamoCardMobile';
 
 interface PrestamosTablaProps {
   prestamos: any[];
@@ -31,7 +32,34 @@ export function PrestamosTabla({
 
   return (
     <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-2xs">
-      <div className="overflow-x-auto">
+      {/* Vista Móvil: Tarjetas táctiles */}
+      <div className="md:hidden divide-y divide-border/40">
+        {prestamos.map((p) => (
+          <PrestamoCardMobile
+            key={`m-p-${p.id}`}
+            p={p}
+            moneda={moneda}
+            isLoading={loadingAction === `cuota-${p.cuotaId}` || loadingAction === `del-prestamo-${p.id}`}
+            onSelect={onSelect}
+            onToggleEstado={onToggleEstado}
+            onEditarBase={onEditarBase}
+            onEliminar={onEliminar}
+          />
+        ))}
+
+        {/* Resumen Móvil al pie */}
+        <div className="p-3 bg-muted/20 border-t border-border/60 flex items-center justify-between text-xs">
+          <span className="text-[11px] text-muted-foreground">
+            {prestamos.length} {prestamos.length === 1 ? 'crédito' : 'créditos'} activos
+          </span>
+          <div className="font-mono font-bold text-xs text-foreground tabular-nums">
+            {formatMoney(totalCuotasMes, moneda)}
+          </div>
+        </div>
+      </div>
+
+      {/* Vista Desktop: Tabla completa optimizada */}
+      <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left text-sm border-collapse">
           <thead className="bg-muted/40 text-muted-foreground text-[11px] font-semibold border-b border-border/60 uppercase tracking-wider">
             <tr>

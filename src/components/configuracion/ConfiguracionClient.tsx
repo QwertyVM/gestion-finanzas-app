@@ -55,7 +55,7 @@ export function ConfiguracionClient() {
     if (resumen?.config) {
       setSueldoBase(String(resumen.config.sueldoBaseMensual));
       setTipoCambio(String(resumen.config.tipoCambioUSD || '4.00'));
-      setMetaAhorro(String(resumen.config.metaAhorroMensual || '1000'));
+      setMetaAhorro(String(resumen.config.metaAhorroMensual ?? 0));
       setDiaPago(String(resumen.config.diaPagoSueldo));
     }
   }, [resumen]);

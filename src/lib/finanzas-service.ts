@@ -536,7 +536,7 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
     sueldoBaseMensual: Number(usuario.sueldoBaseMensual),
     diaPagoSueldo: usuario.diaPagoSueldo,
     tipoCambioUSD: Number(usuario.tipoCambioUSD || 4.00),
-    metaAhorroMensual: Number(usuario.metaAhorroMensual || 1000.00),
+    metaAhorroMensual: Number(usuario.metaAhorroMensual ?? 0),
   };
 
   // 1. Ingresos
@@ -919,10 +919,10 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
   // por lo que no restan del dinero disponible del sueldo de este mes.
   const egresosSueldoMes = Math.max(0, totalEgresos - totalAdelantado);
   const dineroDisponibleBruto = totalIngresos - egresosSueldoMes;
-  const metaAhorro = Number(config.metaAhorroMensual || 1000);
+  const metaAhorro = Number(config.metaAhorroMensual ?? 0);
   const dineroDisponibleNeto = dineroDisponibleBruto;
 
-  const sueldoBaseNum = Number(config.sueldoBaseMensual || 8200);
+  const sueldoBaseNum = Number(config.sueldoBaseMensual ?? 0);
 
   const proyeccionMultiMes = periodos12.map((p, idx) => {
     const [, monthStr] = p.split('-');

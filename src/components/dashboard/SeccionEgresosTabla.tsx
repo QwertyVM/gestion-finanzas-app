@@ -3,7 +3,8 @@
 import React from 'react';
 import { formatMoney } from '@/lib/utils';
 import { ChevronDown, Plus } from 'lucide-react';
-import { SeccionEgresoFila } from './SeccionEgresoFila';
+import { SeccionEgresoCardMobile } from './SeccionEgresoCardMobile';
+import { SeccionEgresosDesktopTable } from './SeccionEgresosDesktopTable';
 
 interface SeccionEgresosTablaProps {
   seccion: {
@@ -127,7 +128,7 @@ export function SeccionEgresosTabla({
         </div>
       </div>
 
-      {/* Tabla de la Sección */}
+      {/* Contenido de la Sección */}
       {!estaColapsada && (
         seccion.itemsFiltrados.length === 0 ? (
           <div className="p-6 text-center text-xs text-muted-foreground bg-muted/10 space-y-2">
@@ -142,40 +143,39 @@ export function SeccionEgresosTabla({
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead className="bg-muted/40 text-muted-foreground text-[11px] font-semibold border-b border-border/60 uppercase tracking-wider">
-                <tr>
-                  <th scope="col" className="py-2.5 px-2 w-7 text-center"><span className="sr-only">Mover</span></th>
-                  <th scope="col" className="py-2.5 px-2 w-8 text-center"><span className="sr-only">Seleccionar</span></th>
-                  <th scope="col" className="py-2.5 px-3 font-semibold text-foreground">Concepto & Detalle</th>
-                  <th scope="col" className="py-2.5 px-3 text-center font-semibold text-foreground">Estado</th>
-                  <th scope="col" className="py-2.5 px-3 text-right font-semibold text-foreground">Monto</th>
-                  <th scope="col" className="py-2.5 px-3 text-right font-semibold text-foreground">Acción</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {seccion.itemsFiltrados.map((item) => (
-                  <SeccionEgresoFila
-                    key={item.id}
-                    item={item}
-                    isSelected={selectedGastoIds.includes(item.id)}
-                    dragOverId={dragOverId}
-                    draggedId={draggedId}
-                    moneda={moneda}
-                    onSelectItem={onSelectItem}
-                    onToggleSelectGasto={onToggleSelectGasto}
-                    onToggleEstadoItem={onToggleEstadoItem}
-                    onDragStart={onDragStart}
-                    onDragOver={onDragOver}
-                    onDragLeave={onDragLeave}
-                    onDragEnd={onDragEnd}
-                    onDrop={onDrop}
-                  />
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Móvil: Lista de tarjetas ergonómicas */}
+            <div className="md:hidden divide-y divide-border/40">
+              {seccion.itemsFiltrados.map((item) => (
+                <SeccionEgresoCardMobile
+                  key={`m-${item.id}`}
+                  item={item}
+                  isSelected={selectedGastoIds.includes(item.id)}
+                  moneda={moneda}
+                  onSelectItem={onSelectItem}
+                  onToggleSelectGasto={onToggleSelectGasto}
+                  onToggleEstadoItem={onToggleEstadoItem}
+                />
+              ))}
+            </div>
+
+            {/* Desktop: Tabla estructurada */}
+            <SeccionEgresosDesktopTable
+              items={seccion.itemsFiltrados}
+              selectedGastoIds={selectedGastoIds}
+              moneda={moneda}
+              draggedId={draggedId}
+              dragOverId={dragOverId}
+              onSelectItem={onSelectItem}
+              onToggleSelectGasto={onToggleSelectGasto}
+              onToggleEstadoItem={onToggleEstadoItem}
+              onDragStart={onDragStart}
+              onDragOver={onDragOver}
+              onDragLeave={onDragLeave}
+              onDragEnd={onDragEnd}
+              onDrop={onDrop}
+            />
+          </>
         )
       )}
     </div>

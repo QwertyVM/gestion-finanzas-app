@@ -23,9 +23,9 @@ export function GastosFiltrosBar({
   onToggleSelectAll,
 }: GastosFiltrosBarProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-      <div className="flex flex-wrap items-center gap-2.5">
-        <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg border border-border/50">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 text-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full sm:w-auto">
+        <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg border border-border/50 overflow-x-auto no-scrollbar max-w-full">
           {(['PENDIENTE', 'ADELANTADO', 'PAGADO', 'TODOS'] as const).map((est) => {
             const isSelected = filtroEstado === est;
             return (
@@ -33,7 +33,7 @@ export function GastosFiltrosBar({
                 key={est}
                 type="button"
                 onClick={() => onFiltroEstadoChange(est)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition ${
+                className={`px-3 py-1.5 rounded-md text-xs font-medium whitespace-nowrap transition ${
                   isSelected
                     ? 'bg-card text-foreground shadow-xs font-semibold'
                     : 'text-muted-foreground hover:text-foreground'
@@ -51,7 +51,7 @@ export function GastosFiltrosBar({
           })}
         </div>
 
-        <div className="relative min-w-[220px] max-w-xs">
+        <div className="relative w-full sm:w-auto sm:min-w-[220px] max-w-full sm:max-w-xs">
           <Search className="w-3.5 h-3.5 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
           <input
             type="text"

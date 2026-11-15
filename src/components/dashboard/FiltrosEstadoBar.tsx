@@ -27,13 +27,13 @@ export function FiltrosEstadoBar({
   hasItems,
 }: FiltrosEstadoBarProps) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
-      {/* Botones de filtro de estado */}
-      <div className="flex items-center gap-1.5 flex-wrap">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 sm:gap-3 pt-2">
+      {/* Botones de filtro de estado con scroll horizontal táctil */}
+      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 max-w-full">
         <button
           type="button"
           onClick={() => onSelectEstado('PENDIENTE')}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition ${
             filtroEstado === 'PENDIENTE'
               ? 'bg-amber-500 text-white shadow-xs'
               : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -46,7 +46,7 @@ export function FiltrosEstadoBar({
         <button
           type="button"
           onClick={() => onSelectEstado('ADELANTADO')}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition ${
             filtroEstado === 'ADELANTADO'
               ? 'bg-indigo-600 text-white shadow-xs'
               : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -59,7 +59,7 @@ export function FiltrosEstadoBar({
         <button
           type="button"
           onClick={() => onSelectEstado('PAGADO')}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition ${
             filtroEstado === 'PAGADO'
               ? 'bg-emerald-600 text-white shadow-xs'
               : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
@@ -72,7 +72,7 @@ export function FiltrosEstadoBar({
         <button
           type="button"
           onClick={() => onSelectEstado('TODOS')}
-          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition ${
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition ${
             filtroEstado === 'TODOS'
               ? 'bg-foreground text-background shadow-xs'
               : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'

@@ -42,10 +42,10 @@ export async function provisionNewUserInstance({
       avatar: avatar || 'User',
       color: '#2563eb',
       monedaSimbolo: 'S/',
-      sueldoBaseMensual: 5000.0,
+      sueldoBaseMensual: 0.0,
       diaPagoSueldo: 30,
       tipoCambioUSD: 3.4,
-      metaAhorroMensual: 1000.0,
+      metaAhorroMensual: 0.0,
       activo: true,
     },
   });
