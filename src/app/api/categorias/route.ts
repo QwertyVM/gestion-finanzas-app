@@ -5,13 +5,14 @@ import { getAuthenticatedUser } from '@/lib/auth';
 export async function GET(request: NextRequest) {
   try {
     const user = await getAuthenticatedUser(request);
-    const where: any = {};
-    if (user) {
-      where.OR = [{ usuarioId: user.id }, { usuarioId: null }];
+    if (!user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
     const categorias = await prisma.categoria.findMany({
-      where,
+      where: {
+        OR: [{ usuarioId: user.id }, { usuarioId: null }],
+      },
       include: {
         _count: {
           select: {
@@ -78,10 +79,18 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
     const { id, nombre, icono, color, esFijo } = await request.json();
 
     if (!id) {
       return NextResponse.json({ error: 'ID es requerido' }, { status: 400 });
+    }
+
+    const catExistente = await prisma.categoria.findUnique({ where: { id } });
+    if (!catExistente || (catExistente.usuarioId && catExistente.usuarioId !== user.id)) {
+      return NextResponse.json({ error: 'Categoría no encontrada o no autorizada' }, { status: 403 });
     }
 
     const categoria = await prisma.categoria.update({
@@ -110,6 +119,9 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -117,7 +129,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID es requerido' }, { status: 400 });
     }
 
-    // Comprobar si tiene registros asociados
     const cat = await prisma.categoria.findUnique({
       where: { id },
       include: {
@@ -130,11 +141,10 @@ export async function DELETE(request: NextRequest) {
       },
     });
 
-    if (!cat) {
-      return NextResponse.json({ error: 'Categoría no encontrada' }, { status: 404 });
+    if (!cat || (cat.usuarioId && cat.usuarioId !== user.id)) {
+      return NextResponse.json({ error: 'Categoría no encontrada o no autorizada' }, { status: 404 });
     }
 
-    // Desvincular de fijos y gastos si los tuviera antes de eliminar (SetNull)
     await prisma.categoria.delete({
       where: { id },
     });

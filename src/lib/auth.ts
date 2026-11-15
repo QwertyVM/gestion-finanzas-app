@@ -60,107 +60,61 @@ export async function createDatabaseSession(
 }
 
 /**
- * Obtiene el usuario autenticado a partir de la cookie de sesión criptográfica.
- * Valida la firma del token Y la existencia activa de la sesión en la base de datos.
- * Esta función es la que garantiza el aislamiento estricto entre usuarios.
- * Incluye fallback seguro al usuario principal (Víctor) si no se ha cerrado sesión explícitamente.
+ * Obtiene el usuario autenticado exclusivamente a partir de la cookie de sesión criptográfica.
+ * Valida la firma criptográfica del JWT y la existencia activa de la sesión en PostgreSQL.
+ * Modelo Zero-Trust: no confía en headers no firmados ni query params para garantizar aislamiento estricto.
  */
 export async function getAuthenticatedUser(request: NextRequest) {
-  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
-  if (sessionCookie) {
-    const verified = await verifySessionToken(sessionCookie);
-    if (verified) {
-      try {
-        const sesion = await prisma.sesion.findUnique({
-          where: { token: verified.token },
-          include: {
-            usuario: {
-              select: {
-                id: true,
-                nombre: true,
-                slug: true,
-                email: true,
-                googleId: true,
-                color: true,
-                avatar: true,
-                monedaSimbolo: true,
-                sueldoBaseMensual: true,
-                diaPagoSueldo: true,
-                tipoCambioUSD: true,
-                metaAhorroMensual: true,
-                activo: true,
-              },
-            },
-          },
-        });
-
-        if (sesion && sesion.expiresAt >= new Date() && sesion.usuario && sesion.usuario.activo) {
-          return {
-            ...sesion.usuario,
-            sueldoBaseMensual: Number(sesion.usuario.sueldoBaseMensual),
-            tipoCambioUSD: Number(sesion.usuario.tipoCambioUSD || 4.0),
-            metaAhorroMensual: Number(sesion.usuario.metaAhorroMensual || 1000.0),
-            sessionId: sesion.id,
-          };
-        }
-      } catch (err) {
-        console.error('Error al verificar sesión en BD:', err);
-      }
-    }
-  }
-
-  // Si el usuario cerró sesión explícitamente, respetamos la decisión
   const isLoggedOut = request.cookies.get('finanzapp_logged_out')?.value === 'true';
   if (isLoggedOut) {
     return null;
   }
 
-  // Fallback transparente: si no hay sesión cerrada explícitamente, recuperar el usuario activo
+  const sessionCookie = request.cookies.get(SESSION_COOKIE_NAME)?.value;
+  if (!sessionCookie) {
+    return null;
+  }
+
+  const verified = await verifySessionToken(sessionCookie);
+  if (!verified) {
+    return null;
+  }
+
   try {
-    const headerUserId = request.headers.get('x-usuario-id');
-    const urlUserId = request.nextUrl?.searchParams?.get('usuarioId');
-    const cookieUserId = request.cookies.get('finanzapp_usuario_id')?.value;
-    const targetId = headerUserId || urlUserId || cookieUserId;
+    const sesion = await prisma.sesion.findUnique({
+      where: { token: verified.token },
+      include: {
+        usuario: {
+          select: {
+            id: true,
+            nombre: true,
+            slug: true,
+            email: true,
+            googleId: true,
+            color: true,
+            avatar: true,
+            monedaSimbolo: true,
+            sueldoBaseMensual: true,
+            diaPagoSueldo: true,
+            tipoCambioUSD: true,
+            metaAhorroMensual: true,
+            activo: true,
+          },
+        },
+      },
+    });
 
-    let usuario = null;
-    if (targetId) {
-      usuario = await prisma.usuario.findUnique({
-        where: { id: targetId, activo: true },
-      });
-    }
-
-    if (!usuario) {
-      usuario = await prisma.usuario.findFirst({
-        where: { slug: 'victor', activo: true },
-      });
-    }
-
-    if (!usuario) {
-      usuario = await prisma.usuario.findFirst({
-        where: { activo: true },
-        orderBy: { createdAt: 'asc' },
-      });
-    }
-
-    if (usuario) {
+    if (sesion && sesion.expiresAt >= new Date() && sesion.usuario && sesion.usuario.activo) {
       return {
-        id: usuario.id,
-        nombre: usuario.nombre,
-        slug: usuario.slug,
-        email: usuario.email,
-        googleId: usuario.googleId,
-        color: usuario.color,
-        avatar: usuario.avatar,
-        monedaSimbolo: usuario.monedaSimbolo,
-        sueldoBaseMensual: Number(usuario.sueldoBaseMensual),
-        diaPagoSueldo: usuario.diaPagoSueldo,
-        tipoCambioUSD: Number(usuario.tipoCambioUSD || 4.0),
-        metaAhorroMensual: Number(usuario.metaAhorroMensual || 1000.0),
-        sessionId: 'session-restored',
+        ...sesion.usuario,
+        sueldoBaseMensual: Number(sesion.usuario.sueldoBaseMensual),
+        tipoCambioUSD: Number(sesion.usuario.tipoCambioUSD || 4.0),
+        metaAhorroMensual: Number(sesion.usuario.metaAhorroMensual || 1000.0),
+        sessionId: sesion.id,
       };
     }
   } catch (err) {
-    console.error('Error en fallback de usuario autenticado:', err);
+    console.error('Error al verificar sesión en BD:', err);
   }
 
   return null;

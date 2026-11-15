@@ -4,22 +4,9 @@ import React, { createContext, useContext, useState, useEffect, useCallback } fr
 import type { ResumenFinanciero } from '@/lib/finanzas-service';
 import { getCurrentPeriodo } from '@/lib/utils';
 import { toast } from 'sonner';
+import { useAuth, UsuarioSesion } from './AuthContext';
 
-export interface UsuarioItem {
-  id: string;
-  nombre: string;
-  slug: string;
-  color: string;
-  avatar?: string | null;
-  monedaSimbolo: string;
-  sueldoBaseMensual: number;
-  diaPagoSueldo: number;
-  tipoCambioUSD?: number;
-  metaAhorroMensual?: number;
-  email?: string | null;
-  googleId?: string | null;
-  pin?: string | null;
-}
+export type { UsuarioSesion as UsuarioItem };
 
 export type TipoRecordModal = 'GASTO' | 'INGRESO' | 'FIJO' | 'PRESTAMO';
 
@@ -39,14 +26,9 @@ interface FinanzasContextType {
   resumen: ResumenFinanciero | null;
   loading: boolean;
   refresh: () => Promise<void>;
-  // Multiusuario / Perfiles
-  usuarioActual: UsuarioItem | null;
-  usuarios: UsuarioItem[];
-  cambiarUsuario: (usuarioId: string, pin?: string) => Promise<boolean>;
-  cerrarSesion: () => void;
-  isSelectorUsuarioOpen: boolean;
-  openSelectorUsuario: () => void;
-  closeSelectorUsuario: () => void;
+  // Usuario autenticado exclusivo de la instancia
+  usuarioActual: UsuarioSesion | null;
+  cerrarSesion: () => Promise<void>;
   // Selección interactiva para sumatorias automáticas
   selectedGastoIds: string[];
   toggleSelectGasto: (id: string, monto: number) => void;
@@ -61,53 +43,20 @@ interface FinanzasContextType {
   closeRecordModal: () => void;
 }
 
-// Perfiles conocidos predeterminados para renderizado instantáneo (0ms) sin esperar cold start
-export const PERFILES_PREDETERMINADOS: UsuarioItem[] = [
-  {
-    id: '10d544b8-e9f6-41a0-a660-6abee5ac6d4a',
-    nombre: 'Víctor',
-    slug: 'victor',
-    color: '#2563eb',
-    avatar: 'User',
-    monedaSimbolo: 'S/',
-    sueldoBaseMensual: 8200.00,
-    diaPagoSueldo: 30,
-    tipoCambioUSD: 4.00,
-    metaAhorroMensual: 1000.00,
-  },
-];
-
-const CACHE_KEY_USUARIOS = 'finanzapp_cached_usuarios';
-
 const FinanzasContext = createContext<FinanzasContextType | undefined>(undefined);
 
 export function FinanzasProvider({ children }: { children: React.ReactNode }) {
+  const { usuario: usuarioActual, cerrarSesion, loading: authLoading } = useAuth();
   const [periodo, setPeriodoState] = useState<string>(getCurrentPeriodo());
   const [resumen, setResumen] = useState<ResumenFinanciero | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Multiusuario - Inicializa con perfiles predeterminados para 0ms de espera visual
-  const [usuarios, setUsuarios] = useState<UsuarioItem[]>(PERFILES_PREDETERMINADOS);
-  const [usuarioActual, setUsuarioActual] = useState<UsuarioItem | null>(null);
-  const [isSelectorUsuarioOpen, setIsSelectorUsuarioOpen] = useState<boolean>(false);
-
-  // Cargar periodo guardado y caché de usuarios al iniciar
+  // Cargar periodo guardado al iniciar
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('finanzapp_periodo');
       if (saved && /^\d{4}-\d{2}$/.test(saved)) {
         setPeriodoState(saved);
-      }
-      try {
-        const cachedUsers = localStorage.getItem(CACHE_KEY_USUARIOS);
-        if (cachedUsers) {
-          const parsed = JSON.parse(cachedUsers);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setUsuarios(parsed);
-          }
-        }
-      } catch (err) {
-        console.error('Error al restaurar usuarios en caché:', err);
       }
     }
   }, []);
@@ -119,206 +68,45 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const fetchResumen = useCallback(async (intentos: number = 2) => {
-    if (!usuarioActual?.id) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const uParam = `&usuarioId=${usuarioActual.id}`;
-      const res = await fetch(`/api/finanzas?periodo=${periodo}${uParam}`, {
-        headers: { 'x-usuario-id': usuarioActual.id },
-      });
-      if (!res.ok) {
-        if (res.status === 401) {
-          setUsuarioActual(null);
-          if (typeof window !== 'undefined') {
-            window.location.href = '/login';
-          }
-          return;
-        }
-        throw new Error('Error al cargar datos financieros');
-      }
-      const data: ResumenFinanciero = await res.json();
-      setResumen(data);
-    } catch (err: any) {
-      if (intentos > 1) {
-        await new Promise((r) => setTimeout(r, 600));
-        return fetchResumen(intentos - 1);
-      }
-      console.error('Error al cargar resumen financiero:', err);
-      toast.error('No se pudo cargar la información del periodo');
-    } finally {
-      setLoading(false);
-    }
-  }, [periodo, usuarioActual?.id]);
-
-  // Cargar lista de usuarios al inicio y restaurar sesión activa desde el backend
-  useEffect(() => {
-    async function loadUsuarios() {
-      try {
-        const [usersRes, meRes] = await Promise.all([
-          fetch('/api/usuarios'),
-          fetch('/api/usuarios/me'),
-        ]);
-
-        let list: UsuarioItem[] = [];
-        if (usersRes.ok) {
-          list = await usersRes.json();
-          if (Array.isArray(list) && list.length > 0) {
-            setUsuarios(list);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem(CACHE_KEY_USUARIOS, JSON.stringify(list));
-            }
-          }
-        }
-
-        if (meRes.ok) {
-          const meData = await meRes.json();
-          if (meData.authenticated && meData.usuario) {
-            setUsuarioActual(meData.usuario);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('finanzapp_usuario_id', meData.usuario.id);
-              localStorage.removeItem('finanzapp_logged_out');
-            }
-            return;
-          }
-        }
-
-        // Si el usuario cerró sesión explícitamente en el navegador
-        const isLoggedOut = typeof window !== 'undefined' && localStorage.getItem('finanzapp_logged_out') === 'true';
-        if (isLoggedOut) {
-          setUsuarioActual(null);
-          return;
-        }
-
-        // Si no ha cerrado sesión explícitamente (ej: desarrollo local o reinicio), auto-activar usuario principal (Víctor)
-        const victor = list.find((u) => u.slug === 'victor') || list[0];
-        if (victor) {
-          setUsuarioActual(victor);
-          if (typeof window !== 'undefined') {
-            localStorage.setItem('finanzapp_usuario_id', victor.id);
-            document.cookie = `finanzapp_usuario_id=${victor.id}; Path=/; max-age=31536000; SameSite=Lax`;
-          }
-        } else {
-          setUsuarioActual(null);
-        }
-      } catch (err) {
-        console.error('Error al inicializar sesión de usuario:', err);
-      }
-    }
-    loadUsuarios();
-  }, []);
-
-  const cambiarUsuario = useCallback(async (usuarioId: string, pin?: string): Promise<boolean> => {
-    const user = usuarios.find((u) => u.id === usuarioId || u.slug === usuarioId);
-    if (!user) return false;
-
-    try {
-      const res = await fetch('/api/usuarios/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuarioId: user.id, slug: user.slug, pin }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || 'Credenciales incorrectas');
-        return false;
-      }
-
-      const activeUser = data.usuario || user;
-      setUsuarioActual(activeUser);
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('finanzapp_usuario_id', activeUser.id);
-        localStorage.removeItem('finanzapp_logged_out');
-        document.cookie = `finanzapp_usuario_id=${activeUser.id}; Path=/; max-age=31536000; SameSite=Lax`;
-        document.cookie = `finanzapp_logged_out=; Path=/; max-age=0; SameSite=Lax`;
-      }
-      setIsSelectorUsuarioOpen(false);
-      toast.success(`Sesión iniciada: ${activeUser.nombre}`);
-      await fetchResumen();
-      return true;
-    } catch (err: any) {
-      toast.error(err.message || 'Error al autenticar');
-      return false;
-    }
-  }, [usuarios, fetchResumen]);
-
-  const cerrarSesion = useCallback(async () => {
-    try {
-      await fetch('/api/usuarios/logout', { method: 'POST' });
-    } catch {
-      // ignore
-    }
-    setUsuarioActual(null);
-    if (typeof window !== 'undefined') {
-      localStorage.removeItem('finanzapp_usuario_id');
-      localStorage.setItem('finanzapp_logged_out', 'true');
-      document.cookie = `finanzapp_usuario_id=; Path=/; max-age=0; SameSite=Lax`;
-      document.cookie = `finanzapp_logged_out=true; Path=/; max-age=2592000; SameSite=Lax`;
-      window.location.href = '/login';
-    }
-    toast.info('Sesión cerrada.');
-  }, []);
-
-  const openSelectorUsuario = useCallback(() => setIsSelectorUsuarioOpen(true), []);
-  const closeSelectorUsuario = useCallback(() => {
-    if (usuarioActual) setIsSelectorUsuarioOpen(false);
-  }, [usuarioActual]);
-
-  // Selección de items y sumatoria instantánea
-  const [selectedItems, setSelectedItems] = useState<Map<string, number>>(new Map());
-
-  // Modal Dinámico de Registro Unificado
-  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
-  const [recordModalType, setRecordModalType] = useState<TipoRecordModal>('GASTO');
-  const [recordModalOptions, setRecordModalOptions] = useState<RecordModalOptions | undefined>(undefined);
-
-  const openRecordModal = useCallback((type: TipoRecordModal = 'GASTO', options?: RecordModalOptions) => {
-    setRecordModalType(type);
-    setRecordModalOptions(options);
-    setIsRecordModalOpen(true);
-  }, []);
-
-  const closeRecordModal = useCallback(() => {
-    setIsRecordModalOpen(false);
-    setRecordModalOptions(undefined);
-  }, []);
-
-  // Atajo global de teclado para registro rápido (Desktop: N o Cmd+K)
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const target = e.target as HTMLElement;
-      if (
-        target &&
-        (target.tagName === 'INPUT' ||
-          target.tagName === 'TEXTAREA' ||
-          target.tagName === 'SELECT' ||
-          target.isContentEditable)
-      ) {
+  const fetchResumen = useCallback(
+    async (intentos: number = 2) => {
+      if (!usuarioActual?.id) {
+        setLoading(false);
         return;
       }
 
-      if ((e.key === 'n' || e.key === 'N') && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        e.preventDefault();
-        openRecordModal('GASTO');
-      } else if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
-        e.preventDefault();
-        openRecordModal('GASTO');
+      try {
+        setLoading(true);
+        const res = await fetch(`/api/finanzas?periodo=${periodo}`);
+        if (!res.ok) {
+          if (res.status === 401) {
+            await cerrarSesion();
+            return;
+          }
+          throw new Error('Error al cargar datos financieros');
+        }
+        const data: ResumenFinanciero = await res.json();
+        setResumen(data);
+      } catch (err: any) {
+        if (intentos > 1) {
+          await new Promise((r) => setTimeout(r, 600));
+          return fetchResumen(intentos - 1);
+        }
+        console.error('Error al cargar resumen financiero:', err);
+        toast.error('No se pudo cargar la información del periodo');
+      } finally {
+        setLoading(false);
       }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [openRecordModal]);
+    },
+    [periodo, usuarioActual?.id, cerrarSesion]
+  );
 
   useEffect(() => {
-    fetchResumen();
-    setSelectedItems(new Map());
-  }, [fetchResumen]);
+    if (!authLoading) {
+      fetchResumen();
+      setSelectedItems(new Map());
+    }
+  }, [fetchResumen, authLoading]);
 
   const irMesAnterior = () => {
     const [anio, mes] = periodo.split('-').map(Number);
@@ -333,6 +121,9 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
     const nuevoPeriodo = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
     setPeriodo(nuevoPeriodo);
   };
+
+  // Selección de items y sumatoria instantánea
+  const [selectedItems, setSelectedItems] = useState<Map<string, number>>(new Map());
 
   const toggleSelectGasto = (id: string, monto: number) => {
     setSelectedItems((prev) => {
@@ -367,6 +158,49 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
   const selectedGastoIds = Array.from(selectedItems.keys());
   const sumaSeleccionada = Array.from(selectedItems.values()).reduce((a, b) => a + b, 0);
 
+  // Modal Dinámico de Registro Unificado
+  const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  const [recordModalType, setRecordModalType] = useState<TipoRecordModal>('GASTO');
+  const [recordModalOptions, setRecordModalOptions] = useState<RecordModalOptions | undefined>(undefined);
+
+  const openRecordModal = useCallback((type: TipoRecordModal = 'GASTO', options?: RecordModalOptions) => {
+    setRecordModalType(type);
+    setRecordModalOptions(options);
+    setIsRecordModalOpen(true);
+  }, []);
+
+  const closeRecordModal = useCallback(() => {
+    setIsRecordModalOpen(false);
+    setRecordModalOptions(undefined);
+  }, []);
+
+  // Atajos globales de teclado para registro rápido (Desktop: N o Cmd+K)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target &&
+        (target.tagName === 'INPUT' ||
+          target.tagName === 'TEXTAREA' ||
+          target.tagName === 'SELECT' ||
+          target.isContentEditable)
+      ) {
+        return;
+      }
+
+      if ((e.key === 'n' || e.key === 'N') && !e.metaKey && !e.ctrlKey && !e.altKey) {
+        e.preventDefault();
+        openRecordModal('GASTO');
+      } else if ((e.metaKey || e.ctrlKey) && (e.key === 'k' || e.key === 'K')) {
+        e.preventDefault();
+        openRecordModal('GASTO');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [openRecordModal]);
+
   return (
     <FinanzasContext.Provider
       value={{
@@ -375,15 +209,10 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
         irMesAnterior,
         irMesSiguiente,
         resumen,
-        loading,
+        loading: loading || authLoading,
         refresh: fetchResumen,
         usuarioActual,
-        usuarios,
-        cambiarUsuario,
         cerrarSesion,
-        isSelectorUsuarioOpen,
-        openSelectorUsuario,
-        closeSelectorUsuario,
         selectedGastoIds,
         toggleSelectGasto,
         selectAllGastos,

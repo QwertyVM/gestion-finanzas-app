@@ -2,17 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createDatabaseSession } from '@/lib/auth';
 import { eliminarJamileSiVacio } from '@/lib/user-cleanup';
-
-const CATEGORIAS_DEFAULT = [
-  { nombre: 'Alimentación / Supermercado', color: '#f59e0b', esFijo: true },
-  { nombre: 'Servicios Básicos (Luz/Agua/Net)', color: '#3b82f6', esFijo: true },
-  { nombre: 'Salud & Cuidado Personal', color: '#ec4899', esFijo: true },
-  { nombre: 'Suscripciones / Streaming', color: '#8b5cf6', esFijo: true },
-  { nombre: 'Transporte & Vehicular', color: '#64748b', esFijo: false },
-  { nombre: 'Restaurantes & Salidas', color: '#f97316', esFijo: false },
-  { nombre: 'Compras Varias', color: '#10b981', esFijo: false },
-  { nombre: 'Educación & Cursos', color: '#06b6d4', esFijo: false },
-];
+import { provisionNewUserInstance } from '@/lib/user-workspace';
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
@@ -133,38 +123,12 @@ export async function GET(request: NextRequest) {
         });
       } else {
         // Cuenta nueva sin vinculación: CREAR INSTANCIA TOTALMENTE NUEVA
-        const nombrePerfil = googleUser.name?.trim() || googleEmail?.split('@')[0] || 'Mi Perfil';
-        const rawSlug = nombrePerfil.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-').slice(0, 18);
-        const uniqueSlug = `${rawSlug}-${Math.random().toString(36).substring(2, 7)}`;
-
-        usuario = await prisma.usuario.create({
-          data: {
-            nombre: nombrePerfil,
-            slug: uniqueSlug,
-            email: googleEmail,
-            googleId,
-            avatar: googleUser.picture || 'User',
-            color: '#2563eb',
-            monedaSimbolo: 'S/',
-            sueldoBaseMensual: 5000.00,
-            diaPagoSueldo: 30,
-            tipoCambioUSD: 3.40,
-            metaAhorroMensual: 1000.00,
-            activo: true,
-          },
+        usuario = await provisionNewUserInstance({
+          nombre: googleUser.name?.trim() || googleEmail?.split('@')[0] || 'Mi Perfil',
+          email: googleEmail,
+          googleId,
+          avatar: googleUser.picture || null,
         });
-
-        // Crear categorías iniciales para la nueva instancia
-        for (const cat of CATEGORIAS_DEFAULT) {
-          await prisma.categoria.create({
-            data: {
-              nombre: cat.nombre,
-              color: cat.color,
-              esFijo: cat.esFijo,
-              usuarioId: usuario.id,
-            },
-          });
-        }
       }
     }
 

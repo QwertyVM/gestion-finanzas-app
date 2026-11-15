@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { AuthProvider } from '@/context/AuthContext';
 import { FinanzasProvider } from '@/context/FinanzasContext';
 import { AppShell } from '@/components/layout/AppShell';
 import { Toaster } from 'sonner';
@@ -30,10 +31,12 @@ export default function RootLayout({
           enableSystem={false}
           disableTransitionOnChange
         >
-          <FinanzasProvider>
-            <AppShell>{children}</AppShell>
-            <Toaster richColors position="top-right" />
-          </FinanzasProvider>
+          <AuthProvider>
+            <FinanzasProvider>
+              <AppShell>{children}</AppShell>
+              <Toaster richColors position="top-right" />
+            </FinanzasProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

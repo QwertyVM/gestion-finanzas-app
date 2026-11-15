@@ -6,7 +6,6 @@ import { Sidebar } from './Sidebar';
 import { FloatingSumBar } from '../common/FloatingSumBar';
 import { DynamicRecordModal } from '../modals/DynamicRecordModal';
 import { MobileRecordFAB } from './MobileRecordFAB';
-import { ModalSelectorUsuario } from '../modals/ModalSelectorUsuario';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -42,9 +41,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Modal Dinámico Global (Desktop + Mobile Sheet) */}
       <DynamicRecordModal />
-
-      {/* Modal Selector / Login de Usuario */}
-      <ModalSelectorUsuario />
     </div>
   );
 }
