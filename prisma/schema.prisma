@@ -37,6 +37,8 @@ model Usuario {
   id                 String           @id @default(uuid())
   nombre             String           @unique // "Víctor", "Jamile"
   slug               String           @unique // "victor", "jamile"
+  email              String?          @unique // Email asociado para Google Auth
+  googleId           String?          @unique // ID de Google
   pin                String?          // PIN opcional de 4 dígitos
   color              String           @default("#2563eb") // Azul para Víctor, Rosa para Jamile
   avatar             String?          // Identificador visual

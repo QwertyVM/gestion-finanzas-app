@@ -3,16 +3,19 @@
 import React from 'react';
 import type { UsuarioItem } from '@/context/FinanzasContext';
 import { Wallet, Check, User, Heart, KeyRound, Loader2 } from 'lucide-react';
+import { GoogleSignInButton } from './GoogleSignInButton';
 
 interface LoginProfileSelectorProps {
   usuarios: UsuarioItem[];
   usuarioActual: UsuarioItem | null;
+  fromPath?: string;
   onSelectPerfil: (user: UsuarioItem) => void;
 }
 
 export function LoginProfileSelector({
   usuarios,
   usuarioActual,
+  fromPath = '/',
   onSelectPerfil,
 }: LoginProfileSelectorProps) {
   return (
@@ -89,9 +92,25 @@ export function LoginProfileSelector({
         )}
       </div>
 
-      <div className="pt-2 text-center">
+      {/* Opción de ingreso con Google */}
+      <div className="pt-2">
+        <div className="relative my-3">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-border/70" />
+          </div>
+          <div className="relative flex justify-center text-[10px] uppercase tracking-wider">
+            <span className="bg-card px-2.5 text-muted-foreground font-semibold">
+              O ingresa con
+            </span>
+          </div>
+        </div>
+
+        <GoogleSignInButton from={fromPath} />
+      </div>
+
+      <div className="pt-1 text-center">
         <span className="text-[11px] text-muted-foreground">
-          Selecciona tu perfil e ingresa tu PIN personal para acceder a tus finanzas.
+          Acceso biométrico, PIN criptográfico o autenticación única con Google.
         </span>
       </div>
     </>
