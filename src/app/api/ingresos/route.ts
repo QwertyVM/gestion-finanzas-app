@@ -59,21 +59,50 @@ export async function PATCH(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const { id, recibido } = await request.json();
+    const body = await request.json();
+    const { id, recibido, monto, concepto, fechaEsperada, tipo, monedaOriginal, montoOriginal, tipoCambio } = body;
     if (!id) return NextResponse.json({ error: 'ID requerido' }, { status: 400 });
+
+    const updateData: any = {};
+    if (recibido !== undefined) {
+      updateData.recibido = !!recibido;
+      updateData.fechaRecibido = recibido ? new Date() : null;
+    }
+    if (monto !== undefined) {
+      updateData.monto = parseFloat(monto);
+    }
+    if (concepto !== undefined) {
+      updateData.concepto = concepto.trim();
+    }
+    if (fechaEsperada !== undefined) {
+      updateData.fechaEsperada = new Date(fechaEsperada);
+    }
+    if (tipo !== undefined) {
+      updateData.tipo = tipo;
+    }
+    if (monedaOriginal !== undefined) {
+      updateData.monedaOriginal = monedaOriginal;
+    }
+    if (montoOriginal !== undefined) {
+      updateData.montoOriginal = montoOriginal ? parseFloat(montoOriginal) : null;
+    }
+    if (tipoCambio !== undefined) {
+      updateData.tipoCambio = parseFloat(tipoCambio);
+    }
 
     const updated = await prisma.ingresoMes.updateMany({
       where: { id, usuarioId: user.id },
-      data: {
-        recibido: !!recibido,
-        fechaRecibido: recibido ? new Date() : null,
-      },
+      data: updateData,
     });
 
     return NextResponse.json({ success: true, count: updated.count });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+}
+
+export async function PUT(request: NextRequest) {
+  return PATCH(request);
 }
 
 export async function DELETE(request: NextRequest) {

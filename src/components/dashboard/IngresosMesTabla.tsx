@@ -13,6 +13,7 @@ interface IngresosMesTablaProps {
   onToggleRecibido: (ingreso: IngresoItem) => void;
   onEliminarIngreso: (id: string) => void;
   onEditarSueldo?: (montoActual: number) => void;
+  onEditarIngreso?: (ingreso: IngresoItem) => void;
 }
 
 export function IngresosMesTabla({
@@ -22,6 +23,7 @@ export function IngresosMesTabla({
   onToggleRecibido,
   onEliminarIngreso,
   onEditarSueldo,
+  onEditarIngreso,
 }: IngresosMesTablaProps) {
   return (
     <div className="space-y-3">
@@ -66,6 +68,7 @@ export function IngresosMesTabla({
                   onToggleRecibido={onToggleRecibido}
                   onEliminarIngreso={onEliminarIngreso}
                   onEditarSueldo={onEditarSueldo}
+                  onEditarIngreso={onEditarIngreso}
                 />
               ))}
             </div>
@@ -92,6 +95,7 @@ export function IngresosMesTabla({
                       onToggleRecibido={onToggleRecibido}
                       onEliminarIngreso={onEliminarIngreso}
                       onEditarSueldo={onEditarSueldo}
+                      onEditarIngreso={onEditarIngreso}
                     />
                   ))}
                 </tbody>

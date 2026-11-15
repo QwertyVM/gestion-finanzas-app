@@ -11,6 +11,7 @@ interface IngresoFilaDesktopProps {
   onToggleRecibido: (ingreso: IngresoItem) => void;
   onEliminarIngreso: (id: string) => void;
   onEditarSueldo?: (montoActual: number) => void;
+  onEditarIngreso?: (ingreso: IngresoItem) => void;
 }
 
 export function IngresoFilaDesktop({
@@ -19,6 +20,7 @@ export function IngresoFilaDesktop({
   onToggleRecibido,
   onEliminarIngreso,
   onEditarSueldo,
+  onEditarIngreso,
 }: IngresoFilaDesktopProps) {
   const fechaObj = new Date(ing.fechaEsperada);
   const fechaLabel = !isNaN(fechaObj.getTime())
@@ -46,7 +48,13 @@ export function IngresoFilaDesktop({
   return (
     <tr className="hover:bg-muted/40 transition-colors">
       <td className="py-2.5 px-3">
-        <div className="font-medium text-foreground text-xs sm:text-sm">{ing.concepto}</div>
+        <div
+          onClick={() => onEditarIngreso?.(ing)}
+          className={`font-medium text-foreground text-xs sm:text-sm ${onEditarIngreso ? 'cursor-pointer hover:text-indigo-600 transition' : ''}`}
+          title="Click para editar"
+        >
+          {ing.concepto}
+        </div>
         {ing.monedaOriginal === 'USD' && ing.montoOriginal && (
           <div className="text-[10px] text-muted-foreground font-mono mt-0.5">
             ${ing.montoOriginal} USD (TC: {ing.tipoCambio})
@@ -84,7 +92,11 @@ export function IngresoFilaDesktop({
         </button>
       </td>
 
-      <td className="py-2.5 px-3 text-right font-mono font-semibold text-foreground whitespace-nowrap text-xs sm:text-sm tabular-nums">
+      <td
+        onClick={() => onEditarIngreso?.(ing)}
+        className={`py-2.5 px-3 text-right font-mono font-semibold text-foreground whitespace-nowrap text-xs sm:text-sm tabular-nums ${onEditarIngreso ? 'cursor-pointer hover:text-indigo-600 transition' : ''}`}
+        title="Click para editar monto"
+      >
         {formatMoney(ing.monto, moneda)}
       </td>
 
@@ -103,12 +115,12 @@ export function IngresoFilaDesktop({
             />
           </button>
 
-          {ing.tipo === 'SUELDO' && onEditarSueldo && (
+          {(onEditarIngreso || (ing.tipo === 'SUELDO' && onEditarSueldo)) && (
             <button
               type="button"
-              onClick={() => onEditarSueldo(ing.monto)}
+              onClick={() => onEditarIngreso ? onEditarIngreso(ing) : onEditarSueldo?.(ing.monto)}
               className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-indigo-500 transition"
-              title="Modificar sueldo"
+              title="Modificar ingreso"
             >
               <Edit2 className="w-3.5 h-3.5" />
             </button>

@@ -25,6 +25,8 @@ import { DiferenciacionEgresosBar } from './DiferenciacionEgresosBar';
 import { FiltrosEstadoBar } from './FiltrosEstadoBar';
 import { SeccionEgresosTabla } from './SeccionEgresosTabla';
 import { ModalEditarSueldo } from '@/components/modals/ModalEditarSueldo';
+import { ModalEditarIngreso } from '@/components/modals/ModalEditarIngreso';
+import type { IngresoItem } from './IngresoCardMobile';
 
 export function DashboardClient() {
   const {
@@ -51,6 +53,7 @@ export function DashboardClient() {
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [modalSueldoOpen, setModalSueldoOpen] = useState(false);
   const [sueldoParaEditar, setSueldoParaEditar] = useState(0);
+  const [ingresoParaEditar, setIngresoParaEditar] = useState<IngresoItem | null>(null);
 
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
   const mesActual = parseInt(periodo.split('-')[1], 10);
@@ -679,6 +682,7 @@ export function DashboardClient() {
           setSueldoParaEditar(monto);
           setModalSueldoOpen(true);
         }}
+        onEditarIngreso={(ing) => setIngresoParaEditar(ing)}
       />
 
       {/* 3. SECCIÓN: EGRESOS & COMPROMISOS DEL MES */}
@@ -811,6 +815,16 @@ export function DashboardClient() {
         sueldoActual={sueldoParaEditar || resumen.config?.sueldoBaseMensual || 0}
         periodoActual={periodo}
         monedaSimbolo={moneda}
+      />
+
+      {/* MODAL EDITAR INGRESO (GRATIFICACIÓN, SUELDO, UTILIDADES, EXTRA) */}
+      <ModalEditarIngreso
+        isOpen={Boolean(ingresoParaEditar)}
+        ingreso={ingresoParaEditar}
+        onClose={() => setIngresoParaEditar(null)}
+        moneda={moneda}
+        periodoActual={periodo}
+        onEliminarIngreso={handleEliminarIngreso}
       />
     </div>
   );

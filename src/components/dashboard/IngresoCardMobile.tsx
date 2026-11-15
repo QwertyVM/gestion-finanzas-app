@@ -22,6 +22,7 @@ interface IngresoCardMobileProps {
   onToggleRecibido: (ingreso: IngresoItem) => void;
   onEliminarIngreso: (id: string) => void;
   onEditarSueldo?: (montoActual: number) => void;
+  onEditarIngreso?: (ingreso: IngresoItem) => void;
 }
 
 export function IngresoCardMobile({
@@ -30,6 +31,7 @@ export function IngresoCardMobile({
   onToggleRecibido,
   onEliminarIngreso,
   onEditarSueldo,
+  onEditarIngreso,
 }: IngresoCardMobileProps) {
   const fechaObj = new Date(ingreso.fechaEsperada);
   const fechaLabel = !isNaN(fechaObj.getTime())
@@ -57,7 +59,10 @@ export function IngresoCardMobile({
   return (
     <div className="p-3.5 border-b border-border/40 last:border-b-0 space-y-2">
       <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
+        <div
+          onClick={() => onEditarIngreso?.(ingreso)}
+          className={`min-w-0 flex-1 ${onEditarIngreso ? 'cursor-pointer' : ''}`}
+        >
           <h4 className="font-semibold text-xs text-foreground truncate">{ingreso.concepto}</h4>
           <div className="flex items-center gap-2 mt-1">
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${tipoBadgeClass}`}>
@@ -72,7 +77,10 @@ export function IngresoCardMobile({
           )}
         </div>
 
-        <div className="text-right shrink-0">
+        <div
+          onClick={() => onEditarIngreso?.(ingreso)}
+          className={`text-right shrink-0 ${onEditarIngreso ? 'cursor-pointer' : ''}`}
+        >
           <span className="font-mono font-bold text-xs text-foreground tabular-nums block">
             {formatMoney(ingreso.monto, moneda)}
           </span>
@@ -96,13 +104,13 @@ export function IngresoCardMobile({
         </button>
 
         <div className="flex items-center gap-1">
-          {ingreso.tipo === 'SUELDO' && onEditarSueldo && (
+          {(onEditarIngreso || (ingreso.tipo === 'SUELDO' && onEditarSueldo)) && (
             <button
               type="button"
-              onClick={() => onEditarSueldo(ingreso.monto)}
+              onClick={() => onEditarIngreso ? onEditarIngreso(ingreso) : onEditarSueldo?.(ingreso.monto)}
               className="p-1 rounded-md text-muted-foreground hover:text-indigo-500 transition"
-              title="Modificar sueldo"
-              aria-label="Modificar sueldo"
+              title="Modificar ingreso"
+              aria-label="Modificar ingreso"
             >
               <Edit2 className="w-3.5 h-3.5" />
             </button>
