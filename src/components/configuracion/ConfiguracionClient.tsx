@@ -13,6 +13,7 @@ import {
   ShieldCheck,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { TarjetasConfigSection } from './TarjetasConfigSection';
 
 interface CategoriaItem {
   id: string;
@@ -39,17 +40,6 @@ export function ConfiguracionClient() {
   const [nuevoPin, setNuevoPin] = useState('');
   const [confirmarNuevoPin, setConfirmarNuevoPin] = useState('');
   const [savingPin, setSavingPin] = useState(false);
-
-  // Tarjetas
-  const [nombreTarjeta, setNombreTarjeta] = useState('');
-  const [banco, setBanco] = useState('BCP');
-  const [ultimosCuatro, setUltimosCuatro] = useState('');
-  const [diaCorte, setDiaCorte] = useState('10');
-  const [diaPagoTarjeta, setDiaPagoTarjeta] = useState('30');
-  const [colorTarjeta, setColorTarjeta] = useState('#2563eb');
-  const [savingTarjeta, setSavingTarjeta] = useState(false);
-  const [deletingTarjetaId, setDeletingTarjetaId] = useState<string | null>(null);
-  const [editandoTarjeta, setEditandoTarjeta] = useState<any | null>(null);
 
   // Categorías
   const [categorias, setCategorias] = useState<CategoriaItem[]>([]);
@@ -153,91 +143,6 @@ export function ConfiguracionClient() {
       toast.error(err.message || 'Error al actualizar PIN');
     } finally {
       setSavingPin(false);
-    }
-  };
-
-  const handleGuardarTarjeta = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!nombreTarjeta.trim()) {
-      toast.error('Ingresa el nombre de la tarjeta');
-      return;
-    }
-
-    try {
-      setSavingTarjeta(true);
-      if (editandoTarjeta) {
-        const res = await fetch('/api/tarjetas', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            id: editandoTarjeta.id,
-            nombre: nombreTarjeta.trim(),
-            banco: banco.trim(),
-            ultimosCuatro: ultimosCuatro.trim() || undefined,
-            diaCorte: parseInt(diaCorte, 10),
-            diaPago: parseInt(diaPagoTarjeta, 10),
-            color: colorTarjeta,
-          }),
-        });
-        if (!res.ok) throw new Error('Error al actualizar tarjeta');
-        toast.success('Tarjeta actualizada');
-        setEditandoTarjeta(null);
-      } else {
-        const res = await fetch('/api/tarjetas', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            nombre: nombreTarjeta.trim(),
-            banco: banco.trim(),
-            ultimosCuatro: ultimosCuatro.trim() || undefined,
-            diaCorte: parseInt(diaCorte, 10),
-            diaPago: parseInt(diaPagoTarjeta, 10),
-            color: colorTarjeta,
-          }),
-        });
-        if (!res.ok) throw new Error('Error al crear tarjeta');
-        toast.success('Tarjeta agregada');
-      }
-
-      setNombreTarjeta('');
-      setUltimosCuatro('');
-      await refresh();
-    } catch (err: any) {
-      toast.error(err.message || 'Error al guardar tarjeta');
-    } finally {
-      setSavingTarjeta(false);
-    }
-  };
-
-  const handleEditarTarjeta = (t: any) => {
-    setEditandoTarjeta(t);
-    setNombreTarjeta(t.nombre);
-    setBanco(t.banco);
-    setUltimosCuatro(t.ultimosCuatro || '');
-    setDiaCorte(String(t.diaCorte));
-    setDiaPagoTarjeta(String(t.diaPago));
-    setColorTarjeta(t.color || '#2563eb');
-  };
-
-  const handleCancelarEdicionTarjeta = () => {
-    setEditandoTarjeta(null);
-    setNombreTarjeta('');
-    setUltimosCuatro('');
-    setColorTarjeta('#2563eb');
-  };
-
-  const handleEliminarTarjeta = async (id: string, nombre: string) => {
-    if (!confirm(`¿Eliminar la tarjeta "${nombre}"?`)) return;
-    try {
-      setDeletingTarjetaId(id);
-      const res = await fetch(`/api/tarjetas?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error al eliminar la tarjeta');
-      toast.success(`Tarjeta eliminada`);
-      await refresh();
-    } catch (err: any) {
-      toast.error(err.message || 'Error al eliminar');
-    } finally {
-      setDeletingTarjetaId(null);
     }
   };
 
@@ -492,189 +397,11 @@ export function ConfiguracionClient() {
       </div>
 
       {/* 2. TARJETAS DE CRÉDITO */}
-      <div className="space-y-3">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Tarjetas de Crédito
-        </h2>
-
-        <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-xs">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs border-collapse">
-              <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
-                <tr>
-                  <th scope="col" className="py-2.5 px-3 font-medium">Tarjeta</th>
-                  <th scope="col" className="py-2.5 px-3 font-medium">Banco</th>
-                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Dígitos</th>
-                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Día Corte</th>
-                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Día Pago</th>
-                  <th scope="col" className="py-2.5 px-3 text-center font-medium">Color</th>
-                  <th scope="col" className="py-2.5 px-3 text-center font-medium"><span className="sr-only">Acciones</span></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {resumen?.tarjetasCredito && resumen.tarjetasCredito.length > 0 ? (
-                  resumen.tarjetasCredito.map((t) => (
-                    <tr key={t.id} className="hover:bg-muted/30 transition">
-                      <td className="py-2.5 px-3 font-medium text-foreground">
-                        {t.nombre}
-                      </td>
-                      <td className="py-2.5 px-3 text-muted-foreground">
-                        {t.banco}
-                      </td>
-                      <td className="py-2.5 px-3 text-center font-mono text-muted-foreground">
-                        {t.ultimosCuatro ? `•••• ${t.ultimosCuatro}` : '—'}
-                      </td>
-                      <td className="py-2.5 px-3 text-center text-muted-foreground">
-                        Día {t.diaCorte}
-                      </td>
-                      <td className="py-2.5 px-3 text-center text-muted-foreground">
-                        Día {t.diaPago}
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <span
-                          className="inline-block w-3 h-3 rounded-full border border-border"
-                          style={{ backgroundColor: t.color }}
-                        />
-                      </td>
-                      <td className="py-2.5 px-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          <button
-                            type="button"
-                            onClick={() => handleEditarTarjeta(t)}
-                            className="p-1 rounded text-muted-foreground hover:text-foreground transition"
-                            title="Editar tarjeta"
-                          >
-                            <Pencil className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleEliminarTarjeta(t.id, t.nombre)}
-                            disabled={deletingTarjetaId === t.id}
-                            className="p-1 rounded text-muted-foreground hover:text-rose-500 transition"
-                            title="Eliminar tarjeta"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                ) : (
-                  <tr>
-                    <td colSpan={7} className="py-6 text-center text-xs text-muted-foreground">
-                      No hay tarjetas configuradas.
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Formulario Tarjeta */}
-        <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs">
-          <form onSubmit={handleGuardarTarjeta} className="space-y-3 text-xs">
-            <div className="flex items-center justify-between pb-2 border-b border-border/60">
-              <span className="font-medium text-foreground text-xs">
-                {editandoTarjeta ? `Editar "${editandoTarjeta.nombre}"` : 'Nueva Tarjeta'}
-              </span>
-              {editandoTarjeta && (
-                <button
-                  type="button"
-                  onClick={handleCancelarEdicionTarjeta}
-                  className="text-muted-foreground hover:text-foreground text-[11px] flex items-center gap-1"
-                >
-                  <X className="w-3.5 h-3.5" /> Cancelar
-                </button>
-              )}
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-              <div className="sm:col-span-2 space-y-1">
-                <label className="text-muted-foreground">Nombre</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="ej. Visa Signature"
-                  value={nombreTarjeta}
-                  onChange={(e) => setNombreTarjeta(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-muted-foreground">Banco</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="ej. BCP, BBVA"
-                  value={banco}
-                  onChange={(e) => setBanco(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-muted-foreground">Últimos 4 Dígitos</label>
-                <input
-                  type="text"
-                  maxLength={4}
-                  placeholder="ej. 4589"
-                  value={ultimosCuatro}
-                  onChange={(e) => setUltimosCuatro(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground font-mono text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-muted-foreground">Día Corte</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="31"
-                  required
-                  value={diaCorte}
-                  onChange={(e) => setDiaCorte(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
-                />
-              </div>
-
-              <div className="space-y-1">
-                <label className="text-muted-foreground">Día Pago</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="31"
-                  required
-                  value={diaPagoTarjeta}
-                  onChange={(e) => setDiaPagoTarjeta(e.target.value)}
-                  className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border outline-none focus:border-foreground text-foreground text-xs"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between gap-3 pt-2">
-              <div className="flex items-center gap-2">
-                <label className="text-muted-foreground text-xs">Color:</label>
-                <input
-                  type="color"
-                  value={colorTarjeta}
-                  onChange={(e) => setColorTarjeta(e.target.value)}
-                  className="w-6 h-6 rounded border border-border cursor-pointer bg-transparent"
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={savingTarjeta}
-                className="py-1.5 px-3.5 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition disabled:opacity-50"
-              >
-                {savingTarjeta ? 'Guardando...' : editandoTarjeta ? 'Actualizar Tarjeta' : '+ Agregar Tarjeta'}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
+      <TarjetasConfigSection
+        tarjetas={resumen?.tarjetasCredito || []}
+        moneda={resumen?.config?.monedaSimbolo || 'S/'}
+        refresh={refresh}
+      />
 
       {/* 3. CATEGORÍAS */}
       <div className="space-y-3">

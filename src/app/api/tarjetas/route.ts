@@ -9,9 +9,25 @@ export async function GET(request: NextRequest) {
 
     const tarjetas = await prisma.tarjetaCredito.findMany({
       where: { usuarioId: user.id },
+      include: {
+        _count: {
+          select: {
+            gastos: true,
+            costosFijos: true,
+          },
+        },
+      },
       orderBy: { nombre: 'asc' },
     });
-    return NextResponse.json(tarjetas);
+
+    const resultado = tarjetas.map((t) => ({
+      ...t,
+      totalRegistros: (t._count?.gastos || 0) + (t._count?.costosFijos || 0),
+      cantidadGastos: t._count?.gastos || 0,
+      cantidadCostosFijos: t._count?.costosFijos || 0,
+    }));
+
+    return NextResponse.json(resultado);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
@@ -88,11 +104,21 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'ID de tarjeta requerido' }, { status: 400 });
     }
 
-    // Desvincular gastos asociados solo del usuario
-    await prisma.gasto.updateMany({
-      where: { tarjetaId: id, usuarioId: user.id },
-      data: { tarjetaId: null },
-    });
+    // Verificar si tiene registros asociados (gastos o costos fijos)
+    const [gastosCount, costosFijosCount] = await Promise.all([
+      prisma.gasto.count({ where: { tarjetaId: id, usuarioId: user.id } }),
+      prisma.costoFijo.count({ where: { tarjetaId: id, usuarioId: user.id } }),
+    ]);
+
+    const totalAsociados = gastosCount + costosFijosCount;
+    if (totalAsociados > 0) {
+      return NextResponse.json(
+        {
+          error: `No se puede eliminar la tarjeta porque tiene ${totalAsociados} registro(s) asociado(s) (${gastosCount} compras/gastos y ${costosFijosCount} costos fijos). Reasigna o elimina los registros antes de borrarla.`,
+        },
+        { status: 400 }
+      );
+    }
 
     const res = await prisma.tarjetaCredito.deleteMany({
       where: { id, usuarioId: user.id },

@@ -367,6 +367,9 @@ export interface ResumenFinanciero {
     diaPago: number;
     color: string;
     totalPeriodo: number;
+    totalRegistros?: number;
+    cantidadGastos?: number;
+    cantidadCostosFijos?: number;
     gastosPeriodo: Array<any>;
     totalSiguientePeriodo: number;
     gastosSiguientePeriodo: Array<any>;
@@ -494,6 +497,12 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
           where: { periodoPago: periodo, usuarioId: uId },
           include: { categoria: true },
           orderBy: [{ orden: 'asc' }, { fechaGasto: 'desc' }],
+        },
+        _count: {
+          select: {
+            gastos: true,
+            costosFijos: true,
+          },
         },
       },
       orderBy: { nombre: 'asc' },
@@ -764,6 +773,9 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
       diaPago: t.diaPago,
       color: t.color,
       totalPeriodo: totalMes,
+      totalRegistros: ((t as any)._count?.gastos || 0) + ((t as any)._count?.costosFijos || 0),
+      cantidadGastos: (t as any)._count?.gastos || 0,
+      cantidadCostosFijos: (t as any)._count?.costosFijos || 0,
       gastosPeriodo: gastosMes.map((g) => {
         const esCuota = (g.totalCuotas || 1) > 1;
         const gCatNombre = g.categoria?.nombre || 'General';
