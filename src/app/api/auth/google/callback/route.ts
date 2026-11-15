@@ -164,6 +164,7 @@ export async function GET(request: NextRequest) {
       maxAge: 0,
       sameSite: 'lax',
     });
+    response.cookies.delete('finanzapp_logged_out');
 
     return response;
   } catch (error) {

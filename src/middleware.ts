@@ -19,9 +19,9 @@ export async function middleware(request: NextRequest) {
   const verified = await verifySessionToken(sessionToken);
   const isExplicitlyLoggedOut = request.cookies.get('finanzapp_logged_out')?.value === 'true';
 
-  // 3. Rutas de autenticación pública (login y APIs de usuarios)
+  // 3. Rutas de autenticación pública (login y APIs de usuarios/auth)
   const isLoginPage = pathname === '/login';
-  const isAuthApi = pathname.startsWith('/api/usuarios');
+  const isAuthApi = pathname.startsWith('/api/usuarios') || pathname.startsWith('/api/auth');
 
   // Si el usuario cerró sesión explícitamente y trata de acceder sin autenticarse
   if (isExplicitlyLoggedOut && !verified && !isLoginPage && !isAuthApi) {
