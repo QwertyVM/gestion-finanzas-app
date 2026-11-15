@@ -7,8 +7,7 @@ import { DetalleHeader } from './detalle/DetalleHeader';
 import { DetalleMontoHero } from './detalle/DetalleMontoHero';
 import { DetalleEstadoSelector } from './detalle/DetalleEstadoSelector';
 import { DetalleClasificacionSelector } from './detalle/DetalleClasificacionSelector';
-import { DetallePropiedadesFijo } from './detalle/DetallePropiedadesFijo';
-import { DetallePropiedadesTarjeta } from './detalle/DetallePropiedadesTarjeta';
+import { DetallePropiedadesSeccion } from './detalle/DetallePropiedadesSeccion';
 import { DetalleCuotasProgress } from './detalle/DetalleCuotasProgress';
 import { DetallePropiedadesPrestamo } from './detalle/DetallePropiedadesPrestamo';
 import { DetalleFooterAcciones } from './detalle/DetalleFooterAcciones';
@@ -50,13 +49,17 @@ export function ModalDetalleGasto({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in duration-150"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/50 backdrop-blur-xs animate-in fade-in duration-150"
       onClick={onClose}
     >
       <div
-        className="bg-card border border-border w-full max-w-lg rounded-2xl shadow-xl overflow-hidden animate-in zoom-in-95 duration-150 text-card-foreground"
+        className="bg-card border-t sm:border border-border w-full sm:max-w-lg rounded-t-3xl sm:rounded-2xl shadow-2xl overflow-hidden animate-in slide-in-from-bottom sm:zoom-in-95 duration-200 text-card-foreground max-h-[92vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
+        {/* Barra de Arrastre visual táctil para Móvil */}
+        <div className="sm:hidden pt-2.5 pb-1 flex justify-center shrink-0">
+          <div className="w-12 h-1.5 bg-muted-foreground/30 rounded-full" />
+        </div>
         <DetalleHeader
           concepto={d.conceptoLocal}
           tipo={item.tipo}
@@ -109,34 +112,14 @@ export function ModalDetalleGasto({
             />
           )}
 
-          {item.tipo === 'FIJO' && (
-            <DetallePropiedadesFijo
-              metodoPago={item.metodoPago}
-              tarjetaId={item.tarjetaId}
-              tarjetaNombre={item.tarjetaNombre}
-              tarjetaBanco={item.tarjetaBanco}
-              categoria={item.categoria}
-              categoriaColor={item.categoriaColor}
-              mesInicio={item.mesInicio}
-              mesFin={item.mesFin}
-              notas={d.notasLocal}
-              tarjetas={tarjetas}
-              onCambiarMetodoPago={onCambiarMetodoPago ? (m, t, f) => onCambiarMetodoPago(item, m, t, f) : undefined}
-              onGuardarNotas={d.handleGuardarNotas}
-            />
-          )}
-
-          {item.tipo === 'TARJETA' && (
-            <DetallePropiedadesTarjeta
-              tarjetaNombre={item.tarjetaNombre}
-              tarjetaBanco={item.tarjetaBanco}
-              tarjetaDiaCorte={item.tarjetaDiaCorte}
-              fechaGasto={item.fechaGasto}
-              periodoPago={item.periodoPago}
-              categoria={item.categoria}
-              categoriaColor={item.categoriaColor}
-            />
-          )}
+          <DetallePropiedadesSeccion
+            clasificacionLocal={d.clasificacionLocal}
+            item={item}
+            notasLocal={d.notasLocal}
+            tarjetas={tarjetas}
+            onCambiarMetodoPago={onCambiarMetodoPago}
+            onGuardarNotas={d.handleGuardarNotas}
+          />
 
           {tieneCuotas && (
             <DetalleCuotasProgress

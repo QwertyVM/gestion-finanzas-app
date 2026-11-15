@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { registrarNuevoGasto } from '@/lib/finanzas-service';
+import { calcularPeriodoFacturacion } from '@/lib/billing-cycles';
 import prisma from '@/lib/prisma';
 import { getAuthenticatedUser } from '@/lib/auth';
 
@@ -72,7 +73,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { id, monto, concepto, estado, notas, clasificacion } = await request.json();
+    const { id, monto, concepto, estado, notas, clasificacion, metodoPago, tarjetaId, periodoPago } = await request.json();
     const updateData: any = {};
     if (monto !== undefined) updateData.monto = parseFloat(monto);
     if (concepto !== undefined) updateData.concepto = concepto;
@@ -83,6 +84,60 @@ export async function PATCH(request: NextRequest) {
     if (notas !== undefined) updateData.notas = notas;
     if (clasificacion !== undefined) {
       updateData.clasificacion = clasificacion;
+    }
+
+    if (metodoPago !== undefined) {
+      updateData.metodoPago = metodoPago;
+      const gasto = await prisma.gasto.findFirst({
+        where: { id, usuarioId: user.id },
+      });
+
+      if (metodoPago === 'TARJETA_CREDITO') {
+        const tId = tarjetaId !== undefined ? tarjetaId : gasto?.tarjetaId;
+        updateData.tarjetaId = tId || null;
+        if (gasto && tId) {
+          const tarjeta = await prisma.tarjetaCredito.findUnique({ where: { id: tId } });
+          if (tarjeta) {
+            const calculo = calcularPeriodoFacturacion(
+              gasto.fechaGasto,
+              tarjeta.diaCorte || 10,
+              tarjeta.diaPago || 30
+            );
+            updateData.periodoPago = calculo.periodoPago;
+          }
+        }
+      } else {
+        updateData.tarjetaId = null;
+        if (gasto) {
+          const fg = new Date(gasto.fechaGasto);
+          const anio = fg.getFullYear();
+          const mes = String(fg.getMonth() + 1).padStart(2, '0');
+          updateData.periodoPago = `${anio}-${mes}`;
+        }
+      }
+    } else if (tarjetaId !== undefined) {
+      updateData.tarjetaId = tarjetaId || null;
+      if (tarjetaId) {
+        updateData.metodoPago = 'TARJETA_CREDITO';
+        const gasto = await prisma.gasto.findFirst({
+          where: { id, usuarioId: user.id },
+        });
+        if (gasto) {
+          const tarjeta = await prisma.tarjetaCredito.findUnique({ where: { id: tarjetaId } });
+          if (tarjeta) {
+            const calculo = calcularPeriodoFacturacion(
+              gasto.fechaGasto,
+              tarjeta.diaCorte || 10,
+              tarjeta.diaPago || 30
+            );
+            updateData.periodoPago = calculo.periodoPago;
+          }
+        }
+      }
+    }
+
+    if (periodoPago !== undefined) {
+      updateData.periodoPago = periodoPago;
     }
 
     const res = await prisma.gasto.updateMany({

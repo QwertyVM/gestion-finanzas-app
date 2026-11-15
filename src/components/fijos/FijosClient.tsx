@@ -216,7 +216,7 @@ export function FijosClient() {
     aplicarFuturos?: boolean
   ) => {
     try {
-      if (item.tipo === 'FIJO') {
+      if (item.tipo === 'FIJO' && item.clasificacion !== 'VARIABLE') {
         const res = await fetch('/api/fijos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -241,23 +241,37 @@ export function FijosClient() {
             }),
           });
         }
-
-        const tObj = tarjetas.find((t) => t.id === tarjetaId);
-        setDetalleItem((prev) =>
-          prev
-            ? {
-                ...prev,
-                metodoPago: nuevoMetodo,
-                tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? (tarjetaId || null) : null,
-                tarjetaNombre: tObj?.nombre || null,
-                tarjetaBanco: tObj?.banco || null,
-                tarjetaColor: tObj?.color || null,
-              }
-            : null
-        );
-        toast.success('Forma de pago actualizada');
-        await refresh();
+      } else {
+        const res = await fetch('/api/gastos', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: item.dbId,
+            metodoPago: nuevoMetodo,
+            tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? tarjetaId : null,
+          }),
+        });
+        if (!res.ok) throw new Error('Error al actualizar');
       }
+
+      const tObj = tarjetas.find((t) => t.id === tarjetaId);
+      setDetalleItem((prev) =>
+        prev
+          ? {
+              ...prev,
+              tipo: nuevoMetodo === 'TARJETA_CREDITO' ? 'TARJETA' : 'DIRECTO',
+              metodoPago: nuevoMetodo,
+              tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? (tarjetaId || null) : null,
+              tarjetaNombre: tObj?.nombre || null,
+              tarjetaBanco: tObj?.banco || null,
+              tarjetaColor: tObj?.color || null,
+              tarjetaDiaCorte: tObj?.diaCorte,
+              tarjetaDiaPago: tObj?.diaPago,
+            }
+          : null
+      );
+      toast.success('Forma de pago actualizada');
+      await refresh();
     } catch {
       toast.error('Error al actualizar forma de pago');
     }

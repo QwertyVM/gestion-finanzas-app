@@ -5,20 +5,21 @@ import React from 'react';
 interface DetalleMetodoPagoEditorProps {
   metodoSel: string;
   tarjetaSel: string;
-  aplicarFuturos: boolean;
+  aplicarFuturos?: boolean;
   savingMetodo: boolean;
   tarjetas: Array<{ id: string; nombre: string; banco: string }>;
   onChangeMetodoSel: (val: string) => void;
   onChangeTarjetaSel: (val: string) => void;
-  onChangeAplicarFuturos: (val: boolean) => void;
+  onChangeAplicarFuturos?: (val: boolean) => void;
   onSave: () => void;
   onCancel: () => void;
+  mostrarAplicarFuturos?: boolean;
 }
 
 export function DetalleMetodoPagoEditor({
   metodoSel,
   tarjetaSel,
-  aplicarFuturos,
+  aplicarFuturos = false,
   savingMetodo,
   tarjetas,
   onChangeMetodoSel,
@@ -26,6 +27,7 @@ export function DetalleMetodoPagoEditor({
   onChangeAplicarFuturos,
   onSave,
   onCancel,
+  mostrarAplicarFuturos = true,
 }: DetalleMetodoPagoEditorProps) {
   return (
     <div className="space-y-2.5 pt-1">
@@ -79,15 +81,17 @@ export function DetalleMetodoPagoEditor({
         </select>
       )}
 
-      <label className="flex items-center gap-2 text-[11px] text-muted-foreground cursor-pointer select-none">
-        <input
-          type="checkbox"
-          checked={aplicarFuturos}
-          onChange={(e) => onChangeAplicarFuturos(e.target.checked)}
-          className="rounded border-border"
-        />
-        <span>Aplicar también a meses futuros</span>
-      </label>
+      {mostrarAplicarFuturos && (
+        <label className="flex items-center gap-2 text-[11px] text-muted-foreground cursor-pointer select-none">
+          <input
+            type="checkbox"
+            checked={aplicarFuturos}
+            onChange={(e) => onChangeAplicarFuturos?.(e.target.checked)}
+            className="rounded border-border"
+          />
+          <span>Aplicar también a meses futuros</span>
+        </label>
+      )}
 
       <div className="flex items-center justify-end gap-1.5 pt-1">
         <button

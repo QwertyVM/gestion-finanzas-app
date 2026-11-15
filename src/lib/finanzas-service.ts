@@ -33,6 +33,8 @@ export interface EgresoConsolidado {
   tarjetaBanco?: string | null;
   tarjetaColor?: string | null;
   tarjetaUltimosCuatro?: string | null;
+  tarjetaDiaCorte?: number | null;
+  tarjetaDiaPago?: number | null;
   cuotaActual?: number | null;
   totalCuotas?: number | null;
   cuotasTotales?: number | null;
@@ -1104,6 +1106,8 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
         tarjetaBanco: t.banco,
         tarjetaColor: t.color,
         tarjetaUltimosCuatro: t.ultimosCuatro,
+        tarjetaDiaCorte: t.diaCorte,
+        tarjetaDiaPago: t.diaPago,
         cuotaActual: g.cuotaActual,
         totalCuotas: g.totalCuotas,
         notas: g.notas,

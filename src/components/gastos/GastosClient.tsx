@@ -363,14 +363,19 @@ export function GastosClient() {
             const err = await res.json();
             throw new Error(err.error || 'Error al cambiar clasificación');
           }
+          const resData = await res.json();
           toast.success(
             nuevaClasificacion === 'FIJO'
               ? 'Movido a Compras fijas'
               : 'Movido a Compras variables'
           );
-          setDetalleGasto((prev) =>
-            prev ? { ...prev, clasificacion: nuevaClasificacion } : null
-          );
+          if (nuevaClasificacion === 'FIJO') {
+            setDetalleGasto(null);
+          } else {
+            setDetalleGasto((prev) =>
+              prev ? { ...prev, clasificacion: nuevaClasificacion } : null
+            );
+          }
           await refresh();
         }}
         onGuardarConcepto={async (item, nuevoConcepto) => {
@@ -394,6 +399,40 @@ export function GastosClient() {
           setDetalleGasto((prev) => (prev ? { ...prev, notas: nuevasNotas } : null));
           toast.success('Notas actualizadas');
           await refresh();
+        }}
+        onCambiarMetodoPago={async (item, nuevoMetodo, tarjetaId) => {
+          try {
+            const res = await fetch('/api/gastos', {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                id: item.dbId || item.id,
+                metodoPago: nuevoMetodo,
+                tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? tarjetaId : null,
+              }),
+            });
+            if (!res.ok) throw new Error('Error al actualizar método de pago');
+            const tObj = tarjetas.find((t) => t.id === tarjetaId);
+            setDetalleGasto((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    tipo: nuevoMetodo === 'TARJETA_CREDITO' ? 'TARJETA' : 'DIRECTO',
+                    metodoPago: nuevoMetodo,
+                    tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? (tarjetaId || null) : null,
+                    tarjetaNombre: tObj?.nombre || null,
+                    tarjetaBanco: tObj?.banco || null,
+                    tarjetaColor: tObj?.color || null,
+                    tarjetaDiaCorte: tObj?.diaCorte,
+                    tarjetaDiaPago: tObj?.diaPago,
+                  }
+                : null
+            );
+            toast.success('Forma de pago actualizada');
+            await refresh();
+          } catch {
+            toast.error('Error al actualizar forma de pago');
+          }
         }}
         tarjetas={tarjetas}
         monedaSimbolo={moneda}

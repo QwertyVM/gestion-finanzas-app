@@ -73,5 +73,7 @@ export interface ModalDetalleGastoProps {
     banco: string;
     color: string;
     ultimosCuatro?: string | null;
+    diaCorte?: number;
+    diaPago?: number;
   }>;
 }

@@ -420,8 +420,8 @@ export function DashboardClient() {
     aplicarFuturos?: boolean
   ) => {
     try {
-      if (item.tipo === 'FIJO') {
-        await fetch('/api/fijos', {
+      if (item.tipo === 'FIJO' && item.clasificacion !== 'VARIABLE') {
+        const res = await fetch('/api/fijos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -431,6 +431,7 @@ export function DashboardClient() {
             tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? tarjetaId : null,
           }),
         });
+        if (!res.ok) throw new Error('Error al actualizar método de pago');
 
         if (aplicarFuturos) {
           await fetch('/api/fijos', {
@@ -444,8 +445,8 @@ export function DashboardClient() {
             }),
           });
         }
-      } else if (item.tipo === 'TARJETA' || item.tipo === 'DIRECTO') {
-        await fetch('/api/gastos', {
+      } else {
+        const res = await fetch('/api/gastos', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -454,6 +455,7 @@ export function DashboardClient() {
             tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? tarjetaId : null,
           }),
         });
+        if (!res.ok) throw new Error('Error al actualizar método de pago');
       }
 
       const tObj = resumen?.tarjetasCredito?.find((t) => t.id === tarjetaId);
@@ -461,11 +463,14 @@ export function DashboardClient() {
         prev
           ? {
               ...prev,
+              tipo: nuevoMetodo === 'TARJETA_CREDITO' ? 'TARJETA' : 'DIRECTO',
               metodoPago: nuevoMetodo,
               tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? (tarjetaId || null) : null,
               tarjetaNombre: tObj?.nombre || null,
               tarjetaBanco: tObj?.banco || null,
               tarjetaColor: tObj?.color || null,
+              tarjetaDiaCorte: tObj?.diaCorte,
+              tarjetaDiaPago: tObj?.diaPago,
             }
           : null
       );
@@ -498,6 +503,8 @@ export function DashboardClient() {
         throw new Error(errorData.error || 'Error al cambiar clasificación');
       }
 
+      const resData = await res.json();
+
       toast.success(
         nuevaClasificacion === 'FIJO'
           ? 'Movido a Compras fijas'
@@ -508,8 +515,13 @@ export function DashboardClient() {
         prev
           ? {
               ...prev,
+              dbId: (resData.tipo === 'CONVERTIDO_A_GASTO' && resData.nuevoGastoId)
+                ? resData.nuevoGastoId
+                : (resData.tipo === 'CONVERTIDO_A_FIJO' && resData.nuevoCostoFijoId)
+                ? resData.nuevoCostoFijoId
+                : prev.dbId,
               clasificacion: nuevaClasificacion,
-              tipo: prev.tipo === 'FIJO' && nuevaClasificacion === 'VARIABLE' ? 'DIRECTO' : prev.tipo,
+              tipo: nuevaClasificacion === 'FIJO' ? 'FIJO' : 'DIRECTO',
             }
           : null
       );
