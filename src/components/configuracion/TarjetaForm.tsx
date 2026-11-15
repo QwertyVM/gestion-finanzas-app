@@ -113,6 +113,7 @@ export function TarjetaForm({
             <label className="text-muted-foreground">Últimos 4 Dígitos (opcional)</label>
             <input
               type="text"
+              inputMode="numeric"
               maxLength={4}
               placeholder="ej. 4589"
               value={ultimosCuatro}

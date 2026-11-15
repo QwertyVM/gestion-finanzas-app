@@ -487,6 +487,7 @@ export function DynamicRecordModal() {
                 ref={amountInputRef}
                 type="number"
                 step="0.01"
+                inputMode="decimal"
                 required
                 placeholder="0.00"
                 value={montoInput}

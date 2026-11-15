@@ -71,7 +71,7 @@ export function PerfilParametrosForm({
             <DollarSign className="w-3.5 h-3.5 text-emerald-500" />
             <span>Sueldo Base Mensual ({moneda})</span>
           </label>
-          <input type="number" step="0.01" min="0" required value={sueldoBase} onChange={(e) => onSueldoBaseChange(e.target.value)} className={monoClass} />
+          <input type="number" step="0.01" min="0" inputMode="decimal" required value={sueldoBase} onChange={(e) => onSueldoBaseChange(e.target.value)} className={monoClass} />
         </div>
 
         <div>
@@ -79,7 +79,7 @@ export function PerfilParametrosForm({
             <Target className="w-3.5 h-3.5 text-indigo-500" />
             <span>Meta de Ahorro Mensual ({moneda})</span>
           </label>
-          <input type="number" step="0.01" min="0" required value={metaAhorro} onChange={(e) => onMetaAhorroChange(e.target.value)} className={monoClass} />
+          <input type="number" step="0.01" min="0" inputMode="decimal" required value={metaAhorro} onChange={(e) => onMetaAhorroChange(e.target.value)} className={monoClass} />
         </div>
 
         <div>
@@ -87,7 +87,7 @@ export function PerfilParametrosForm({
             <Calendar className="w-3.5 h-3.5 text-blue-500" />
             <span>Día de Pago del Sueldo</span>
           </label>
-          <input type="number" min="1" max="31" required value={diaPago} onChange={(e) => onDiaPagoChange(e.target.value)} className={monoClass} />
+          <input type="number" min="1" max="31" inputMode="numeric" required value={diaPago} onChange={(e) => onDiaPagoChange(e.target.value)} className={monoClass} />
         </div>
 
         <div>
@@ -95,7 +95,7 @@ export function PerfilParametrosForm({
             <RefreshCw className="w-3.5 h-3.5 text-amber-500" />
             <span>Tipo de Cambio USD de Referencia</span>
           </label>
-          <input type="number" step="0.01" min="1" required value={tipoCambio} onChange={(e) => onTipoCambioChange(e.target.value)} className={monoClass} />
+          <input type="number" step="0.01" min="1" inputMode="decimal" required value={tipoCambio} onChange={(e) => onTipoCambioChange(e.target.value)} className={monoClass} />
         </div>
 
         <div className="sm:col-span-2">

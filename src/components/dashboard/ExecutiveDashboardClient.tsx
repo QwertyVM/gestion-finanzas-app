@@ -1123,7 +1123,58 @@ export function ExecutiveDashboardClient() {
                 </div>
 
                 {/* Lista de transacciones de esta categoría */}
-                <div className="overflow-x-auto">
+                {/* Móvil: Tarjetas táctiles */}
+                <div className="md:hidden divide-y divide-border/40">
+                  {categoriaSeleccionada.items.map((item) => (
+                    <div key={`mob-cat-item-${item.id}`} className="p-3 space-y-1.5 hover:bg-muted/20 transition">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span
+                              className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold border ${
+                                item.clasificacion === 'FIJO'
+                                  ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300'
+                                  : item.clasificacion === 'PRESTAMO'
+                                  ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
+                                  : item.clasificacion === 'CUOTA'
+                                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                  : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300'
+                              }`}
+                            >
+                              {item.badgeLabel}
+                            </span>
+                            <span className="text-[10px] text-muted-foreground truncate">
+                              {item.tarjetaNombre ? `Tarjeta · ${item.tarjetaNombre}` : 'Fin de mes'}
+                            </span>
+                          </div>
+                          <h4 className="font-semibold text-xs text-foreground truncate">{item.concepto}</h4>
+                          {item.subtexto && (
+                            <div className="text-[11px] text-muted-foreground truncate">{item.subtexto}</div>
+                          )}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <span className="font-mono font-bold text-xs text-foreground tabular-nums block">
+                            {formatMoney(item.monto, moneda)}
+                          </span>
+                          <span
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-medium mt-1 ${
+                              item.estado === 'PAGADO'
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                : item.estado === 'ADELANTADO'
+                                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                            }`}
+                          >
+                            {item.estado === 'PAGADO' ? 'Pagado' : item.estado === 'ADELANTADO' ? 'Adelantado' : 'Pendiente'}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Desktop: Tabla estructurada */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full text-left text-xs border-collapse">
                     <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                       <tr>
@@ -1217,7 +1268,48 @@ export function ExecutiveDashboardClient() {
               </p>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Móvil: Lista de categorías */}
+            <div className="md:hidden divide-y divide-border/40">
+              {todasCategorias.map((c) => (
+                <div
+                  key={`mob-cat-${c.id}`}
+                  onClick={() => setCategoriaSeleccionadaId(c.id === categoriaSeleccionadaId ? null : c.id)}
+                  className="p-3.5 space-y-2 hover:bg-muted/20 transition cursor-pointer"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="w-3 h-3 rounded-full shrink-0"
+                        style={{ backgroundColor: c.color }}
+                      />
+                      <span className="font-semibold text-foreground text-xs">{c.nombre}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="font-mono font-bold text-xs text-foreground tabular-nums block">
+                        {formatMoney(c.totalMonto, moneda)}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground block">
+                        {c.porcentaje}% del mes
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/30">
+                    <div className="flex items-center gap-2 text-[10px] flex-wrap">
+                      {c.desgloseClasificacion.fijo > 0 && <span>Fijos: {formatMoney(c.desgloseClasificacion.fijo, moneda)}</span>}
+                      {c.desgloseClasificacion.cuotas > 0 && <span>Cuotas: {formatMoney(c.desgloseClasificacion.cuotas, moneda)}</span>}
+                      {c.desgloseClasificacion.variables > 0 && <span>Var: {formatMoney(c.desgloseClasificacion.variables, moneda)}</span>}
+                    </div>
+                    <span className="text-[10px] font-mono font-semibold text-emerald-600 dark:text-emerald-400 shrink-0">
+                      {c.porcentajePagado}% pag.
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: Matriz comparativa */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                   <tr>
@@ -1584,7 +1676,62 @@ export function ExecutiveDashboardClient() {
             </div>
 
             {/* Tabla de Egresos por Tag */}
-            <div className="overflow-x-auto">
+            {/* Móvil: Lista de egresos por tag */}
+            <div className="md:hidden divide-y divide-border/40">
+              {egresosFiltradosPorTag.map((item) => (
+                <div key={`mob-tag-item-${item.id}`} className="p-3 space-y-1.5 hover:bg-muted/20 transition">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 mb-0.5">
+                        <span
+                          className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold border ${
+                            item.clasificacion === 'FIJO'
+                              ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300'
+                              : item.clasificacion === 'PRESTAMO'
+                              ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
+                              : item.clasificacion === 'CUOTA'
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300'
+                              : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300'
+                          }`}
+                        >
+                          {item.badgeLabel}
+                        </span>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground truncate">
+                          <span
+                            className="w-1.5 h-1.5 rounded-full shrink-0"
+                            style={{ backgroundColor: item.categoriaColor }}
+                          />
+                          <span className="truncate">{item.categoria}</span>
+                        </div>
+                      </div>
+                      <h4 className="font-semibold text-xs text-foreground truncate">{item.concepto}</h4>
+                      {item.subtexto && (
+                        <div className="text-[11px] text-muted-foreground truncate">{item.subtexto}</div>
+                      )}
+                    </div>
+                    <div className="text-right shrink-0">
+                      <span className="font-mono font-bold text-xs text-foreground tabular-nums block">
+                        {formatMoney(item.monto, moneda)}
+                      </span>
+                      <span
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-medium mt-1 ${
+                          item.estado === 'PAGADO'
+                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                            : item.estado === 'ADELANTADO'
+                            ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                            : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                        }`}
+                      >
+                        {item.estado === 'PAGADO' ? 'Pagado' : item.estado === 'ADELANTADO' ? 'Adelantado' : 'Pendiente'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop: Tabla de Egresos por Tag */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                   <tr>
