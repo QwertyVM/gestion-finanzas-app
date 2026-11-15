@@ -79,6 +79,14 @@ export function useDetalleGasto(
           body: JSON.stringify({ id: targetId, tipo: item.tipo, nuevaClasificacion: nueva, periodo }),
         });
         if (!res.ok) throw new Error('Error al cambiar clasificación');
+        const resData = await res.json();
+        if (resData.tipo === 'CONVERTIDO_A_FIJO' && resData.nuevoCostoFijoId) {
+          item.tipo = 'FIJO';
+          item.dbId = resData.nuevoCostoFijoId;
+        } else if (resData.tipo === 'CONVERTIDO_A_GASTO' && resData.nuevoGastoId) {
+          item.tipo = 'DIRECTO';
+          item.dbId = resData.nuevoGastoId;
+        }
         toast.success(nueva === 'FIJO' ? 'Movido a Compras fijas' : 'Movido a Compras variables');
         await refresh();
       }

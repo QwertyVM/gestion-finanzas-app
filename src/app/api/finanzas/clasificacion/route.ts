@@ -37,6 +37,47 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Gasto no encontrado' }, { status: 404 });
       }
 
+      // Si se quiere cambiar a FIJO: se convierte formalmente a CostoFijo para que viva en la misma tabla
+      if (nuevaClasificacion === 'FIJO') {
+        const periodoDestino = periodo || gasto.periodoPago || new Date().toISOString().slice(0, 7);
+        const finalMetodoPago = gasto.metodoPago || 'EFECTIVO_DEBITO';
+
+        const nuevoCostoFijo = await prisma.costoFijo.create({
+          data: {
+            usuario: { connect: { id: user.id } },
+            concepto: gasto.concepto,
+            monto: gasto.monto,
+            diaVencimiento: 30,
+            mesInicio: periodoDestino,
+            categoria: gasto.categoriaId ? { connect: { id: gasto.categoriaId } } : undefined,
+            metodoPago: finalMetodoPago,
+            tarjeta: gasto.tarjetaId ? { connect: { id: gasto.tarjetaId } } : undefined,
+            activo: true,
+            registrosMes: {
+              create: {
+                periodo: periodoDestino,
+                monto: gasto.monto,
+                estado: gasto.estado,
+                metodoPago: finalMetodoPago,
+                tarjetaId: gasto.tarjetaId,
+                fechaPagoReal: gasto.fechaPagoReal,
+                notas: gasto.notas,
+              },
+            },
+          },
+        });
+
+        // Eliminar el gasto de la tabla Gasto
+        await prisma.gasto.delete({ where: { id: gasto.id } });
+
+        return NextResponse.json({
+          success: true,
+          tipo: 'CONVERTIDO_A_FIJO',
+          nuevoCostoFijoId: nuevoCostoFijo.id,
+          data: nuevoCostoFijo,
+        });
+      }
+
       const gastoActualizado = await prisma.gasto.update({
         where: { id },
         data: {
