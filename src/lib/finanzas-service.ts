@@ -424,29 +424,16 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
     periodos12.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   }
 
-  // Resolver usuario activo (Víctor por defecto o el especificado)
+  // Resolver usuario activo para la instancia financiera
   let usuario = null;
   if (usuarioId) {
     usuario = await prisma.usuario.findUnique({ where: { id: usuarioId } });
   }
   if (!usuario) {
-    usuario =
-      (await prisma.usuario.findFirst({ where: { slug: 'victor' } })) ||
-      (await prisma.usuario.findFirst());
+    usuario = await prisma.usuario.findFirst({ where: { activo: true }, orderBy: { createdAt: 'asc' } });
   }
   if (!usuario) {
-    usuario = await prisma.usuario.create({
-      data: {
-        nombre: 'Víctor',
-        slug: 'victor',
-        color: '#2563eb',
-        avatar: 'User',
-        sueldoBaseMensual: 8200.00,
-        diaPagoSueldo: 30,
-        tipoCambioUSD: 4.00,
-        metaAhorroMensual: 1000.00,
-      },
-    });
+    throw new Error('Usuario no encontrado para generar el resumen financiero');
   }
   const uId = usuario.id;
 
@@ -1594,10 +1581,9 @@ export async function registrarNuevoGasto(params: {
     notas,
   } = params;
 
-  let uId = usuarioId;
+  const uId = usuarioId;
   if (!uId) {
-    const victor = await prisma.usuario.findFirst({ where: { slug: 'victor' } });
-    uId = victor?.id;
+    throw new Error('usuarioId es requerido para registrar un gasto');
   }
 
   const fecha = typeof fechaGasto === 'string' ? new Date(fechaGasto) : fechaGasto;
