@@ -8,7 +8,7 @@ export async function GET() {
       orderBy: { createdAt: 'asc' },
     });
 
-    // Si aún no existen usuarios, creamos automáticamente a Víctor y Jamile
+    // Si aún no existen usuarios, creamos automáticamente a Víctor
     if (usuarios.length === 0) {
       const victor = await prisma.usuario.create({
         data: {
@@ -23,20 +23,7 @@ export async function GET() {
         },
       });
 
-      const jamile = await prisma.usuario.create({
-        data: {
-          nombre: 'Jamile',
-          slug: 'jamile',
-          color: '#ec4899',
-          avatar: 'Heart',
-          sueldoBaseMensual: 5000.00,
-          diaPagoSueldo: 30,
-          tipoCambioUSD: 4.00,
-          metaAhorroMensual: 1000.00,
-        },
-      });
-
-      usuarios = [victor, jamile];
+      usuarios = [victor];
     }
 
     return NextResponse.json(usuarios, {

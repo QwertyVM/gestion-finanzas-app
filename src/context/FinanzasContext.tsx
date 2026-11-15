@@ -16,6 +16,9 @@ export interface UsuarioItem {
   diaPagoSueldo: number;
   tipoCambioUSD?: number;
   metaAhorroMensual?: number;
+  email?: string | null;
+  googleId?: string | null;
+  pin?: string | null;
 }
 
 export type TipoRecordModal = 'GASTO' | 'INGRESO' | 'FIJO' | 'PRESTAMO';
@@ -68,18 +71,6 @@ export const PERFILES_PREDETERMINADOS: UsuarioItem[] = [
     avatar: 'User',
     monedaSimbolo: 'S/',
     sueldoBaseMensual: 8200.00,
-    diaPagoSueldo: 30,
-    tipoCambioUSD: 4.00,
-    metaAhorroMensual: 1000.00,
-  },
-  {
-    id: '63971acd-ef2d-4fd2-b5a8-a0da50fceaac',
-    nombre: 'Jamile',
-    slug: 'jamile',
-    color: '#ec4899',
-    avatar: 'Heart',
-    monedaSimbolo: 'S/',
-    sueldoBaseMensual: 5000.00,
     diaPagoSueldo: 30,
     tipoCambioUSD: 4.00,
     metaAhorroMensual: 1000.00,

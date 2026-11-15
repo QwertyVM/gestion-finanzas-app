@@ -25,6 +25,12 @@ export async function POST(request: NextRequest) {
       if (usuario.pin.trim() !== String(pin).trim()) {
         return NextResponse.json({ error: 'PIN incorrecto. Inténtalo de nuevo.' }, { status: 401 });
       }
+    } else if (pin) {
+      // Si el usuario no tenía PIN, guardar el ingresado
+      usuario = await prisma.usuario.update({
+        where: { id: usuario.id },
+        data: { pin: String(pin).trim() },
+      });
     }
 
     // Crear sesión criptográfica en la base de datos
@@ -43,6 +49,8 @@ export async function POST(request: NextRequest) {
       diaPagoSueldo: usuario.diaPagoSueldo,
       tipoCambioUSD: Number(usuario.tipoCambioUSD || 4.0),
       metaAhorroMensual: Number(usuario.metaAhorroMensual || 1000.0),
+      email: usuario.email,
+      requiereAsociacion: !usuario.email,
     };
 
     const response = NextResponse.json({ success: true, usuario: safeUser });

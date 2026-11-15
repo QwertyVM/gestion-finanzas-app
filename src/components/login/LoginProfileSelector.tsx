@@ -2,7 +2,7 @@
 
 import React from 'react';
 import type { UsuarioItem } from '@/context/FinanzasContext';
-import { Wallet, Check, User, Heart, KeyRound, Loader2 } from 'lucide-react';
+import { Wallet, Check, User, Heart, KeyRound, Loader2, MailCheck, AlertCircle } from 'lucide-react';
 import { GoogleSignInButton } from './GoogleSignInButton';
 
 interface LoginProfileSelectorProps {
@@ -25,23 +25,24 @@ export function LoginProfileSelector({
           <Wallet className="w-7 h-7" />
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-foreground">
-          Iniciar Sesión
+          Cuentas Existentes
         </h1>
         <p className="text-xs sm:text-sm text-muted-foreground max-w-xs mx-auto">
-          Selecciona tu perfil financiero e ingresa tu PIN de acceso personal.
+          Selecciona tu perfil financiero para ingresar con tu PIN o con Google.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-2">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 pt-1">
         {usuarios.length === 0 ? (
           <div className="col-span-full py-8 text-center text-xs text-muted-foreground flex flex-col items-center justify-center gap-2">
             <Loader2 className="w-5 h-5 animate-spin text-indigo-500" />
-            <span>Cargando perfiles...</span>
+            <span>Cargando cuentas...</span>
           </div>
         ) : (
           usuarios.map((u) => {
             const isVictor = u.slug === 'victor';
             const isSelected = usuarioActual?.id === u.id;
+            const tieneCorreo = Boolean(u.email || u.googleId);
 
             return (
               <button
@@ -77,9 +78,17 @@ export function LoginProfileSelector({
                   <h2 className="font-extrabold text-base text-foreground group-hover:text-indigo-400 transition-colors">
                     {u.nombre}
                   </h2>
-                  <span className="text-[11px] font-semibold text-muted-foreground block">
-                    {isVictor ? 'Cuenta Principal' : 'Cuenta Personal'}
-                  </span>
+                  <div className="pt-0.5">
+                    {tieneCorreo ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                        <MailCheck className="w-2.5 h-2.5" /> Asociado a correo
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                        <AlertCircle className="w-2.5 h-2.5" /> Sin correo vinculado
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div className="mt-3 w-full pt-2.5 border-t border-border/60 flex items-center justify-center gap-1 text-xs font-bold text-foreground/80 group-hover:text-foreground">
@@ -92,9 +101,8 @@ export function LoginProfileSelector({
         )}
       </div>
 
-      {/* Opción de ingreso con Google */}
       <div className="pt-2">
-        <div className="relative my-3">
+        <div className="relative my-2.5">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-border/70" />
           </div>
@@ -106,12 +114,6 @@ export function LoginProfileSelector({
         </div>
 
         <GoogleSignInButton from={fromPath} />
-      </div>
-
-      <div className="pt-1 text-center">
-        <span className="text-[11px] text-muted-foreground">
-          Acceso biométrico, PIN criptográfico o autenticación única con Google.
-        </span>
       </div>
     </>
   );

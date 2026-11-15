@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { createDatabaseSession } from '@/lib/auth';
+import { eliminarJamileSiVacio } from '@/lib/user-cleanup';
 
 export async function GET(request: NextRequest) {
   const url = new URL(request.url);
@@ -134,6 +135,9 @@ export async function GET(request: NextRequest) {
     if (!usuario || !usuario.activo) {
       return NextResponse.redirect(new URL('/login?error=user_not_found', origin));
     }
+
+    // Posterior a la asociación con el correo, eliminar la cuenta de Jamile
+    await eliminarJamileSiVacio();
 
     // 4. Crear sesión criptográfica en la BD
     const userAgent = request.headers.get('user-agent') || undefined;
