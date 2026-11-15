@@ -12,6 +12,7 @@ interface ResumenHeroKpisProps {
   totalIngresos: number;
   totalEgresos: number;
   totalPendiente: number;
+  totalAdelantado?: number;
   cantidadIngresos: number;
   moneda: string;
   esMesEspecial: boolean;
@@ -27,6 +28,7 @@ export function ResumenHeroKpis({
   totalIngresos,
   totalEgresos,
   totalPendiente,
+  totalAdelantado = 0,
   cantidadIngresos,
   moneda,
   esMesEspecial,
@@ -130,9 +132,14 @@ export function ResumenHeroKpis({
             <span className="text-xl font-bold text-foreground font-mono mt-0.5 block">
               {formatMoney(totalEgresos, moneda)}
             </span>
-            <span className="text-xs text-muted-foreground">
-              {formatMoney(totalPendiente, moneda)} pendientes
-            </span>
+            <div className="text-xs text-muted-foreground flex items-center gap-1.5 flex-wrap mt-0.5">
+              <span>{formatMoney(totalPendiente, moneda)} pendientes</span>
+              {totalAdelantado > 0 && (
+                <span className="text-amber-600 dark:text-amber-400 font-semibold inline-flex items-center gap-0.5">
+                  · ⚡ {formatMoney(totalAdelantado, moneda)} con otro dinero
+                </span>
+              )}
+            </div>
           </div>
         </div>
       </div>

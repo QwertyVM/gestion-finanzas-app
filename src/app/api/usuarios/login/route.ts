@@ -9,7 +9,8 @@ export async function POST(request: NextRequest) {
     let usuario = null;
     if (usuarioId) {
       usuario = await prisma.usuario.findUnique({ where: { id: usuarioId } });
-    } else if (slug) {
+    }
+    if (!usuario && slug) {
       usuario = await prisma.usuario.findUnique({ where: { slug } });
     }
 

@@ -463,9 +463,14 @@ export function ExecutiveDashboardClient() {
               <div className="text-2xl font-semibold tracking-tight text-foreground font-mono">
                 {formatMoney(totalEgresos, moneda)}
               </div>
-              <span className="text-[11px] text-muted-foreground block">
-                {formatMoney(resumen.totalPendiente, moneda)} pendientes
-              </span>
+              <div className="text-[11px] text-muted-foreground flex items-center gap-1 flex-wrap">
+                <span>{formatMoney(resumen.totalPendiente, moneda)} pendientes</span>
+                {resumen.totalAdelantado > 0 && (
+                  <span className="text-amber-600 dark:text-amber-400 font-semibold">
+                    · ⚡ {formatMoney(resumen.totalAdelantado, moneda)} adelantado
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="bg-card border border-border/80 rounded-xl p-4 shadow-xs space-y-1">
@@ -476,7 +481,7 @@ export function ExecutiveDashboardClient() {
                 {formatMoney(disponibleNeto, moneda)}
               </div>
               <span className="text-[11px] text-muted-foreground block">
-                Ingresos menos egresos
+                {resumen.totalAdelantado > 0 ? 'Sueldo libre (sin descontar pagos adelantados)' : 'Ingresos menos egresos'}
               </span>
             </div>
 

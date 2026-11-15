@@ -12,6 +12,7 @@
 * **Vencimientos:** No existe "día de vencimiento" configurable por ítem. Todos los compromisos se liquidan a fin de mes. No añadir columnas de vencimiento a las tablas de finanzas del mes.
 * **Clasificación en Tablas:** Dado que las listas ya están agrupadas por secciones (Costos Fijos, Préstamos, Compras en Cuotas, Gastos Variables), evitar columnas redundantes de "Clasificación" dentro de esas secciones.
 
-## 3. Calidad de Código
+## 3. Calidad de Código y Validación
 * TypeScript estricto con interfaces claras para props.
 * Mantener siempre `npx tsc --noEmit` con 0 errores.
+* **PROHIBIDO ejecutar `npm run build` o `next build` para verificar cambios:** Ejecutar `next build` mientras el servidor `next dev` está activo sobreescribe la carpeta `.next/` con artefactos de producción y borra las rutas de desarrollo de los CSS (`layout.css`). Esto genera un error 404 en los estilos y causa que la aplicación se muestre en texto plano sin Tailwind (fuente serif / Times New Roman). Para validar que no haya errores de compilación, usar **ÚNICAMENTE** `npx tsc --noEmit`.

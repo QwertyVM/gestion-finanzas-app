@@ -72,7 +72,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { id, monto, concepto, estado, notas } = await request.json();
+    const { id, monto, concepto, estado, notas, clasificacion } = await request.json();
     const updateData: any = {};
     if (monto !== undefined) updateData.monto = parseFloat(monto);
     if (concepto !== undefined) updateData.concepto = concepto;
@@ -81,6 +81,9 @@ export async function PATCH(request: NextRequest) {
       updateData.fechaPagoReal = (estado === 'PAGADO' || estado === 'ADELANTADO') ? new Date() : null;
     }
     if (notas !== undefined) updateData.notas = notas;
+    if (clasificacion !== undefined) {
+      updateData.clasificacion = clasificacion;
+    }
 
     const res = await prisma.gasto.updateMany({
       where: { id, usuarioId: user.id },

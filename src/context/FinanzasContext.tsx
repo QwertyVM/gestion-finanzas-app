@@ -58,6 +58,36 @@ interface FinanzasContextType {
   closeRecordModal: () => void;
 }
 
+// Perfiles conocidos predeterminados para renderizado instantáneo (0ms) sin esperar cold start
+export const PERFILES_PREDETERMINADOS: UsuarioItem[] = [
+  {
+    id: '10d544b8-e9f6-41a0-a660-6abee5ac6d4a',
+    nombre: 'Víctor',
+    slug: 'victor',
+    color: '#2563eb',
+    avatar: 'User',
+    monedaSimbolo: 'S/',
+    sueldoBaseMensual: 8200.00,
+    diaPagoSueldo: 30,
+    tipoCambioUSD: 4.00,
+    metaAhorroMensual: 1000.00,
+  },
+  {
+    id: '63971acd-ef2d-4fd2-b5a8-a0da50fceaac',
+    nombre: 'Jamile',
+    slug: 'jamile',
+    color: '#ec4899',
+    avatar: 'Heart',
+    monedaSimbolo: 'S/',
+    sueldoBaseMensual: 5000.00,
+    diaPagoSueldo: 30,
+    tipoCambioUSD: 4.00,
+    metaAhorroMensual: 1000.00,
+  },
+];
+
+const CACHE_KEY_USUARIOS = 'finanzapp_cached_usuarios';
+
 const FinanzasContext = createContext<FinanzasContextType | undefined>(undefined);
 
 export function FinanzasProvider({ children }: { children: React.ReactNode }) {
@@ -65,16 +95,29 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
   const [resumen, setResumen] = useState<ResumenFinanciero | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Multiusuario
-  const [usuarios, setUsuarios] = useState<UsuarioItem[]>([]);
+  // Multiusuario - Inicializa con perfiles predeterminados para 0ms de espera visual
+  const [usuarios, setUsuarios] = useState<UsuarioItem[]>(PERFILES_PREDETERMINADOS);
   const [usuarioActual, setUsuarioActual] = useState<UsuarioItem | null>(null);
   const [isSelectorUsuarioOpen, setIsSelectorUsuarioOpen] = useState<boolean>(false);
 
-  // Cargar periodo guardado al iniciar
+  // Cargar periodo guardado y caché de usuarios al iniciar
   useEffect(() => {
-    const saved = typeof window !== 'undefined' ? localStorage.getItem('finanzapp_periodo') : null;
-    if (saved && /^\d{4}-\d{2}$/.test(saved)) {
-      setPeriodoState(saved);
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('finanzapp_periodo');
+      if (saved && /^\d{4}-\d{2}$/.test(saved)) {
+        setPeriodoState(saved);
+      }
+      try {
+        const cachedUsers = localStorage.getItem(CACHE_KEY_USUARIOS);
+        if (cachedUsers) {
+          const parsed = JSON.parse(cachedUsers);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setUsuarios(parsed);
+          }
+        }
+      } catch (err) {
+        console.error('Error al restaurar usuarios en caché:', err);
+      }
     }
   }, []);
 
@@ -133,7 +176,12 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
         let list: UsuarioItem[] = [];
         if (usersRes.ok) {
           list = await usersRes.json();
-          setUsuarios(list);
+          if (Array.isArray(list) && list.length > 0) {
+            setUsuarios(list);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem(CACHE_KEY_USUARIOS, JSON.stringify(list));
+            }
+          }
         }
 
         if (meRes.ok) {
@@ -174,14 +222,14 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const cambiarUsuario = useCallback(async (usuarioId: string, pin?: string): Promise<boolean> => {
-    const user = usuarios.find((u) => u.id === usuarioId);
+    const user = usuarios.find((u) => u.id === usuarioId || u.slug === usuarioId);
     if (!user) return false;
 
     try {
       const res = await fetch('/api/usuarios/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ usuarioId: user.id, pin }),
+        body: JSON.stringify({ usuarioId: user.id, slug: user.slug, pin }),
       });
 
       const data = await res.json();
@@ -190,15 +238,16 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
         return false;
       }
 
-      setUsuarioActual(user);
+      const activeUser = data.usuario || user;
+      setUsuarioActual(activeUser);
       if (typeof window !== 'undefined') {
-        localStorage.setItem('finanzapp_usuario_id', user.id);
+        localStorage.setItem('finanzapp_usuario_id', activeUser.id);
         localStorage.removeItem('finanzapp_logged_out');
-        document.cookie = `finanzapp_usuario_id=${user.id}; Path=/; max-age=31536000; SameSite=Lax`;
+        document.cookie = `finanzapp_usuario_id=${activeUser.id}; Path=/; max-age=31536000; SameSite=Lax`;
         document.cookie = `finanzapp_logged_out=; Path=/; max-age=0; SameSite=Lax`;
       }
       setIsSelectorUsuarioOpen(false);
-      toast.success(`Sesión iniciada: ${user.nombre}`);
+      toast.success(`Sesión iniciada: ${activeUser.nombre}`);
       await fetchResumen();
       return true;
     } catch (err: any) {

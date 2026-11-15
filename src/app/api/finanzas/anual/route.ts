@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
       }),
       prisma.gasto.findMany({
         where: { periodoPago: { startsWith: anioPrefijo }, usuarioId: uId },
-        select: { monto: true, periodoPago: true },
+        select: { monto: true, periodoPago: true, estado: true },
       }),
     ]);
 
@@ -81,8 +81,14 @@ export async function GET(request: NextRequest) {
       const gastosMes = gastosYear.filter((g) => g.periodoPago === periodo);
       const totalGastos = gastosMes.reduce((acc, g) => acc + Number(g.monto), 0);
 
+      const adelantoFijos = fijosMes.filter((r) => r.estado === 'ADELANTADO').reduce((acc, r) => acc + Number(r.monto), 0);
+      const adelantoCuotas = cuotasMes.filter((c) => c.estado === 'ADELANTADO').reduce((acc, c) => acc + Number(c.monto), 0);
+      const adelantoGastos = gastosMes.filter((g) => g.estado === 'ADELANTADO').reduce((acc, g) => acc + Number(g.monto), 0);
+      const totalAdelantado = adelantoFijos + adelantoCuotas + adelantoGastos;
+
       const totalEgresos = totalFijosMes + totalPrestamos + totalGastos;
-      const disponible = totalIngresos - totalEgresos;
+      const egresosSueldo = Math.max(0, totalEgresos - totalAdelantado);
+      const disponible = totalIngresos - egresosSueldo;
 
       resultado.push({
         periodo,

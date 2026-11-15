@@ -7,7 +7,8 @@
     "build": "prisma generate && next build",
     "start": "next start -p 3005",
     "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "db:backup": "node scripts/backup-db.mjs"
   },
   "dependencies": {
     "@prisma/client": "^6.4.1",

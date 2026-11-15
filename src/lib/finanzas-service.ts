@@ -915,7 +915,11 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
   }
 
   const totalEgresos = totalCostosFijos + totalPrestamos + totalTarjetas + totalGastosDirectos;
-  const dineroDisponibleBruto = totalIngresos - totalEgresos;
+  // Egresos a liquidar con los ingresos de este mes (Pendientes + Pagados con sueldo).
+  // Los compromisos en estado ADELANTADO se pagaron con otro dinero (ahorros o fondos previos),
+  // por lo que no restan del dinero disponible del sueldo de este mes.
+  const egresosSueldoMes = Math.max(0, totalEgresos - totalAdelantado);
+  const dineroDisponibleBruto = totalIngresos - egresosSueldoMes;
   const metaAhorro = Number(config.metaAhorroMensual || 1000);
   const dineroDisponibleNeto = dineroDisponibleBruto;
 

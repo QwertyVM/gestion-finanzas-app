@@ -39,6 +39,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useFinanzas } from '@/context/FinanzasContext';
+import { DetalleClasificacionSelector } from './detalle/DetalleClasificacionSelector';
 
 export interface DetalleItemData {
   id: string;
@@ -100,6 +101,12 @@ interface ModalDetalleGastoProps {
     tarjetaId?: string | null,
     aplicarFuturos?: boolean
   ) => Promise<void>;
+  onCambiarClasificacion?: (
+    item: DetalleItemData,
+    nuevaClasificacion: 'FIJO' | 'VARIABLE'
+  ) => Promise<void>;
+  onGuardarConcepto?: (item: DetalleItemData, nuevoConcepto: string) => Promise<void>;
+  onGuardarNotas?: (item: DetalleItemData, nuevasNotas: string) => Promise<void>;
   monedaSimbolo?: string;
   tarjetas?: Array<{
     id: string;
@@ -117,6 +124,9 @@ export function ModalDetalleGasto({
   onGuardarMonto,
   onEliminarGasto,
   onCambiarMetodoPago,
+  onCambiarClasificacion,
+  onGuardarConcepto,
+  onGuardarNotas,
   monedaSimbolo = 'S/',
   tarjetas = [],
 }: ModalDetalleGastoProps) {
@@ -128,6 +138,24 @@ export function ModalDetalleGasto({
   const [editandoMontoTotal, setEditandoMontoTotal] = useState(false);
   const [nuevoMontoTotal, setNuevoMontoTotal] = useState(item?.montoTotal ? item.montoTotal.toString() : '');
   const [savingMontoTotal, setSavingMontoTotal] = useState(false);
+
+  // Edición Concepto / Descripción
+  const [conceptoLocal, setConceptoLocal] = useState(item?.concepto || '');
+  const [editandoConcepto, setEditandoConcepto] = useState(false);
+  const [conceptoEditInput, setConceptoEditInput] = useState(item?.concepto || '');
+  const [savingConcepto, setSavingConcepto] = useState(false);
+
+  // Edición Notas / Observaciones
+  const [notasLocal, setNotasLocal] = useState(item?.notas || '');
+  const [editandoNotas, setEditandoNotas] = useState(false);
+  const [notasEditInput, setNotasEditInput] = useState(item?.notas || '');
+  const [savingNotas, setSavingNotas] = useState(false);
+
+  // Clasificación (Fijo vs Variable)
+  const [clasificacionLocal, setClasificacionLocal] = useState<ClasificacionEgreso>(
+    item?.clasificacion || (item ? obtenerClasificacionEgreso(item) : 'VARIABLE')
+  );
+  const [updatingClasificacion, setUpdatingClasificacion] = useState(false);
 
   // Edición de cuotas restantes / totales / cuota actual ("cuántas voy pagando")
   const [editandoCuotaActual, setEditandoCuotaActual] = useState(false);
@@ -156,8 +184,15 @@ export function ModalDetalleGasto({
 
   React.useEffect(() => {
     if (item) {
+      setClasificacionLocal(item.clasificacion || obtenerClasificacionEgreso(item));
       setMontoEditInput(item.monto.toString());
       setEditandoMonto(false);
+      setConceptoLocal(item.concepto || '');
+      setConceptoEditInput(item.concepto || '');
+      setEditandoConcepto(false);
+      setNotasLocal(item.notas || '');
+      setNotasEditInput(item.notas || '');
+      setEditandoNotas(false);
       const isUsd = item.monedaOriginal === 'USD' || item.concepto.includes('$');
       setModoEdicion(isUsd ? 'DOLARES' : 'SOLES');
       if (item.montoOriginal) {
@@ -183,6 +218,115 @@ export function ModalDetalleGasto({
       setAplicarMetodoAFuturos(false);
     }
   }, [item, tarjetas]);
+
+  const handleClasificacionChange = async (nuevaClasificacion: 'FIJO' | 'VARIABLE') => {
+    if (!item || updatingClasificacion || clasificacionLocal === nuevaClasificacion) return;
+    try {
+      setUpdatingClasificacion(true);
+      if (onCambiarClasificacion) {
+        await onCambiarClasificacion(item, nuevaClasificacion);
+      } else {
+        const targetId = item.dbId || item.id.replace('fijo-', '').replace('prestamo-', '');
+        const res = await fetch('/api/finanzas/clasificacion', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id: targetId,
+            tipo: item.tipo,
+            nuevaClasificacion,
+            periodo,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          throw new Error(err.error || 'Error al cambiar clasificación');
+        }
+        toast.success(
+          nuevaClasificacion === 'FIJO'
+            ? 'Movido a Compras fijas'
+            : 'Movido a Compras variables'
+        );
+        await refresh();
+      }
+      setClasificacionLocal(nuevaClasificacion);
+    } catch (err: any) {
+      toast.error(err.message || 'Error al cambiar clasificación');
+    } finally {
+      setUpdatingClasificacion(false);
+    }
+  };
+
+  const handleGuardarConcepto = async () => {
+    if (!item || savingConcepto || !conceptoEditInput.trim()) return;
+    const nuevo = conceptoEditInput.trim();
+    try {
+      setSavingConcepto(true);
+      if (onGuardarConcepto) {
+        await onGuardarConcepto(item, nuevo);
+      } else {
+        if (item.tipo === 'FIJO') {
+          const id = item.dbId || item.id.replace('fijo-', '');
+          const res = await fetch('/api/fijos', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, concepto: nuevo }),
+          });
+          if (!res.ok) throw new Error('Error al actualizar descripción');
+        } else {
+          const res = await fetch('/api/gastos', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: item.dbId || item.id, concepto: nuevo }),
+          });
+          if (!res.ok) throw new Error('Error al actualizar descripción');
+        }
+        toast.success('Descripción actualizada');
+        await refresh();
+      }
+      setConceptoLocal(nuevo);
+      setEditandoConcepto(false);
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar descripción');
+    } finally {
+      setSavingConcepto(false);
+    }
+  };
+
+  const handleGuardarNotas = async () => {
+    if (!item || savingNotas) return;
+    const nuevasNotas = notasEditInput.trim();
+    try {
+      setSavingNotas(true);
+      if (onGuardarNotas) {
+        await onGuardarNotas(item, nuevasNotas);
+      } else {
+        if (item.tipo === 'FIJO') {
+          const id = item.dbId || item.id.replace('fijo-', '');
+          const res = await fetch('/api/fijos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ costoFijoId: id, periodo, notas: nuevasNotas }),
+          });
+          if (!res.ok) throw new Error('Error al actualizar notas');
+        } else {
+          const res = await fetch('/api/gastos', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: item.dbId || item.id, notas: nuevasNotas }),
+          });
+          if (!res.ok) throw new Error('Error al actualizar notas');
+        }
+        toast.success('Notas actualizadas');
+        await refresh();
+      }
+      setNotasLocal(nuevasNotas);
+      setEditandoNotas(false);
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar notas');
+    } finally {
+      setSavingNotas(false);
+    }
+  };
 
   if (!item) return null;
 
@@ -457,7 +601,7 @@ export function ModalDetalleGasto({
   const esAntesDeCorte = diaConsumo !== null ? diaConsumo <= diaCorte : true;
 
   // Clasificación y estilos de color
-  const clasificacionEfectiva: ClasificacionEgreso = item.clasificacion || obtenerClasificacionEgreso(item);
+  const clasificacionEfectiva: ClasificacionEgreso = clasificacionLocal;
   const estilo = getEstiloClasificacion(clasificacionEfectiva);
 
   // Icono según tipo y clasificación
@@ -530,9 +674,59 @@ export function ModalDetalleGasto({
                   {estilo.badgeLabel}
                 </span>
               </div>
-              <h2 className="text-sm font-semibold text-foreground truncate max-w-[280px] sm:max-w-[340px]">
-                {item.concepto}
-              </h2>
+              {!editandoConcepto ? (
+                <div className="flex items-center gap-1.5 group">
+                  <h2 className="text-sm font-semibold text-foreground truncate max-w-[240px] sm:max-w-[320px]">
+                    {conceptoLocal}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setConceptoEditInput(conceptoLocal);
+                      setEditandoConcepto(true);
+                    }}
+                    className="p-1 rounded text-muted-foreground hover:text-foreground opacity-70 group-hover:opacity-100 transition"
+                    title="Editar descripción"
+                  >
+                    <Pencil className="w-3 h-3" />
+                  </button>
+                </div>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleGuardarConcepto();
+                  }}
+                  className="flex items-center gap-1.5 mt-0.5"
+                >
+                  <input
+                    type="text"
+                    value={conceptoEditInput}
+                    onChange={(e) => setConceptoEditInput(e.target.value)}
+                    disabled={savingConcepto}
+                    placeholder="Descripción del egreso"
+                    className="text-xs font-semibold px-2 py-1 rounded-md border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary w-40 sm:w-56"
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    disabled={savingConcepto || !conceptoEditInput.trim()}
+                    className="p-1 rounded bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 transition"
+                    title="Guardar"
+                  >
+                    <Check className="w-3 h-3" />
+                  </button>
+                  <button
+                    type="button"
+                    disabled={savingConcepto}
+                    onClick={() => setEditandoConcepto(false)}
+                    className="p-1 rounded bg-muted text-muted-foreground hover:text-foreground transition"
+                    title="Cancelar"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </form>
+              )}
             </div>
           </div>
           <button
@@ -806,6 +1000,15 @@ export function ModalDetalleGasto({
               </p>
             )}
           </div>
+
+          {/* SELECTOR DE CLASIFICACIÓN (COMPRA FIJA VS COMPRA VARIABLE) */}
+          {item.tipo !== 'PRESTAMO' && (
+            <DetalleClasificacionSelector
+              clasificacionActual={clasificacionLocal}
+              isUpdating={updatingClasificacion}
+              onCambiarClasificacion={handleClasificacionChange}
+            />
+          )}
 
           {/* TARJETA DE CRÉDITO Y REGLA DEL DÍA 10 */}
           {item.tipo === 'TARJETA' && (
@@ -1440,14 +1643,65 @@ export function ModalDetalleGasto({
               )}
             </div>
 
-            {item.notas && (
-              <div className="pt-2 border-t border-border mt-2">
+            <div className="pt-2 border-t border-border mt-2">
+              <div className="flex items-center justify-between">
                 <span className="text-[10px] text-muted-foreground block">Notas / Observaciones</span>
-                <p className="text-[11px] text-foreground italic mt-0.5">
-                  "{item.notas}"
-                </p>
+                {!editandoNotas && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNotasEditInput(notasLocal || '');
+                      setEditandoNotas(true);
+                    }}
+                    className="text-[10px] text-muted-foreground hover:text-foreground font-medium inline-flex items-center gap-1 transition"
+                  >
+                    <Pencil className="w-2.5 h-2.5" />
+                    <span>{notasLocal ? 'Modificar' : 'Agregar nota'}</span>
+                  </button>
+                )}
               </div>
-            )}
+              {!editandoNotas ? (
+                notasLocal ? (
+                  <p className="text-[11px] text-foreground italic mt-0.5">
+                    "{notasLocal}"
+                  </p>
+                ) : (
+                  <p className="text-[11px] text-muted-foreground/60 italic mt-0.5">
+                    Sin observaciones adicionales
+                  </p>
+                )
+              ) : (
+                <div className="space-y-1.5 mt-1.5">
+                  <textarea
+                    value={notasEditInput}
+                    onChange={(e) => setNotasEditInput(e.target.value)}
+                    disabled={savingNotas}
+                    placeholder="Escribe una observación o nota..."
+                    rows={2}
+                    className="w-full text-xs p-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                    autoFocus
+                  />
+                  <div className="flex items-center justify-end gap-1.5">
+                    <button
+                      type="button"
+                      disabled={savingNotas}
+                      onClick={() => setEditandoNotas(false)}
+                      className="px-2 py-1 rounded text-[11px] text-muted-foreground hover:text-foreground"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={savingNotas}
+                      onClick={handleGuardarNotas}
+                      className="px-2.5 py-1 rounded text-[11px] font-semibold bg-primary text-primary-foreground hover:opacity-90 transition"
+                    >
+                      {savingNotas ? 'Guardando...' : 'Guardar nota'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

@@ -1,0 +1,73 @@
+name: Respaldo Diario de Base de Datos
+
+on:
+  schedule:
+    # Se ejecuta todos los días a las 05:00 UTC (00:00 hora Perú / UTC-5)
+    - cron: '0 5 * * *'
+  workflow_dispatch: # Permite ejecutar el respaldo manualmente desde GitHub Actions
+
+permissions:
+  contents: write
+
+jobs:
+  backup:
+    name: Backup PostgreSQL
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout del repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar cliente de PostgreSQL
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+
+      - name: Preparar carpeta de respaldos
+        run: mkdir -p backups
+
+      - name: Generar Dump de PostgreSQL (Neon)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          if [ -z "$DATABASE_URL" ]; then
+            echo "❌ Error: El secret DATABASE_URL no está configurado en GitHub Secrets."
+            exit 1
+          fi
+
+          TIMESTAMP=$(date +'%Y-%m-%d_%H%M%S')
+          BACKUP_FILE="backups/db_backup_${TIMESTAMP}.sql.gz"
+
+          echo "⏳ Generando copia de seguridad..."
+          pg_dump "$DATABASE_URL" \
+            --clean \
+            --if-exists \
+            --no-owner \
+            --no-privileges \
+            --encoding=utf8 \
+            | gzip > "$BACKUP_FILE"
+
+          SIZE=$(ls -lh "$BACKUP_FILE" | awk '{print $5}')
+          echo "✅ Respaldo creado exitosamente: $BACKUP_FILE ($SIZE)"
+
+          echo "BACKUP_FILE=$BACKUP_FILE" >> $GITHUB_ENV
+          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+
+      - name: Subir como Artefacto (Descargable por 30 días)
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backup-${{ env.TIMESTAMP }}
+          path: ${{ env.BACKUP_FILE }}
+          retention-days: 30
+
+      - name: Crear Release con Respaldo Permanente en GitHub
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="backup-${{ env.TIMESTAMP }}"
+          echo "Publicando release con tag $TAG..."
+          gh release create "$TAG" "$BACKUP_FILE" \
+            --title "Copia BD - $(date +'%Y-%m-%d')" \
+            --notes "Respaldo automático diario de la base de datos PostgreSQL (Neon). Generado el $(date +'%Y-%m-%d %H:%M:%S UTC')." \
+            --prerelease || echo "⚠️ Advertencia: No se pudo crear el release en GitHub. El respaldo permanece disponible en la sección de Artefactos."
+

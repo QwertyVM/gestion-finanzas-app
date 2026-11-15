@@ -348,6 +348,53 @@ export function GastosClient() {
             toast.error(err.message || 'Error al eliminar');
           }
         }}
+        onCambiarClasificacion={async (item, nuevaClasificacion) => {
+          const res = await fetch('/api/finanzas/clasificacion', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: item.dbId || item.id,
+              tipo: item.tipo,
+              nuevaClasificacion,
+              periodo,
+            }),
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Error al cambiar clasificación');
+          }
+          toast.success(
+            nuevaClasificacion === 'FIJO'
+              ? 'Movido a Compras fijas'
+              : 'Movido a Compras variables'
+          );
+          setDetalleGasto((prev) =>
+            prev ? { ...prev, clasificacion: nuevaClasificacion } : null
+          );
+          await refresh();
+        }}
+        onGuardarConcepto={async (item, nuevoConcepto) => {
+          const res = await fetch('/api/gastos', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: item.dbId || item.id, concepto: nuevoConcepto }),
+          });
+          if (!res.ok) throw new Error('Error al actualizar descripción');
+          setDetalleGasto((prev) => (prev ? { ...prev, concepto: nuevoConcepto } : null));
+          toast.success('Descripción actualizada');
+          await refresh();
+        }}
+        onGuardarNotas={async (item, nuevasNotas) => {
+          const res = await fetch('/api/gastos', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: item.dbId || item.id, notas: nuevasNotas }),
+          });
+          if (!res.ok) throw new Error('Error al actualizar notas');
+          setDetalleGasto((prev) => (prev ? { ...prev, notas: nuevasNotas } : null));
+          toast.success('Notas actualizadas');
+          await refresh();
+        }}
         tarjetas={tarjetas}
         monedaSimbolo={moneda}
       />

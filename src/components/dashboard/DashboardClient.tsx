@@ -476,6 +476,100 @@ export function DashboardClient() {
     }
   };
 
+  const handleCambiarClasificacionModal = async (
+    item: DetalleItemData,
+    nuevaClasificacion: 'FIJO' | 'VARIABLE'
+  ) => {
+    try {
+      const targetId = item.dbId || item.id.replace('fijo-', '').replace('prestamo-', '');
+      const res = await fetch('/api/finanzas/clasificacion', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: targetId,
+          tipo: item.tipo,
+          nuevaClasificacion,
+          periodo,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Error al cambiar clasificación');
+      }
+
+      toast.success(
+        nuevaClasificacion === 'FIJO'
+          ? 'Movido a Compras fijas'
+          : 'Movido a Compras variables'
+      );
+      await refresh();
+      setDetalleItem((prev) =>
+        prev
+          ? {
+              ...prev,
+              clasificacion: nuevaClasificacion,
+              tipo: prev.tipo === 'FIJO' && nuevaClasificacion === 'VARIABLE' ? 'DIRECTO' : prev.tipo,
+            }
+          : null
+      );
+    } catch (err: any) {
+      toast.error(err.message || 'Error al cambiar clasificación');
+    }
+  };
+
+  const handleGuardarConceptoModal = async (item: DetalleItemData, nuevoConcepto: string) => {
+    try {
+      if (item.tipo === 'FIJO') {
+        const id = item.dbId || item.id.replace('fijo-', '');
+        const res = await fetch('/api/fijos', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, concepto: nuevoConcepto }),
+        });
+        if (!res.ok) throw new Error('Error al actualizar descripción');
+      } else {
+        const res = await fetch('/api/gastos', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: item.dbId || item.id, concepto: nuevoConcepto }),
+        });
+        if (!res.ok) throw new Error('Error al actualizar descripción');
+      }
+      setDetalleItem((prev) => (prev ? { ...prev, concepto: nuevoConcepto } : null));
+      toast.success('Descripción actualizada');
+      await refresh();
+    } catch {
+      toast.error('Error al actualizar descripción');
+    }
+  };
+
+  const handleGuardarNotasModal = async (item: DetalleItemData, nuevasNotas: string) => {
+    try {
+      if (item.tipo === 'FIJO') {
+        const id = item.dbId || item.id.replace('fijo-', '');
+        const res = await fetch('/api/fijos', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ costoFijoId: id, periodo, notas: nuevasNotas }),
+        });
+        if (!res.ok) throw new Error('Error al actualizar notas');
+      } else {
+        const res = await fetch('/api/gastos', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: item.dbId || item.id, notas: nuevasNotas }),
+        });
+        if (!res.ok) throw new Error('Error al actualizar notas');
+      }
+      setDetalleItem((prev) => (prev ? { ...prev, notas: nuevasNotas } : null));
+      toast.success('Notas actualizadas');
+      await refresh();
+    } catch {
+      toast.error('Error al actualizar notas');
+    }
+  };
+
   const handleCambiarEstadoModal = async (item: DetalleItemData, nuevoEstado: string) => {
     await handleToggleEstadoItem(item, nuevoEstado);
     setDetalleItem((prev) => (prev ? { ...prev, estado: nuevoEstado as any } : null));
@@ -520,6 +614,7 @@ export function DashboardClient() {
         totalIngresos={resumen.totalIngresos}
         totalEgresos={resumen.totalEgresos}
         totalPendiente={resumen.totalPendiente}
+        totalAdelantado={resumen.totalAdelantado}
         cantidadIngresos={resumen.ingresos.length}
         moneda={moneda}
         esMesEspecial={esMesEspecial}
@@ -652,6 +747,9 @@ export function DashboardClient() {
         onGuardarMonto={handleGuardarMontoModal}
         onEliminarGasto={handleEliminarGastoModal}
         onCambiarMetodoPago={handleCambiarMetodoPagoModal}
+        onCambiarClasificacion={handleCambiarClasificacionModal}
+        onGuardarConcepto={handleGuardarConceptoModal}
+        onGuardarNotas={handleGuardarNotasModal}
         tarjetas={resumen.tarjetasCredito}
         monedaSimbolo={moneda}
       />
