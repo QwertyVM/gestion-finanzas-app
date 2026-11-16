@@ -29,7 +29,7 @@ export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCar
               Resumen de Egresos por Moneda
             </h3>
             <p className="text-xs text-muted-foreground">
-              Cuánto debes en Soles y Dólares al tipo de cambio de tu cuenta ({moneda} {dolares.tipoCambio.toFixed(2)}).
+              Cuánto debes por pagar en Soles y Dólares al tipo de cambio de tu cuenta ({moneda} {dolares.tipoCambio.toFixed(2)}).
             </p>
           </div>
         </div>
@@ -37,7 +37,7 @@ export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCar
         {consolidado.cuadraSumatoria && (
           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 text-[11px] font-semibold self-start sm:self-auto border border-emerald-200/60 dark:border-emerald-800/40">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Sumatoria exacta con Egresos</span>
+            <span>Sumatoria exacta por pagar</span>
           </div>
         )}
       </div>
@@ -58,20 +58,17 @@ export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCar
                 En Soles (PEN)
               </span>
               <span className="text-[10px] bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 px-1.5 py-0.5 rounded font-medium">
-                {soles.conteo} {soles.conteo === 1 ? 'ítem' : 'ítems'}
+                {soles.conteoPendiente ?? soles.conteo} {(soles.conteoPendiente ?? soles.conteo) === 1 ? 'pendiente' : 'pendientes'}
               </span>
             </div>
             <div className="font-mono text-lg font-bold text-foreground">
-              {formatMoney(soles.total, moneda)}
+              {formatMoney(soles.pendiente, moneda)}
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-0.5 font-mono">
+              Por pagar este mes
             </div>
           </div>
           <div className="pt-2 border-t border-border/40 text-xs text-muted-foreground space-y-0.5">
-            <div className="flex justify-between">
-              <span>Debes pagar:</span>
-              <span className="font-mono font-semibold text-foreground">
-                {formatMoney(soles.pendiente, moneda)}
-              </span>
-            </div>
             {soles.adelantado > 0 && (
               <div className="flex justify-between text-[11px] text-amber-600 dark:text-amber-400 font-medium">
                 <span>⚡ Adelantado:</span>
@@ -88,6 +85,14 @@ export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCar
                 </span>
               </div>
             )}
+            {(soles.adelantado > 0 || soles.pagado > 0) && (
+              <div className="flex justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/20">
+                <span>Total egresos mes:</span>
+                <span className="font-mono">
+                  {formatMoney(soles.total, moneda)}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -99,30 +104,18 @@ export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCar
                 En Dólares (USD)
               </span>
               <span className="text-[10px] bg-sky-50 dark:bg-sky-950/50 text-sky-700 dark:text-sky-300 px-1.5 py-0.5 rounded font-medium">
-                {dolares.conteo} {dolares.conteo === 1 ? 'ítem' : 'ítems'}
+                {dolares.conteoPendiente ?? dolares.conteo} {(dolares.conteoPendiente ?? dolares.conteo) === 1 ? 'pendiente' : 'pendientes'}
               </span>
             </div>
             <div className="font-mono text-lg font-bold text-foreground">
-              ${dolares.totalUSD.toFixed(2)}{' '}
+              ${dolares.pendienteUSD.toFixed(2)}{' '}
               <span className="text-xs font-normal text-muted-foreground">USD</span>
             </div>
             <div className="text-[11px] text-muted-foreground mt-0.5 font-mono">
-              ≈ {formatMoney(dolares.total, moneda)} (TC cuenta: {moneda} {dolares.tipoCambio.toFixed(2)})
+              ≈ {formatMoney(dolares.pendiente, moneda)} (TC cuenta: {moneda} {dolares.tipoCambio.toFixed(2)})
             </div>
           </div>
           <div className="pt-2 border-t border-border/40 text-xs text-muted-foreground space-y-0.5">
-            <div className="flex justify-between">
-              <span>Debes pagar:</span>
-              <span className="font-mono font-semibold text-foreground">
-                ${dolares.pendienteUSD.toFixed(2)} USD
-              </span>
-            </div>
-            <div className="flex justify-between text-[11px]">
-              <span>Equivalente:</span>
-              <span className="font-mono text-muted-foreground">
-                ≈ {formatMoney(dolares.pendiente, moneda)}
-              </span>
-            </div>
             {dolares.adelantadoUSD > 0 && (
               <div className="flex justify-between text-[11px] text-amber-600 dark:text-amber-400 font-medium">
                 <span>⚡ Adelantado:</span>
@@ -139,41 +132,59 @@ export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCar
                 </span>
               </div>
             )}
+            {(dolares.adelantadoUSD > 0 || dolares.pagadoUSD > 0) && (
+              <div className="flex justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/20">
+                <span>Total egresos mes:</span>
+                <span className="font-mono">
+                  ${dolares.totalUSD.toFixed(2)} USD (≈ {formatMoney(dolares.total, moneda)})
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* 3. Total Consolidado */}
+        {/* 3. Total Consolidado por Pagar */}
         <div className="p-3.5 rounded-xl bg-card border border-border/80 shadow-xs flex flex-col justify-between space-y-2">
           <div>
             <div className="flex items-center justify-between text-xs mb-1">
-              <span className="font-semibold text-foreground">Total Egresos</span>
+              <span className="font-semibold text-foreground">Total por Pagar</span>
               <span className="text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded font-medium">
-                {consolidado.totalCompromisos} {consolidado.totalCompromisos === 1 ? 'ítem' : 'ítems'}
+                {consolidado.totalPendientes ?? consolidado.totalCompromisos} {(consolidado.totalPendientes ?? consolidado.totalCompromisos) === 1 ? 'pendiente' : 'pendientes'}
               </span>
             </div>
             <div className="font-mono text-lg font-bold text-foreground">
-              {formatMoney(consolidado.totalEgresosPEN, moneda)}
+              {formatMoney(consolidado.totalPendientePEN, moneda)}
             </div>
             <div className="text-[11px] text-muted-foreground mt-0.5 font-mono flex items-center gap-1 flex-wrap">
-              <span>S/ {soles.total.toFixed(2)}</span>
+              <span>S/ {soles.pendiente.toFixed(2)}</span>
               <span>+</span>
-              <span>S/ {dolares.total.toFixed(2)}</span>
+              <span>S/ {dolares.pendiente.toFixed(2)}</span>
               <ArrowRight className="w-2.5 h-2.5 text-muted-foreground" />
               <span className="font-semibold text-foreground">100%</span>
             </div>
           </div>
           <div className="pt-2 border-t border-border/40 text-xs text-muted-foreground space-y-0.5">
-            <div className="flex justify-between">
-              <span>Total por pagar:</span>
-              <span className="font-mono font-bold text-foreground">
-                {formatMoney(consolidado.totalPendientePEN, moneda)}
-              </span>
-            </div>
             {consolidado.totalAdelantadoPEN > 0 && (
               <div className="flex justify-between text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                <span>⚡ Adelantado:</span>
+                <span>⚡ Total adelantado:</span>
                 <span className="font-mono">
                   {formatMoney(consolidado.totalAdelantadoPEN, moneda)}
+                </span>
+              </div>
+            )}
+            {consolidado.totalPagadoPEN > 0 && (
+              <div className="flex justify-between text-[11px]">
+                <span>Total pagado:</span>
+                <span className="font-mono text-muted-foreground">
+                  {formatMoney(consolidado.totalPagadoPEN, moneda)}
+                </span>
+              </div>
+            )}
+            {(consolidado.totalAdelantadoPEN > 0 || consolidado.totalPagadoPEN > 0) && (
+              <div className="flex justify-between text-[11px] text-muted-foreground pt-1 border-t border-border/20">
+                <span>Total egresos mes:</span>
+                <span className="font-mono">
+                  {formatMoney(consolidado.totalEgresosPEN, moneda)}
                 </span>
               </div>
             )}
