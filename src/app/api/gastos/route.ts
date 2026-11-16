@@ -74,9 +74,39 @@ export async function PATCH(request: NextRequest) {
     }
 
     const { id, monto, concepto, estado, notas, clasificacion, metodoPago, tarjetaId, periodoPago, categoriaId, actualizarSerie } = await request.json();
+
+    const gastoActual = await prisma.gasto.findFirst({
+      where: { id, usuarioId: user.id },
+    });
+    if (!gastoActual) {
+      return NextResponse.json({ error: 'Gasto no encontrado' }, { status: 404 });
+    }
+
     const updateData: any = {};
     if (monto !== undefined) updateData.monto = parseFloat(monto);
-    if (concepto !== undefined) updateData.concepto = concepto;
+    if (concepto !== undefined) {
+      const tieneCuotas = (gastoActual.totalCuotas && gastoActual.totalCuotas > 1) || !!gastoActual.gastoPadreId;
+      if (tieneCuotas && actualizarSerie !== false) {
+        const baseConcepto = concepto.replace(/\s*\(Cuota\s+\d+\/\d+\)/i, '').trim();
+        const pId = gastoActual.gastoPadreId || gastoActual.id;
+        const cuotasSerie = await prisma.gasto.findMany({
+          where: {
+            usuarioId: user.id,
+            OR: [{ id: pId }, { gastoPadreId: pId }],
+          },
+        });
+        for (const c of cuotasSerie) {
+          const nombreCuota = `${baseConcepto} (Cuota ${c.cuotaActual}/${c.totalCuotas})`;
+          await prisma.gasto.update({
+            where: { id: c.id },
+            data: { concepto: nombreCuota },
+          });
+        }
+        updateData.concepto = `${baseConcepto} (Cuota ${gastoActual.cuotaActual}/${gastoActual.totalCuotas})`;
+      } else {
+        updateData.concepto = concepto;
+      }
+    }
     if (estado !== undefined) {
       updateData.estado = estado;
       updateData.fechaPagoReal = (estado === 'PAGADO' || estado === 'ADELANTADO') ? new Date() : null;
@@ -88,27 +118,20 @@ export async function PATCH(request: NextRequest) {
     if (categoriaId !== undefined) {
       updateData.categoriaId = categoriaId || null;
       if (actualizarSerie) {
-        const gastoActual = await prisma.gasto.findFirst({
-          where: { id, usuarioId: user.id },
+        const pId = gastoActual.gastoPadreId || gastoActual.id;
+        await prisma.gasto.updateMany({
+          where: {
+            usuarioId: user.id,
+            OR: [{ id: pId }, { gastoPadreId: pId }],
+          },
+          data: { categoriaId: categoriaId || null },
         });
-        if (gastoActual) {
-          const pId = gastoActual.gastoPadreId || gastoActual.id;
-          await prisma.gasto.updateMany({
-            where: {
-              usuarioId: user.id,
-              OR: [{ id: pId }, { gastoPadreId: pId }],
-            },
-            data: { categoriaId: categoriaId || null },
-          });
-        }
       }
     }
 
     if (metodoPago !== undefined) {
       updateData.metodoPago = metodoPago;
-      const gasto = await prisma.gasto.findFirst({
-        where: { id, usuarioId: user.id },
-      });
+      const gasto = gastoActual;
 
       if (metodoPago === 'TARJETA_CREDITO') {
         const tId = tarjetaId !== undefined ? tarjetaId : gasto?.tarjetaId;
@@ -137,9 +160,7 @@ export async function PATCH(request: NextRequest) {
       updateData.tarjetaId = tarjetaId || null;
       if (tarjetaId) {
         updateData.metodoPago = 'TARJETA_CREDITO';
-        const gasto = await prisma.gasto.findFirst({
-          where: { id, usuarioId: user.id },
-        });
+        const gasto = gastoActual;
         if (gasto) {
           const tarjeta = await prisma.tarjetaCredito.findUnique({ where: { id: tarjetaId } });
           if (tarjeta) {
