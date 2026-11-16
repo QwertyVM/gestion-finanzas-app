@@ -364,15 +364,8 @@ export function clasificarItemBackend(item: {
     };
   }
 
-  // Para gastos (TARJETA o DIRECTO): usar la clasificación persistida en BD como fuente de verdad
-  const clasificacion: 'FIJO' | 'PRESTAMO' | 'CUOTA' | 'VARIABLE' =
-    item.clasificacionBD ?? (
-      (item.totalCuotas && item.totalCuotas > 1) ? 'CUOTA' :
-        esItemRecurrente(item.concepto || '', item.categoria || '') ? 'FIJO' :
-          'VARIABLE'
-    );
-
-  if (clasificacion === 'CUOTA') {
+  // Si tiene cuotas (> 1) o está marcado como CUOTA, siempre es COMPRA A CUOTAS
+  if ((item.totalCuotas && item.totalCuotas > 1) || item.clasificacionBD === 'CUOTA') {
     return {
       clasificacion: 'CUOTA',
       badgeLabel: 'Cuota',
@@ -382,6 +375,12 @@ export function clasificarItemBackend(item: {
       icono: 'Layers',
     };
   }
+
+  // Para gastos de 1 cuota (TARJETA o DIRECTO): usar la clasificación persistida en BD como fuente de verdad
+  const clasificacion: 'FIJO' | 'PRESTAMO' | 'VARIABLE' =
+    (item.clasificacionBD === 'FIJO' || item.clasificacionBD === 'PRESTAMO' || item.clasificacionBD === 'VARIABLE')
+      ? item.clasificacionBD
+      : (esItemRecurrente(item.concepto || '', item.categoria || '') ? 'FIJO' : 'VARIABLE');
 
   if (clasificacion === 'FIJO') {
     return {
@@ -2702,6 +2701,7 @@ export interface ResumenFinanciero {
                 tarjetaId: gasto.tarjetaId,
                 cuotaActual: n,
                 totalCuotas: nuevoCuotasTotales,
+                clasificacion: ClasificacionEgreso.CUOTA,
                 categoriaId: gasto.categoriaId,
                 estado: EstadoPago.PENDIENTE,
                 gastoPadreId: padreId,

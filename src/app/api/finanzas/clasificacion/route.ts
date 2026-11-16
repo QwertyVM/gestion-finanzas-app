@@ -37,6 +37,13 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: 'Gasto no encontrado' }, { status: 404 });
       }
 
+      if ((gasto.totalCuotas && gasto.totalCuotas > 1) || gasto.gastoPadreId) {
+        return NextResponse.json(
+          { error: 'Las compras en cuotas pertenecen a una serie y no se reclasifican individualmente' },
+          { status: 400 }
+        );
+      }
+
       // Si se quiere cambiar a FIJO: se convierte formalmente a CostoFijo para que viva en la misma tabla
       if (nuevaClasificacion === 'FIJO') {
         const periodoDestino = periodo || gasto.periodoPago || new Date().toISOString().slice(0, 7);

@@ -108,7 +108,7 @@ export function ModalDetalleGasto({
             onCambiarEstado={d.handleEstado}
           />
 
-          {item.tipo !== 'PRESTAMO' && (
+          {item.tipo !== 'PRESTAMO' && (item.totalCuotas || 1) <= 1 && d.clasificacionLocal !== 'CUOTA' && (
             <DetalleClasificacionSelector
               clasificacionActual={d.clasificacionLocal}
               isUpdating={d.updatingClasificacion}
