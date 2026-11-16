@@ -20,6 +20,7 @@ import {
 import { toast } from 'sonner';
 
 import { ResumenHeroKpis } from './ResumenHeroKpis';
+import { ResumenDivisasCard } from './ResumenDivisasCard';
 import { IngresosMesTabla } from './IngresosMesTabla';
 import { DiferenciacionEgresosBar } from './DiferenciacionEgresosBar';
 import { FiltrosEstadoBar } from './FiltrosEstadoBar';
@@ -677,6 +678,14 @@ export function DashboardClient() {
         salud={resumen.saludFinanciera}
         openRecordModal={openRecordModal}
       />
+
+      {/* 1.1 RESUMEN POR MONEDA (SOLES & DÓLARES) */}
+      {resumen.resumenDivisas && (
+        <ResumenDivisasCard
+          divisas={resumen.resumenDivisas}
+          moneda={moneda}
+        />
+      )}
 
       {/* 2. SECCIÓN: INGRESOS DEL MES */}
       <IngresosMesTabla

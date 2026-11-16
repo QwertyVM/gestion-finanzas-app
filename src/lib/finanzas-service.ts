@@ -81,6 +81,36 @@ export interface TotalesPorClasificacion {
   porcentajeVariables: number;
 }
 
+export interface DesgloseMonedaDetalle {
+  total: number;
+  pendiente: number;
+  pagado: number;
+  adelantado: number;
+  porcentaje: number;
+  conteo: number;
+}
+
+export interface DesgloseDolaresDetalle extends DesgloseMonedaDetalle {
+  totalUSD: number;
+  pendienteUSD: number;
+  pagadoUSD: number;
+  adelantadoUSD: number;
+  tipoCambioPromedio: number;
+}
+
+export interface ResumenDivisasEgresos {
+  soles: DesgloseMonedaDetalle;
+  dolares: DesgloseDolaresDetalle;
+  consolidado: {
+    totalEgresosPEN: number;
+    totalPendientePEN: number;
+    totalPagadoPEN: number;
+    totalAdelantadoPEN: number;
+    totalCompromisos: number;
+    cuadraSumatoria: boolean;
+  };
+}
+
 export interface CategoriaAnalisisItem {
   id: string;
   nombre: string;
@@ -334,8 +364,8 @@ export function clasificarItemBackend(item: {
   const clasificacion: 'FIJO' | 'PRESTAMO' | 'CUOTA' | 'VARIABLE' =
     item.clasificacionBD ?? (
       (item.totalCuotas && item.totalCuotas > 1) ? 'CUOTA' :
-      esItemRecurrente(item.concepto || '', item.categoria || '') ? 'FIJO' :
-      'VARIABLE'
+        esItemRecurrente(item.concepto || '', item.categoria || '') ? 'FIJO' :
+          'VARIABLE'
     );
 
   if (clasificacion === 'CUOTA') {
@@ -499,6 +529,7 @@ export interface ResumenFinanciero {
   seccionesCompromisos: Array<SeccionCompromiso>;
   analisisCategorias: AnalisisCategoriasResumen;
   saludFinanciera: SaludFinancieraKPIs;
+  resumenDivisas: ResumenDivisasEgresos;
 }
 
 export async function getResumenMensual(periodo: string, usuarioId?: string): Promise<ResumenFinanciero> {
@@ -1067,6 +1098,7 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
   }
 
   for (const p of prestamos) {
+    if (p.aplicaEsteMes === false) continue;
     if (p.estado === EstadoPago.PAGADO) totalPagado += p.montoCuota;
     else if (p.estado === EstadoPago.ADELANTADO) totalAdelantado += p.montoCuota;
     else totalPendiente += p.montoCuota;
@@ -1173,10 +1205,10 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
       subtexto: cf.metodoPago === MetodoPago.TARJETA_CREDITO
         ? `${cf.tarjetaNombre || 'Tarjeta'} · Fin de mes`
         : cf.metodoPago === MetodoPago.TRANSFERENCIA
-        ? `Transferencia · Fin de mes`
-        : esItemRecurrente(cf.concepto, cf.categoria)
-        ? `Suscripción · Fin de mes`
-        : `Efectivo / Débito · Fin de mes`,
+          ? `Transferencia · Fin de mes`
+          : esItemRecurrente(cf.concepto, cf.categoria)
+            ? `Suscripción · Fin de mes`
+            : `Efectivo / Débito · Fin de mes`,
       categoria: cf.categoria,
       categoriaColor: cf.categoriaColor,
       categoriaIcono: cf.categoriaIcono,
@@ -1452,6 +1484,13 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
     analisisCategorias,
   });
 
+  // Cálculo de Resumen por Divisas / Moneda (Soles vs Dólares)
+  const resumenDivisas = calcularResumenDivisas(
+    egresosConsolidados,
+    totalEgresos,
+    Number(config.tipoCambioUSD || 4.00)
+  );
+
   return {
     periodo,
     minPeriodo,
@@ -1490,6 +1529,100 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
     seccionesCompromisos,
     analisisCategorias,
     saludFinanciera,
+    resumenDivisas,
+  };
+}
+
+export function calcularResumenDivisas(
+  egresosConsolidados: EgresoConsolidado[],
+  totalEgresos: number,
+  tipoCambioDefecto: number = 4.0
+): ResumenDivisasEgresos {
+  let sTotal = 0;
+  let sPendiente = 0;
+  let sPagado = 0;
+  let sAdelantado = 0;
+  let sConteo = 0;
+
+  let dTotalUSD = 0;
+  let dTotalPEN = 0;
+  let dPendienteUSD = 0;
+  let dPendientePEN = 0;
+  let dPagadoUSD = 0;
+  let dPagadoPEN = 0;
+  let dAdelantadoUSD = 0;
+  let dAdelantadoPEN = 0;
+  let dConteo = 0;
+
+  for (const item of egresosConsolidados) {
+    if (item.monedaOriginal === 'USD') {
+      const tc = item.tipoCambio && item.tipoCambio > 0 ? item.tipoCambio : tipoCambioDefecto;
+      const montoUSD = item.montoOriginal != null ? item.montoOriginal : (item.monto / tc);
+      const montoPEN = item.monto;
+
+      dTotalUSD += montoUSD;
+      dTotalPEN += montoPEN;
+      dConteo += 1;
+
+      if (item.estado === EstadoPago.PENDIENTE) {
+        dPendienteUSD += montoUSD;
+        dPendientePEN += montoPEN;
+      } else if (item.estado === EstadoPago.PAGADO) {
+        dPagadoUSD += montoUSD;
+        dPagadoPEN += montoPEN;
+      } else if (item.estado === EstadoPago.ADELANTADO) {
+        dAdelantadoUSD += montoUSD;
+        dAdelantadoPEN += montoPEN;
+      }
+    } else {
+      const montoPEN = item.monto;
+      sTotal += montoPEN;
+      sConteo += 1;
+
+      if (item.estado === EstadoPago.PENDIENTE) {
+        sPendiente += montoPEN;
+      } else if (item.estado === EstadoPago.PAGADO) {
+        sPagado += montoPEN;
+      } else if (item.estado === EstadoPago.ADELANTADO) {
+        sAdelantado += montoPEN;
+      }
+    }
+  }
+
+  const sTotalNum = Number(sTotal.toFixed(2));
+  const dTotalPENNum = Number(dTotalPEN.toFixed(2));
+  const totalConsolidado = Number((sTotalNum + dTotalPENNum).toFixed(2));
+
+  return {
+    soles: {
+      total: sTotalNum,
+      pendiente: Number(sPendiente.toFixed(2)),
+      pagado: Number(sPagado.toFixed(2)),
+      adelantado: Number(sAdelantado.toFixed(2)),
+      porcentaje: totalConsolidado > 0 ? Number(((sTotalNum / totalConsolidado) * 100).toFixed(1)) : 0,
+      conteo: sConteo,
+    },
+    dolares: {
+      totalUSD: Number(dTotalUSD.toFixed(2)),
+      total: dTotalPENNum,
+      pendienteUSD: Number(dPendienteUSD.toFixed(2)),
+      pendiente: Number(dPendientePEN.toFixed(2)),
+      pagadoUSD: Number(dPagadoUSD.toFixed(2)),
+      pagado: Number(dPagadoPEN.toFixed(2)),
+      adelantadoUSD: Number(dAdelantadoUSD.toFixed(2)),
+      adelantado: Number(dAdelantadoPEN.toFixed(2)),
+      tipoCambioPromedio: dTotalUSD > 0 ? Number((dTotalPENNum / dTotalUSD).toFixed(3)) : tipoCambioDefecto,
+      porcentaje: totalConsolidado > 0 ? Number(((dTotalPENNum / totalConsolidado) * 100).toFixed(1)) : 0,
+      conteo: dConteo,
+    },
+    consolidado: {
+      totalEgresosPEN: totalConsolidado,
+      totalPendientePEN: Number((sPendiente + dPendientePEN).toFixed(2)),
+      totalPagadoPEN: Number((sPagado + dPagadoPEN).toFixed(2)),
+      totalAdelantadoPEN: Number((sAdelantado + dAdelantadoPEN).toFixed(2)),
+      totalCompromisos: sConteo + dConteo,
+      cuadraSumatoria: Math.abs(totalConsolidado - totalEgresos) < 0.05,
+    },
   };
 }
 
@@ -2085,8 +2218,8 @@ export async function registrarNuevoGasto(params: {
   // Determinar y persistir la clasificación al momento del registro
   const clasificacion: ClasificacionEgreso =
     totalCuotas > 1 ? 'CUOTA' :
-    esItemRecurrente(concepto, catNombre) ? 'FIJO' :
-    'VARIABLE';
+      esItemRecurrente(concepto, catNombre) ? 'FIJO' :
+        'VARIABLE';
 
   let periodoInicial = '';
 

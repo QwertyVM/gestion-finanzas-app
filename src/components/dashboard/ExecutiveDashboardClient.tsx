@@ -45,6 +45,7 @@ import {
 } from 'lucide-react';
 import { ExecutiveDashboardSkeleton } from '@/components/common/Skeleton';
 import { SaludFinancieraScorecard } from './SaludFinancieraScorecard';
+import { ResumenDivisasCard } from './ResumenDivisasCard';
 import { Regla503020Card } from './Regla503020Card';
 import { AlertasConsultorCategorias } from './AlertasConsultorCategorias';
 import {
@@ -340,15 +341,14 @@ export function ExecutiveDashboardClient() {
             <span>Dashboard Financiero</span>
             {metricasMacro?.nivelCompromiso && (
               <span
-                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${
-                  metricasMacro.nivelCompromiso === 'BAJO'
+                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${metricasMacro.nivelCompromiso === 'BAJO'
                     ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60'
                     : metricasMacro.nivelCompromiso === 'MODERADO'
-                    ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60'
-                    : metricasMacro.nivelCompromiso === 'ALTO'
-                    ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60'
-                    : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60'
-                }`}
+                      ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60'
+                      : metricasMacro.nivelCompromiso === 'ALTO'
+                        ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60'
+                        : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60'
+                  }`}
                 title={`Nivel de compromiso: ${metricasMacro.porcentajeComprometido}% de egresos fijos y deudas`}
               >
                 Compromiso {metricasMacro.nivelCompromiso}
@@ -366,11 +366,10 @@ export function ExecutiveDashboardClient() {
             type="button"
             onClick={irMesAnterior}
             disabled={!puedeIrMesAnterior}
-            className={`p-1 rounded transition ${
-              puedeIrMesAnterior
+            className={`p-1 rounded transition ${puedeIrMesAnterior
                 ? 'hover:text-foreground text-muted-foreground cursor-pointer'
                 : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
-            }`}
+              }`}
             title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
           >
             <ChevronLeft className="w-3.5 h-3.5" />
@@ -399,11 +398,10 @@ export function ExecutiveDashboardClient() {
         <button
           type="button"
           onClick={() => setTabActiva('general')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
-            tabActiva === 'general'
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${tabActiva === 'general'
               ? 'bg-background text-foreground shadow-xs border border-border/80'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-          }`}
+            }`}
         >
           <BarChart3 className="w-3.5 h-3.5" />
           <span>Visión General</span>
@@ -412,11 +410,10 @@ export function ExecutiveDashboardClient() {
         <button
           type="button"
           onClick={() => setTabActiva('categorias')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
-            tabActiva === 'categorias'
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${tabActiva === 'categorias'
               ? 'bg-background text-foreground shadow-xs border border-border/80'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-          }`}
+            }`}
         >
           <Tag className="w-3.5 h-3.5" />
           <span>Categorías</span>
@@ -428,11 +425,10 @@ export function ExecutiveDashboardClient() {
         <button
           type="button"
           onClick={() => setTabActiva('tags')}
-          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${
-            tabActiva === 'tags'
+          className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${tabActiva === 'tags'
               ? 'bg-background text-foreground shadow-xs border border-border/80'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-          }`}
+            }`}
         >
           <Layers className="w-3.5 h-3.5" />
           <span>Tags & Clasificación</span>
@@ -505,6 +501,11 @@ export function ExecutiveDashboardClient() {
               </span>
             </div>
           </div>
+
+          {/* RESUMEN DE EGRESOS POR MONEDA (SOLES & DÓLARES) */}
+          {resumen.resumenDivisas && (
+            <ResumenDivisasCard divisas={resumen.resumenDivisas} moneda={moneda} />
+          )}
 
           {/* DIAGNÓSTICO DE SALUD FINANCIERA (RATIOS CONSULTORES) */}
           <SaludFinancieraScorecard salud={resumen.saludFinanciera} moneda={moneda} />
@@ -759,22 +760,20 @@ export function ExecutiveDashboardClient() {
                           </td>
                           <td className="py-2.5 px-3 text-center whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                                p.estado === 'PAGADO'
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${p.estado === 'PAGADO'
                                   ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
                                   : p.estado === 'ADELANTADO'
-                                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
-                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
-                              }`}
+                                    ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                    : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                                }`}
                             >
                               <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  p.estado === 'PAGADO'
+                                className={`w-1.5 h-1.5 rounded-full ${p.estado === 'PAGADO'
                                     ? 'bg-emerald-500'
                                     : p.estado === 'ADELANTADO'
-                                    ? 'bg-indigo-500'
-                                    : 'bg-amber-500'
-                                }`}
+                                      ? 'bg-indigo-500'
+                                      : 'bg-amber-500'
+                                  }`}
                               />
                               {p.estado === 'PAGADO' ? 'Pagado' : p.estado === 'ADELANTADO' ? 'Adelantado' : 'Pendiente'}
                             </span>
@@ -1021,11 +1020,10 @@ export function ExecutiveDashboardClient() {
                   <div
                     key={c.id}
                     onClick={() => setCategoriaSeleccionadaId(esSeleccionada ? null : c.id)}
-                    className={`rounded-xl p-4 border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
-                      esSeleccionada
+                    className={`rounded-xl p-4 border transition-all cursor-pointer flex flex-col justify-between gap-3 ${esSeleccionada
                         ? 'border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10'
                         : 'border-border/80 bg-background hover:border-border hover:shadow-xs'
-                    }`}
+                      }`}
                   >
                     <div>
                       <div className="flex items-center justify-between gap-2">
@@ -1148,15 +1146,14 @@ export function ExecutiveDashboardClient() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <span
-                              className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold border ${
-                                item.clasificacion === 'FIJO'
+                              className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold border ${item.clasificacion === 'FIJO'
                                   ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300'
                                   : item.clasificacion === 'PRESTAMO'
-                                  ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
-                                  : item.clasificacion === 'CUOTA'
-                                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300'
-                                  : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300'
-                              }`}
+                                    ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
+                                    : item.clasificacion === 'CUOTA'
+                                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                      : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300'
+                                }`}
                             >
                               {item.badgeLabel}
                             </span>
@@ -1174,13 +1171,12 @@ export function ExecutiveDashboardClient() {
                             {formatMoney(item.monto, moneda)}
                           </span>
                           <span
-                            className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-medium mt-1 ${
-                              item.estado === 'PAGADO'
+                            className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-medium mt-1 ${item.estado === 'PAGADO'
                                 ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
                                 : item.estado === 'ADELANTADO'
-                                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
-                                : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
-                            }`}
+                                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                              }`}
                           >
                             {item.estado === 'PAGADO' ? 'Pagado' : item.estado === 'ADELANTADO' ? 'Adelantado' : 'Pendiente'}
                           </span>
@@ -1207,26 +1203,24 @@ export function ExecutiveDashboardClient() {
                         <tr key={item.id} className="hover:bg-muted/30 transition">
                           <td className="py-2.5 px-3 whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                                item.clasificacion === 'FIJO'
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${item.clasificacion === 'FIJO'
                                   ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60'
                                   : item.clasificacion === 'PRESTAMO'
-                                  ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60'
-                                  : item.clasificacion === 'CUOTA'
-                                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60'
-                                  : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/60'
-                              }`}
+                                    ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60'
+                                    : item.clasificacion === 'CUOTA'
+                                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60'
+                                      : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/60'
+                                }`}
                             >
                               <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  item.clasificacion === 'FIJO'
+                                className={`w-1.5 h-1.5 rounded-full ${item.clasificacion === 'FIJO'
                                     ? 'bg-sky-500'
                                     : item.clasificacion === 'PRESTAMO'
-                                    ? 'bg-purple-500'
-                                    : item.clasificacion === 'CUOTA'
-                                    ? 'bg-indigo-500'
-                                    : 'bg-teal-500'
-                                }`}
+                                      ? 'bg-purple-500'
+                                      : item.clasificacion === 'CUOTA'
+                                        ? 'bg-indigo-500'
+                                        : 'bg-teal-500'
+                                  }`}
                               />
                               {item.badgeLabel}
                             </span>
@@ -1245,22 +1239,20 @@ export function ExecutiveDashboardClient() {
                           </td>
                           <td className="py-2.5 px-3 text-center whitespace-nowrap">
                             <span
-                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                                item.estado === 'PAGADO'
+                              className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${item.estado === 'PAGADO'
                                   ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
                                   : item.estado === 'ADELANTADO'
-                                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
-                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
-                              }`}
+                                    ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                    : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                                }`}
                             >
                               <span
-                                className={`w-1.5 h-1.5 rounded-full ${
-                                  item.estado === 'PAGADO'
+                                className={`w-1.5 h-1.5 rounded-full ${item.estado === 'PAGADO'
                                     ? 'bg-emerald-500'
                                     : item.estado === 'ADELANTADO'
-                                    ? 'bg-indigo-500'
-                                    : 'bg-amber-500'
-                                }`}
+                                      ? 'bg-indigo-500'
+                                      : 'bg-amber-500'
+                                  }`}
                               />
                               {item.estado === 'PAGADO' ? 'Pagado' : item.estado === 'ADELANTADO' ? 'Adelantado' : 'Pendiente'}
                             </span>
@@ -1399,24 +1391,22 @@ export function ExecutiveDashboardClient() {
               <div
                 key={tag.id}
                 onClick={() => setFiltroTagActivo(filtroTagActivo === tag.id ? 'TODOS' : tag.id)}
-                className={`rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between gap-4 ${
-                  filtroTagActivo === tag.id
+                className={`rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between gap-4 ${filtroTagActivo === tag.id
                     ? 'ring-2 ring-primary bg-primary/5 dark:bg-primary/10 border-primary'
                     : 'bg-card border-border/80 hover:border-border hover:shadow-xs'
-                }`}
+                  }`}
               >
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <span
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${
-                        tag.id === 'FIJO'
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${tag.id === 'FIJO'
                           ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60'
                           : tag.id === 'PRESTAMO'
-                          ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60'
-                          : tag.id === 'CUOTA'
-                          ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60'
-                          : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/60'
-                      }`}
+                            ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60'
+                            : tag.id === 'CUOTA'
+                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60'
+                              : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/60'
+                        }`}
                     >
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.colorHex }} />
                       {tag.badgeLabel}
@@ -1633,22 +1623,20 @@ export function ExecutiveDashboardClient() {
                 <button
                   type="button"
                   onClick={() => setFiltroTagActivo('TODOS')}
-                  className={`px-2.5 py-1 rounded-md transition ${
-                    filtroTagActivo === 'TODOS'
+                  className={`px-2.5 py-1 rounded-md transition ${filtroTagActivo === 'TODOS'
                       ? 'bg-background text-foreground shadow-xs font-bold'
                       : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   Todos ({resumen.egresosConsolidados.length})
                 </button>
                 <button
                   type="button"
                   onClick={() => setFiltroTagActivo('FIJO')}
-                  className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 ${
-                    filtroTagActivo === 'FIJO'
+                  className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 ${filtroTagActivo === 'FIJO'
                       ? 'bg-sky-500 text-white shadow-xs font-bold'
                       : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
                   Fijos
@@ -1656,11 +1644,10 @@ export function ExecutiveDashboardClient() {
                 <button
                   type="button"
                   onClick={() => setFiltroTagActivo('PRESTAMO')}
-                  className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 ${
-                    filtroTagActivo === 'PRESTAMO'
+                  className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 ${filtroTagActivo === 'PRESTAMO'
                       ? 'bg-purple-600 text-white shadow-xs font-bold'
                       : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
                   Préstamos
@@ -1668,11 +1655,10 @@ export function ExecutiveDashboardClient() {
                 <button
                   type="button"
                   onClick={() => setFiltroTagActivo('CUOTA')}
-                  className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 ${
-                    filtroTagActivo === 'CUOTA'
+                  className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 ${filtroTagActivo === 'CUOTA'
                       ? 'bg-indigo-600 text-white shadow-xs font-bold'
                       : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
                   Cuotas
@@ -1680,11 +1666,10 @@ export function ExecutiveDashboardClient() {
                 <button
                   type="button"
                   onClick={() => setFiltroTagActivo('VARIABLE')}
-                  className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 ${
-                    filtroTagActivo === 'VARIABLE'
+                  className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 ${filtroTagActivo === 'VARIABLE'
                       ? 'bg-teal-600 text-white shadow-xs font-bold'
                       : 'text-muted-foreground hover:text-foreground'
-                  }`}
+                    }`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
                   Variables
@@ -1701,15 +1686,14 @@ export function ExecutiveDashboardClient() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span
-                          className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold border ${
-                            item.clasificacion === 'FIJO'
+                          className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold border ${item.clasificacion === 'FIJO'
                               ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300'
                               : item.clasificacion === 'PRESTAMO'
-                              ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
-                              : item.clasificacion === 'CUOTA'
-                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300'
-                              : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300'
-                          }`}
+                                ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
+                                : item.clasificacion === 'CUOTA'
+                                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                  : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300'
+                            }`}
                         >
                           {item.badgeLabel}
                         </span>
@@ -1731,13 +1715,12 @@ export function ExecutiveDashboardClient() {
                         {formatMoney(item.monto, moneda)}
                       </span>
                       <span
-                        className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-medium mt-1 ${
-                          item.estado === 'PAGADO'
+                        className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-medium mt-1 ${item.estado === 'PAGADO'
                             ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
                             : item.estado === 'ADELANTADO'
-                            ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
-                            : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
-                        }`}
+                              ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                              : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                          }`}
                       >
                         {item.estado === 'PAGADO' ? 'Pagado' : item.estado === 'ADELANTADO' ? 'Adelantado' : 'Pendiente'}
                       </span>
@@ -1764,26 +1747,24 @@ export function ExecutiveDashboardClient() {
                     <tr key={item.id} className="hover:bg-muted/30 transition">
                       <td className="py-2.5 px-3 whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-                            item.clasificacion === 'FIJO'
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${item.clasificacion === 'FIJO'
                               ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60'
                               : item.clasificacion === 'PRESTAMO'
-                              ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60'
-                              : item.clasificacion === 'CUOTA'
-                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60'
-                              : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/60'
-                          }`}
+                                ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60'
+                                : item.clasificacion === 'CUOTA'
+                                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60'
+                                  : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/60'
+                            }`}
                         >
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              item.clasificacion === 'FIJO'
+                            className={`w-1.5 h-1.5 rounded-full ${item.clasificacion === 'FIJO'
                                 ? 'bg-sky-500'
                                 : item.clasificacion === 'PRESTAMO'
-                                ? 'bg-purple-500'
-                                : item.clasificacion === 'CUOTA'
-                                ? 'bg-indigo-500'
-                                : 'bg-teal-500'
-                            }`}
+                                  ? 'bg-purple-500'
+                                  : item.clasificacion === 'CUOTA'
+                                    ? 'bg-indigo-500'
+                                    : 'bg-teal-500'
+                              }`}
                           />
                           {item.badgeLabel}
                         </span>
@@ -1808,22 +1789,20 @@ export function ExecutiveDashboardClient() {
                       </td>
                       <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                            item.estado === 'PAGADO'
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${item.estado === 'PAGADO'
                               ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
                               : item.estado === 'ADELANTADO'
-                              ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
-                              : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
-                          }`}
+                                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                            }`}
                         >
                           <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              item.estado === 'PAGADO'
+                            className={`w-1.5 h-1.5 rounded-full ${item.estado === 'PAGADO'
                                 ? 'bg-emerald-500'
                                 : item.estado === 'ADELANTADO'
-                                ? 'bg-indigo-500'
-                                : 'bg-amber-500'
-                            }`}
+                                  ? 'bg-indigo-500'
+                                  : 'bg-amber-500'
+                              }`}
                           />
                           {item.estado === 'PAGADO' ? 'Pagado' : item.estado === 'ADELANTADO' ? 'Adelantado' : 'Pendiente'}
                         </span>
