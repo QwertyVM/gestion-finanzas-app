@@ -69,8 +69,8 @@ export function ModalDetalleGasto({
           editandoConcepto={d.editandoConcepto}
           conceptoEditInput={d.conceptoEditInput}
           savingConcepto={d.savingConcepto}
-          onStartEditConcepto={() => d.setEditandoConcepto(true)}
-          onCancelEditConcepto={() => d.setEditandoConcepto(false)}
+          onStartEditConcepto={d.handleStartEditConcepto}
+          onCancelEditConcepto={d.handleCancelEditConcepto}
           onChangeConceptoInput={d.setConceptoEditInput}
           onGuardarConcepto={d.handleGuardarConcepto}
           onClose={onClose}

@@ -382,10 +382,14 @@ export function GastosClient() {
           const res = await fetch('/api/gastos', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: item.dbId || item.id, concepto: nuevoConcepto }),
+            body: JSON.stringify({ id: item.dbId || item.id, concepto: nuevoConcepto, actualizarSerie: true }),
           });
           if (!res.ok) throw new Error('Error al actualizar descripción');
-          setDetalleGasto((prev) => (prev ? { ...prev, concepto: nuevoConcepto } : null));
+          const base = nuevoConcepto.replace(/\s*\(Cuota\s+\d+\/\d+\)/i, '').trim();
+          const nuevoFormateado = (item.totalCuotas && item.totalCuotas > 1)
+            ? `${base} (Cuota ${item.cuotaActual || 1}/${item.totalCuotas})`
+            : nuevoConcepto;
+          setDetalleGasto((prev) => (prev ? { ...prev, concepto: nuevoFormateado } : null));
           toast.success('Descripción actualizada');
           await refresh();
         }}
