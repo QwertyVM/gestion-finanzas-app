@@ -38,9 +38,13 @@ export function ProyeccionMesCardMobile({
 
   return (
     <div
-      onClick={() => onSelectMes(mes.periodo)}
-      className={`p-4 border-b border-border/40 last:border-b-0 space-y-3 cursor-pointer transition hover:bg-muted/20 ${
-        esMesActual ? 'bg-muted/30' : ''
+      onClick={() => {
+        if (!sinActividad) onSelectMes(mes.periodo);
+      }}
+      className={`p-4 border-b border-border/40 last:border-b-0 space-y-3 transition ${
+        sinActividad
+          ? 'opacity-40 cursor-default select-none'
+          : `hover:bg-muted/20 cursor-pointer ${esMesActual ? 'bg-muted/30' : ''}`
       }`}
     >
       {/* Cabecera del mes */}
@@ -67,10 +71,12 @@ export function ProyeccionMesCardMobile({
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <span className="text-[11px] font-medium">Ver mes</span>
-          <ArrowRight className="w-3.5 h-3.5 text-foreground" />
-        </div>
+        {!sinActividad && (
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+            <span className="text-[11px] font-medium">Ver mes</span>
+            <ArrowRight className="w-3.5 h-3.5 text-foreground" />
+          </div>
+        )}
       </div>
 
       {/* Saldo Disponible y Ahorro */}

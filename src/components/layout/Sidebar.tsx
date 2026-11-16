@@ -29,7 +29,7 @@ import { UserMenu } from './UserMenu';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { periodo, irMesAnterior, irMesSiguiente, openRecordModal, usuarioActual, cerrarSesion } = useFinanzas();
+  const { periodo, irMesAnterior, irMesSiguiente, puedeIrMesAnterior, openRecordModal, usuarioActual, cerrarSesion } = useFinanzas();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -159,8 +159,13 @@ export function Sidebar() {
           <div className="flex items-center justify-between gap-1">
             <button
               onClick={irMesAnterior}
-              className="p-1.5 hover:bg-background text-muted-foreground hover:text-foreground rounded-lg transition"
-              title="Mes anterior"
+              disabled={!puedeIrMesAnterior}
+              className={`p-1.5 rounded-lg transition ${
+                puedeIrMesAnterior
+                  ? 'hover:bg-background text-muted-foreground hover:text-foreground cursor-pointer'
+                  : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
+              }`}
+              title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
             >
               <ChevronLeft className="w-3.5 h-3.5" />
             </button>

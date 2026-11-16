@@ -65,7 +65,7 @@ type TabView = 'general' | 'categorias' | 'tags';
 
 export function ExecutiveDashboardClient() {
   const router = useRouter();
-  const { periodo, irMesAnterior, irMesSiguiente, resumen, loading } = useFinanzas();
+  const { periodo, irMesAnterior, irMesSiguiente, puedeIrMesAnterior, resumen, loading } = useFinanzas();
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
 
   // Estado de Navegación por Pestañas del Dashboard
@@ -365,8 +365,13 @@ export function ExecutiveDashboardClient() {
           <button
             type="button"
             onClick={irMesAnterior}
-            className="p-1 hover:text-foreground text-muted-foreground rounded transition"
-            title="Mes anterior"
+            disabled={!puedeIrMesAnterior}
+            className={`p-1 rounded transition ${
+              puedeIrMesAnterior
+                ? 'hover:text-foreground text-muted-foreground cursor-pointer'
+                : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
+            }`}
+            title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>

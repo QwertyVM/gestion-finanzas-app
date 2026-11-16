@@ -39,9 +39,13 @@ export function ProyeccionMesFila({
 
   return (
     <tr
-      onClick={() => onSelectMes(m.periodo)}
-      className={`hover:bg-muted/30 transition cursor-pointer ${
-        esMesActual ? 'bg-muted/40 font-medium' : ''
+      onClick={() => {
+        if (!sinActividad) onSelectMes(m.periodo);
+      }}
+      className={`transition ${
+        sinActividad
+          ? 'opacity-40 cursor-default select-none'
+          : `hover:bg-muted/30 cursor-pointer ${esMesActual ? 'bg-muted/40 font-medium' : ''}`
       }`}
     >
       <td className="py-3 px-3.5">
@@ -114,13 +118,15 @@ export function ProyeccionMesFila({
         className="py-3 px-3.5 text-center whitespace-nowrap"
         onClick={(e) => e.stopPropagation()}
       >
-        <button
-          onClick={() => onSelectMes(m.periodo)}
-          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition"
-          title="Gestionar este mes"
-        >
-          <ArrowRight className="w-4 h-4" />
-        </button>
+        {!sinActividad && (
+          <button
+            onClick={() => onSelectMes(m.periodo)}
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition"
+            title="Gestionar este mes"
+          >
+            <ArrowRight className="w-4 h-4" />
+          </button>
+        )}
       </td>
     </tr>
   );

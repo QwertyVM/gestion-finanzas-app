@@ -372,6 +372,7 @@ export function clasificarItemBackend(item: {
 
 export interface ResumenFinanciero {
   periodo: string;
+  minPeriodo?: string;
   config: {
     id: string;
     nombre: string;
@@ -613,6 +614,38 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
     }),
   ]);
 
+  // Obtener el periodo mínimo con registros para el usuario
+  const [minIngreso, minGasto, minFijo, minCuota] = await Promise.all([
+    prisma.ingresoMes.findFirst({
+      where: { usuarioId: uId },
+      orderBy: { periodo: 'asc' },
+      select: { periodo: true },
+    }),
+    prisma.gasto.findFirst({
+      where: { usuarioId: uId },
+      orderBy: { periodoPago: 'asc' },
+      select: { periodoPago: true },
+    }),
+    prisma.registroCostoFijoMes.findFirst({
+      where: { costoFijo: { usuarioId: uId } },
+      orderBy: { periodo: 'asc' },
+      select: { periodo: true },
+    }),
+    prisma.cuotaPrestamo.findFirst({
+      where: { prestamo: { usuarioId: uId } },
+      orderBy: { periodo: 'asc' },
+      select: { periodo: true },
+    }),
+  ]);
+  const periodosExistentes = [
+    minIngreso?.periodo,
+    minGasto?.periodoPago,
+    minFijo?.periodo,
+    minCuota?.periodo,
+  ].filter(Boolean) as string[];
+
+  const minPeriodo = periodosExistentes.length > 0 ? periodosExistentes.sort()[0] : '2026-10';
+
   const config = {
     id: usuario.id,
     nombre: usuario.nombre,
@@ -626,9 +659,9 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
     metaAhorroMensual: Number(usuario.metaAhorroMensual ?? 0),
   };
 
-  // 1. Carga automática de sueldo si no existe en el periodo
+  // 1. Carga automática de sueldo si no existe en el periodo (solo para periodos >= minPeriodo)
   const sueldoExistente = ingresosDbRaw.find((i) => i.tipo === 'SUELDO');
-  if (!sueldoExistente && config.sueldoBaseMensual > 0) {
+  if (!sueldoExistente && config.sueldoBaseMensual > 0 && periodo >= minPeriodo) {
     const ultimoSueldo = await prisma.ingresoMes.findFirst({
       where: {
         usuarioId: uId,
@@ -1421,6 +1454,7 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
 
   return {
     periodo,
+    minPeriodo,
     config: {
       id: config.id,
       nombre: config.nombre,

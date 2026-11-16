@@ -10,6 +10,7 @@ interface ResumenHeroKpisProps {
   periodo: string;
   irMesAnterior: () => void;
   irMesSiguiente: () => void;
+  puedeIrMesAnterior?: boolean;
   disponibleNeto: number;
   totalIngresos: number;
   totalEgresos: number;
@@ -24,20 +25,10 @@ interface ResumenHeroKpisProps {
 }
 
 export function ResumenHeroKpis({
-  periodo,
-  irMesAnterior,
-  irMesSiguiente,
-  disponibleNeto,
-  totalIngresos,
-  totalEgresos,
-  totalPendiente,
-  totalAdelantado = 0,
-  cantidadIngresos,
-  moneda,
-  esMesEspecial,
-  labelEspecial,
-  salud,
-  openRecordModal,
+  periodo, irMesAnterior, irMesSiguiente, puedeIrMesAnterior = true,
+  disponibleNeto, totalIngresos, totalEgresos, totalPendiente,
+  totalAdelantado = 0, cantidadIngresos, moneda, esMesEspecial,
+  labelEspecial, salud, openRecordModal,
 }: ResumenHeroKpisProps) {
   const disponibleEsPositivo = disponibleNeto >= 0;
 
@@ -55,8 +46,13 @@ export function ResumenHeroKpis({
                 <button
                   type="button"
                   onClick={irMesAnterior}
-                  className="hover:text-foreground text-muted-foreground transition"
-                  title="Mes anterior"
+                  disabled={!puedeIrMesAnterior}
+                  className={`transition ${
+                    puedeIrMesAnterior
+                      ? 'hover:text-foreground text-muted-foreground cursor-pointer'
+                      : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
+                  }`}
+                  title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
                 </button>

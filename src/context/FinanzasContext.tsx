@@ -23,6 +23,8 @@ interface FinanzasContextType {
   setPeriodo: (p: string) => void;
   irMesAnterior: () => void;
   irMesSiguiente: () => void;
+  puedeIrMesAnterior: boolean;
+  minPeriodo: string;
   resumen: ResumenFinanciero | null;
   loading: boolean;
   refresh: () => Promise<void>;
@@ -61,12 +63,16 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const minPeriodo = resumen?.minPeriodo || '2026-10';
+  const puedeIrMesAnterior = periodo > minPeriodo;
+
   const setPeriodo = useCallback((p: string) => {
-    setPeriodoState(p);
+    const target = resumen?.minPeriodo && p < resumen.minPeriodo ? resumen.minPeriodo : p;
+    setPeriodoState(target);
     if (typeof window !== 'undefined') {
-      localStorage.setItem('finanzapp_periodo', p);
+      localStorage.setItem('finanzapp_periodo', target);
     }
-  }, []);
+  }, [resumen?.minPeriodo]);
 
   const fetchResumen = useCallback(
     async (intentos: number = 2) => {
@@ -109,9 +115,11 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
   }, [fetchResumen, authLoading]);
 
   const irMesAnterior = () => {
+    if (!puedeIrMesAnterior) return;
     const [anio, mes] = periodo.split('-').map(Number);
     const d = new Date(anio, mes - 2, 1);
     const nuevoPeriodo = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    if (nuevoPeriodo < minPeriodo) return;
     setPeriodo(nuevoPeriodo);
   };
 
@@ -208,6 +216,8 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
         setPeriodo,
         irMesAnterior,
         irMesSiguiente,
+        puedeIrMesAnterior,
+        minPeriodo,
         resumen,
         loading: loading || authLoading,
         refresh: fetchResumen,

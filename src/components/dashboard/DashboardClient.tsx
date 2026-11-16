@@ -33,6 +33,7 @@ export function DashboardClient() {
     periodo,
     irMesAnterior,
     irMesSiguiente,
+    puedeIrMesAnterior,
     resumen,
     loading,
     refresh,
@@ -657,6 +658,7 @@ export function DashboardClient() {
         periodo={periodo}
         irMesAnterior={irMesAnterior}
         irMesSiguiente={irMesSiguiente}
+        puedeIrMesAnterior={puedeIrMesAnterior}
         disponibleNeto={disponibleNeto}
         totalIngresos={resumen.totalIngresos}
         totalEgresos={resumen.totalEgresos}

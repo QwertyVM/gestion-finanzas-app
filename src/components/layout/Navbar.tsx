@@ -27,7 +27,7 @@ import { UserMenu } from './UserMenu';
 
 export function Navbar() {
   const pathname = usePathname();
-  const { periodo, irMesAnterior, irMesSiguiente, usuarioActual, cerrarSesion } = useFinanzas();
+  const { periodo, irMesAnterior, irMesSiguiente, puedeIrMesAnterior, usuarioActual, cerrarSesion } = useFinanzas();
   const { theme, setTheme } = useTheme();
 
   const navLinks = [
@@ -66,8 +66,13 @@ export function Navbar() {
           <div className="flex items-center gap-1 bg-secondary/80 px-2 py-1 rounded-xl border border-border shadow-inner">
             <button
               onClick={irMesAnterior}
-              className="p-1 hover:bg-background text-muted-foreground hover:text-foreground rounded-lg transition"
-              title="Mes anterior"
+              disabled={!puedeIrMesAnterior}
+              className={`p-1 rounded-lg transition ${
+                puedeIrMesAnterior
+                  ? 'hover:bg-background text-muted-foreground hover:text-foreground cursor-pointer'
+                  : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
+              }`}
+              title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
             >
               <ChevronLeft className="w-4 h-4" />
             </button>

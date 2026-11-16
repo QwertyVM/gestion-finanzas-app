@@ -21,7 +21,7 @@ import { ModalCrearPrestamo } from './modals/ModalCrearPrestamo';
 import { ModalEditarPrestamo } from './modals/ModalEditarPrestamo';
 
 export function FijosClient() {
-  const { periodo, irMesAnterior, irMesSiguiente, resumen, loading, refresh } = useFinanzas();
+  const { periodo, irMesAnterior, irMesSiguiente, puedeIrMesAnterior, resumen, loading, refresh } = useFinanzas();
   const [detalleItem, setDetalleItem] = useState<DetalleItemData | null>(null);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
@@ -307,8 +307,13 @@ export function FijosClient() {
                 <button
                   type="button"
                   onClick={irMesAnterior}
-                  className="p-1 hover:text-foreground text-muted-foreground rounded transition"
-                  title="Mes anterior"
+                  disabled={!puedeIrMesAnterior}
+                  className={`p-1 rounded transition ${
+                    puedeIrMesAnterior
+                      ? 'hover:text-foreground text-muted-foreground cursor-pointer'
+                      : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
+                  }`}
+                  title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
                   aria-label="Mes anterior"
                 >
                   <ChevronLeft className="w-3.5 h-3.5" />
