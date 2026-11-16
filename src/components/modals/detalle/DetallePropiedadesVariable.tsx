@@ -1,11 +1,10 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Calendar } from 'lucide-react';
-import { formatPeriodoLabel } from '@/lib/utils';
 import { VariableFormaPagoBox } from './VariableFormaPagoBox';
 import { VariableNotasBox } from './VariableNotasBox';
 import { DetalleCategoriaSelector } from './DetalleCategoriaSelector';
+import { DetalleFechaPeriodoBox } from './DetalleFechaPeriodoBox';
 
 interface DetallePropiedadesVariableProps {
   metodoPago?: string;
@@ -31,6 +30,7 @@ interface DetallePropiedadesVariableProps {
   onCambiarMetodoPago?: (nuevoMetodo: string, tarjetaId?: string | null) => Promise<void>;
   onCambiarCategoria?: (categoriaId: string, aplicarSerie?: boolean) => Promise<void>;
   onGuardarNotas?: (nuevasNotas: string) => Promise<void>;
+  onGuardarFechaPeriodo?: (nuevaFecha: string, nuevoPeriodo: string, aplicarSerie?: boolean) => Promise<void>;
 }
 
 export function DetallePropiedadesVariable({
@@ -50,6 +50,7 @@ export function DetallePropiedadesVariable({
   onCambiarMetodoPago,
   onCambiarCategoria,
   onGuardarNotas,
+  onGuardarFechaPeriodo,
 }: DetallePropiedadesVariableProps) {
   const [editandoMetodo, setEditandoMetodo] = useState(false);
   const [metodoSel, setMetodoSel] = useState(metodoPago);
@@ -120,26 +121,15 @@ export function DetallePropiedadesVariable({
       />
 
       {/* 2. FECHA DE COMPRA & PERIODO IMPUTADO */}
-      <div className="grid grid-cols-2 gap-2">
-        {fechaFormatted && (
-          <div className="p-3 rounded-xl bg-card border border-border/70">
-            <span className="text-[10px] text-muted-foreground block mb-0.5">Fecha de Compra</span>
-            <span className="font-medium text-foreground flex items-center gap-1">
-              <Calendar className="w-3 h-3 text-muted-foreground" />
-              <span>{fechaFormatted}</span>
-            </span>
-          </div>
-        )}
-
-        {periodoPago && (
-          <div className="p-3 rounded-xl bg-card border border-border/70">
-            <span className="text-[10px] text-muted-foreground block mb-0.5">Periodo Imputado</span>
-            <span className="font-medium text-foreground">
-              {formatPeriodoLabel(periodoPago)}
-            </span>
-          </div>
-        )}
-      </div>
+      <DetalleFechaPeriodoBox
+        fechaGasto={fechaGasto}
+        periodoPago={periodoPago}
+        tarjetaDiaCorte={diaCorteEfectivo}
+        esTarjeta={metodoPago === 'TARJETA_CREDITO'}
+        tieneCuotas={tieneCuotas}
+        onGuardar={onGuardarFechaPeriodo}
+        permitirEditar={Boolean(onGuardarFechaPeriodo)}
+      />
 
       {/* 3. CATEGORÍA */}
       <DetalleCategoriaSelector

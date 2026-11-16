@@ -1,9 +1,9 @@
 'use client';
 
 import React from 'react';
-import { CreditCard, Calendar, Sparkles } from 'lucide-react';
-import { formatPeriodoLabel } from '@/lib/utils';
+import { CreditCard, Sparkles } from 'lucide-react';
 import { DetalleCategoriaSelector } from './DetalleCategoriaSelector';
+import { DetalleFechaPeriodoBox } from './DetalleFechaPeriodoBox';
 
 interface DetallePropiedadesTarjetaProps {
   tarjetaNombre?: string | null;
@@ -16,6 +16,7 @@ interface DetallePropiedadesTarjetaProps {
   categoriaColor?: string;
   tieneCuotas?: boolean;
   onCambiarCategoria?: (categoriaId: string, aplicarSerie?: boolean) => Promise<void>;
+  onGuardarFechaPeriodo?: (nuevaFecha: string, nuevoPeriodo: string, aplicarSerie?: boolean) => Promise<void>;
 }
 
 export function DetallePropiedadesTarjeta({
@@ -29,6 +30,7 @@ export function DetallePropiedadesTarjeta({
   categoriaColor,
   tieneCuotas = false,
   onCambiarCategoria,
+  onGuardarFechaPeriodo,
 }: DetallePropiedadesTarjetaProps) {
   const diaConsumo = fechaGasto ? new Date(fechaGasto).getUTCDate() : null;
   const esAntesDeCorte = diaConsumo !== null ? diaConsumo <= tarjetaDiaCorte : true;
@@ -66,26 +68,15 @@ export function DetallePropiedadesTarjeta({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-2">
-        {fechaFormatted && (
-          <div className="p-3 rounded-xl bg-card border border-border/70">
-            <span className="text-[10px] text-muted-foreground block mb-0.5">Fecha de Compra</span>
-            <span className="font-medium text-foreground flex items-center gap-1">
-              <Calendar className="w-3 h-3 text-muted-foreground" />
-              <span>{fechaFormatted}</span>
-            </span>
-          </div>
-        )}
-
-        {periodoPago && (
-          <div className="p-3 rounded-xl bg-card border border-border/70">
-            <span className="text-[10px] text-muted-foreground block mb-0.5">Periodo Imputado</span>
-            <span className="font-medium text-foreground">
-              {formatPeriodoLabel(periodoPago)}
-            </span>
-          </div>
-        )}
-      </div>
+      <DetalleFechaPeriodoBox
+        fechaGasto={fechaGasto}
+        periodoPago={periodoPago}
+        tarjetaDiaCorte={tarjetaDiaCorte}
+        esTarjeta={true}
+        tieneCuotas={tieneCuotas}
+        onGuardar={onGuardarFechaPeriodo}
+        permitirEditar={Boolean(onGuardarFechaPeriodo)}
+      />
 
       {/* CATEGORÍA */}
       <DetalleCategoriaSelector

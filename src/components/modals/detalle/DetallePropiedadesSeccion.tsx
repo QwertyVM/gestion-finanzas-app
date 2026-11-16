@@ -23,6 +23,8 @@ interface DetallePropiedadesSeccionProps {
   categoriaNombre?: string;
   categoriaColor?: string;
   categoriaId?: string | null;
+  fechaGastoLocal?: string;
+  periodoPagoLocal?: string;
   onCambiarMetodoPago?: (
     item: DetalleItemData,
     nuevoMetodo: string,
@@ -31,6 +33,7 @@ interface DetallePropiedadesSeccionProps {
   ) => Promise<void>;
   onCambiarCategoria?: (categoriaId: string, aplicarSerie?: boolean) => Promise<void>;
   onGuardarNotas: (nuevasNotas: string) => Promise<void>;
+  onGuardarFechaPeriodo?: (nuevaFecha: string, nuevoPeriodo: string, aplicarSerie?: boolean) => Promise<void>;
 }
 
 export function DetallePropiedadesSeccion({
@@ -41,9 +44,12 @@ export function DetallePropiedadesSeccion({
   categoriaNombre,
   categoriaColor,
   categoriaId,
+  fechaGastoLocal,
+  periodoPagoLocal,
   onCambiarMetodoPago,
   onCambiarCategoria,
   onGuardarNotas,
+  onGuardarFechaPeriodo,
 }: DetallePropiedadesSeccionProps) {
   const tieneCuotas = Boolean((item.totalCuotas || 1) > 1);
   const catNombreFinal = categoriaNombre || item.categoria;
@@ -81,8 +87,8 @@ export function DetallePropiedadesSeccion({
         tarjetaNombre={item.tarjetaNombre}
         tarjetaBanco={item.tarjetaBanco}
         tarjetaDiaCorte={item.tarjetaDiaCorte}
-        fechaGasto={item.fechaGasto}
-        periodoPago={item.periodoPago}
+        fechaGasto={fechaGastoLocal || item.fechaGasto}
+        periodoPago={periodoPagoLocal || item.periodoPago}
         categoria={catNombreFinal}
         categoriaId={catIdFinal}
         categoriaColor={catColorFinal}
@@ -94,6 +100,7 @@ export function DetallePropiedadesSeccion({
         }
         onCambiarCategoria={onCambiarCategoria}
         onGuardarNotas={onGuardarNotas}
+        onGuardarFechaPeriodo={onGuardarFechaPeriodo}
       />
     );
   }
@@ -104,13 +111,14 @@ export function DetallePropiedadesSeccion({
         tarjetaNombre={item.tarjetaNombre}
         tarjetaBanco={item.tarjetaBanco}
         tarjetaDiaCorte={item.tarjetaDiaCorte}
-        fechaGasto={item.fechaGasto}
-        periodoPago={item.periodoPago}
+        fechaGasto={fechaGastoLocal || item.fechaGasto}
+        periodoPago={periodoPagoLocal || item.periodoPago}
         categoria={catNombreFinal}
         categoriaId={catIdFinal}
         categoriaColor={catColorFinal}
         tieneCuotas={tieneCuotas}
         onCambiarCategoria={onCambiarCategoria}
+        onGuardarFechaPeriodo={onGuardarFechaPeriodo}
       />
     );
   }
