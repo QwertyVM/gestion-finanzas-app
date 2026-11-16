@@ -6,6 +6,7 @@ import { GripVertical, CheckSquare, Square, Check } from 'lucide-react';
 
 interface SeccionEgresoFilaProps {
   item: any;
+  showCuotaColumn?: boolean;
   isSelected: boolean;
   dragOverId: string | null;
   draggedId: string | null;
@@ -22,6 +23,7 @@ interface SeccionEgresoFilaProps {
 
 export function SeccionEgresoFila({
   item,
+  showCuotaColumn = false,
   isSelected,
   dragOverId,
   draggedId,
@@ -37,6 +39,14 @@ export function SeccionEgresoFila({
 }: SeccionEgresoFilaProps) {
   const isPagado = item.estado === 'PAGADO';
   const isAdelantado = item.estado === 'ADELANTADO';
+  const esPrestamo = item.tipo === 'PRESTAMO' || item.clasificacion === 'PRESTAMO';
+  const cuotaTotal = item.totalCuotas || item.cuotasTotales || 1;
+
+  const subtextoLimpio = showCuotaColumn
+    ? esPrestamo
+      ? (item.banco || item.subtexto?.replace(/Cuota\s+\d+\/\d+\s*·?\s*/i, '').replace(/\s*\([^)]*\)/, '') || '')
+      : (item.tarjetaNombre || item.subtexto?.replace(/·?\s*Cuota\s+\d+\/\d+/i, '') || '')
+    : item.subtexto;
 
   return (
     <tr
@@ -47,11 +57,7 @@ export function SeccionEgresoFila({
       onDragEnd={onDragEnd}
       onDrop={(e) => onDrop(item.id, e)}
       onClick={() => onSelectItem(item)}
-      className={`group transition-colors cursor-pointer hover:bg-muted/40 ${
-        isSelected ? 'bg-muted/50' : ''
-      } ${dragOverId === item.id ? 'border-t-2 border-t-primary bg-primary/10' : ''} ${
-        draggedId === item.id ? 'opacity-40' : ''
-      }`}
+      className={`group transition-colors cursor-pointer hover:bg-muted/40 ${isSelected ? 'bg-muted/50' : ''} ${dragOverId === item.id ? 'border-t-2 border-t-primary bg-primary/10' : ''} ${draggedId === item.id ? 'opacity-40' : ''}`}
     >
       {/* 1. Drag Handle */}
       <td
@@ -70,11 +76,7 @@ export function SeccionEgresoFila({
           className="text-muted-foreground hover:text-foreground transition p-0.5 inline-flex"
           aria-label={isSelected ? `Deseleccionar ${item.concepto}` : `Seleccionar ${item.concepto}`}
         >
-          {isSelected ? (
-            <CheckSquare className="w-3.5 h-3.5 text-foreground" />
-          ) : (
-            <Square className="w-3.5 h-3.5" />
-          )}
+          {isSelected ? <CheckSquare className="w-3.5 h-3.5 text-foreground" /> : <Square className="w-3.5 h-3.5" />}
         </button>
       </td>
 
@@ -89,16 +91,35 @@ export function SeccionEgresoFila({
             style={{ backgroundColor: item.categoriaColor || '#64748b' }}
           />
           <span className="text-foreground/80 font-medium">{item.categoria}</span>
-          {item.subtexto && (
+          {subtextoLimpio && (
             <>
               <span className="opacity-40">·</span>
-              <span className="truncate">{item.subtexto}</span>
+              <span className="truncate">{subtextoLimpio}</span>
             </>
           )}
         </div>
       </td>
 
-      {/* 4. Estado */}
+      {/* 4. Cuota */}
+      {showCuotaColumn && (
+        <td className="py-2.5 px-3 text-center whitespace-nowrap">
+          {item.cuotaActual ? (
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold font-mono border ${
+                esPrestamo
+                  ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/40'
+                  : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/40'
+              }`}
+            >
+              Cuota {item.cuotaActual} de {cuotaTotal}
+            </span>
+          ) : (
+            <span className="text-muted-foreground text-xs">—</span>
+          )}
+        </td>
+      )}
+
+      {/* 5. Estado */}
       <td className="py-2.5 px-3 text-center whitespace-nowrap">
         <span
           className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border ${

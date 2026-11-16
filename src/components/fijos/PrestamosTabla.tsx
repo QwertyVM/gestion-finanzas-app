@@ -64,7 +64,7 @@ export function PrestamosTabla({
           <thead className="bg-muted/40 text-muted-foreground text-[11px] font-semibold border-b border-border/60 uppercase tracking-wider">
             <tr>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Concepto</th>
-              <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Progreso</th>
+              <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Cuota</th>
               <th scope="col" className="py-2.5 px-3 text-center text-foreground font-semibold">TEA %</th>
               <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Cuota Mensual</th>
               <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Total</th>

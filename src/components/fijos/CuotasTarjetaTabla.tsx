@@ -56,7 +56,7 @@ export function CuotasTarjetaTabla({
             <tr>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Concepto</th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Tarjeta</th>
-              <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Progreso</th>
+              <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Cuota</th>
               <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Cuota Mensual</th>
               <th scope="col" className="py-2.5 px-3 text-center text-foreground font-semibold">Estado</th>
               <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Acciones</th>

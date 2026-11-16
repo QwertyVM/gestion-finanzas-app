@@ -70,12 +70,12 @@ export function PrestamoFila({
         </div>
       </td>
 
-      {/* 2. Progreso */}
+      {/* 2. Cuota */}
       <td className="py-2.5 px-3">
-        <div className="w-28 space-y-1">
+        <div className="w-32 space-y-1">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-            <span>
-              {p.aplicaEsteMes === false ? 'Fuera de rango' : `Cta ${p.cuotaActual}/${p.cuotasTotales}`}
+            <span className="font-semibold text-foreground">
+              {p.aplicaEsteMes === false ? 'Fuera de rango' : `Cuota ${p.cuotaActual} de ${p.cuotasTotales}`}
             </span>
             <span className="font-medium text-foreground">{progreso}%</span>
           </div>

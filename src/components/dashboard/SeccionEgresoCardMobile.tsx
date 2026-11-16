@@ -23,6 +23,12 @@ export function SeccionEgresoCardMobile({
 }: SeccionEgresoCardMobileProps) {
   const isPagado = item.estado === 'PAGADO';
   const isAdelantado = item.estado === 'ADELANTADO';
+  const esPrestamo = item.tipo === 'PRESTAMO' || item.clasificacion === 'PRESTAMO';
+  const subtextoMobile = item.cuotaActual
+    ? esPrestamo
+      ? (item.banco || item.subtexto?.replace(/Cuota\s+\d+\/\d+\s*·?\s*/i, '').replace(/\s*\([^)]*\)/, '') || '')
+      : (item.tarjetaNombre || item.subtexto?.replace(/·?\s*Cuota\s+\d+\/\d+/i, '') || '')
+    : item.subtexto;
 
   return (
     <div
@@ -60,10 +66,21 @@ export function SeccionEgresoCardMobile({
                 style={{ backgroundColor: item.categoriaColor || '#64748b' }}
               />
               <span className="text-foreground/80 font-medium truncate">{item.categoria}</span>
-              {item.subtexto && (
+              {item.cuotaActual ? (
+                <span
+                  className={`text-[10px] font-semibold font-mono px-1.5 py-0.5 rounded border shrink-0 ${
+                    esPrestamo
+                      ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/40'
+                      : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/40'
+                  }`}
+                >
+                  Cuota {item.cuotaActual}/{item.totalCuotas || item.cuotasTotales}
+                </span>
+              ) : null}
+              {subtextoMobile && (
                 <>
                   <span className="opacity-40">·</span>
-                  <span className="truncate">{item.subtexto}</span>
+                  <span className="truncate">{subtextoMobile}</span>
                 </>
               )}
             </div>

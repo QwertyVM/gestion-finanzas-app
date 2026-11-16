@@ -7,6 +7,7 @@ interface SeccionEgresosDesktopTableProps {
   items: any[];
   selectedGastoIds: string[];
   moneda: string;
+  seccionId?: string;
   draggedId: string | null;
   dragOverId: string | null;
   onSelectItem: (item: any) => void;
@@ -23,6 +24,7 @@ export function SeccionEgresosDesktopTable({
   items,
   selectedGastoIds,
   moneda,
+  seccionId,
   draggedId,
   dragOverId,
   onSelectItem,
@@ -34,6 +36,15 @@ export function SeccionEgresosDesktopTable({
   onDragEnd,
   onDrop,
 }: SeccionEgresosDesktopTableProps) {
+  const showCuotaColumn =
+    seccionId === 'CUOTAS' ||
+    seccionId === 'PRESTAMOS' ||
+    items.some(
+      (it) =>
+        Boolean(it.cuotaActual) &&
+        ((it.totalCuotas && it.totalCuotas > 1) || (it.cuotasTotales && it.cuotasTotales > 1))
+    );
+
   return (
     <div className="hidden md:block overflow-x-auto">
       <table className="w-full text-left text-sm border-collapse">
@@ -48,6 +59,11 @@ export function SeccionEgresosDesktopTable({
             <th scope="col" className="py-2.5 px-3 font-semibold text-foreground">
               Concepto & Detalle
             </th>
+            {showCuotaColumn && (
+              <th scope="col" className="py-2.5 px-3 text-center font-semibold text-foreground">
+                Cuota
+              </th>
+            )}
             <th scope="col" className="py-2.5 px-3 text-center font-semibold text-foreground">
               Estado
             </th>
@@ -64,6 +80,7 @@ export function SeccionEgresosDesktopTable({
             <SeccionEgresoFila
               key={item.id}
               item={item}
+              showCuotaColumn={showCuotaColumn}
               isSelected={selectedGastoIds.includes(item.id)}
               dragOverId={dragOverId}
               draggedId={draggedId}

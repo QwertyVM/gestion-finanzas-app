@@ -708,7 +708,7 @@ export function ExecutiveDashboardClient() {
                     <thead className="bg-muted/40 text-muted-foreground text-[11px] border-b border-border/60">
                       <tr>
                         <th scope="col" className="py-2.5 px-3 font-medium">Banco / Concepto</th>
-                        <th scope="col" className="py-2.5 px-3 font-medium">Progreso</th>
+                        <th scope="col" className="py-2.5 px-3 font-medium">Cuota</th>
                         <th scope="col" className="py-2.5 px-3 text-center font-medium">Día Pago</th>
                         <th scope="col" className="py-2.5 px-3 text-right font-medium">Cuota Mensual</th>
                         <th scope="col" className="py-2.5 px-3 text-right font-medium">Saldo Restante</th>
@@ -737,7 +737,7 @@ export function ExecutiveDashboardClient() {
                           <td className="py-2.5 px-3 min-w-[140px]">
                             <div className="space-y-1">
                               <div className="flex items-center justify-between text-[10px] text-muted-foreground">
-                                <span>Cuota {p.cuotaActual}/{p.cuotasTotales}</span>
+                                <span className="font-semibold text-foreground">Cuota {p.cuotaActual} de {p.cuotasTotales}</span>
                                 <span>{p.progreso}%</span>
                               </div>
                               <div className="w-full h-1 rounded-full bg-muted overflow-hidden">

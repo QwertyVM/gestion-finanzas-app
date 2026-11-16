@@ -70,11 +70,11 @@ export function CuotaTarjetaFila({
         </span>
       </td>
 
-      {/* 3. Progreso */}
+      {/* 3. Cuota */}
       <td className="py-2.5 px-3">
-        <div className="w-28 space-y-1">
+        <div className="w-32 space-y-1">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-            <span>Cuota {c.cuotaActual}/{c.totalCuotas}</span>
+            <span className="font-semibold text-foreground">Cuota {c.cuotaActual} de {c.totalCuotas}</span>
             <span className="font-medium text-foreground">{progreso}%</span>
           </div>
           <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">

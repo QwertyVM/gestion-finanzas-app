@@ -162,6 +162,7 @@ export function SeccionEgresosTabla({
             {/* Desktop: Tabla estructurada */}
             <SeccionEgresosDesktopTable
               items={seccion.itemsFiltrados}
+              seccionId={seccion.id}
               selectedGastoIds={selectedGastoIds}
               moneda={moneda}
               draggedId={draggedId}
