@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
 import { Trash2 } from 'lucide-react';
 
 interface GastoSiguienteCardMobileProps {
@@ -43,7 +43,7 @@ export function GastoSiguienteCardMobile({
             </span>
           </div>
 
-          <h4 className="font-semibold text-xs text-foreground truncate">{gasto.concepto}</h4>
+          <h4 className="font-semibold text-xs text-foreground truncate">{limpiarConceptoCuota(gasto.concepto)}</h4>
 
           <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-1">
             <span className="truncate">{gasto.categoria || 'Sin categoría'}</span>

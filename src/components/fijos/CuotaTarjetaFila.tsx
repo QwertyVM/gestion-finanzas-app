@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
 import { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import { CuotaTarjetaAcciones } from './CuotaTarjetaAcciones';
 
@@ -55,7 +55,7 @@ export function CuotaTarjetaFila({
       {/* 1. Concepto */}
       <td className="py-2.5 px-3">
         <div className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[200px]" title={c.concepto}>
-          {c.concepto}
+          {limpiarConceptoCuota(c.concepto)}
         </div>
       </td>
 

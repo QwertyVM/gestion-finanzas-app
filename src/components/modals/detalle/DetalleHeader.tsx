@@ -10,7 +10,7 @@ import {
   Check,
   X,
 } from 'lucide-react';
-import { ClasificacionEgreso, getEstiloClasificacion } from '@/lib/utils';
+import { ClasificacionEgreso, getEstiloClasificacion, limpiarConceptoCuota } from '@/lib/utils';
 
 interface DetalleHeaderProps {
   concepto: string;
@@ -40,6 +40,9 @@ export function DetalleHeader({
   onClose,
 }: DetalleHeaderProps) {
   const estilo = getEstiloClasificacion(clasificacion);
+  const conceptoLimpio = limpiarConceptoCuota(concepto);
+  const matchCuota = concepto?.match(/\(Cuota\s+(\d+\/\d+)\)/i);
+  const cuotaTexto = matchCuota ? `Cuota ${matchCuota[1]}` : null;
 
   const getTipoLabel = () => {
     switch (tipo) {
@@ -78,10 +81,15 @@ export function DetalleHeader({
             {getTipoLabel()}
           </span>
           {!editandoConcepto ? (
-            <div className="flex items-center gap-1.5 group">
-              <h2 className="text-sm sm:text-base font-semibold text-foreground truncate max-w-[220px] sm:max-w-xs">
-                {concepto}
+            <div className="flex items-center gap-2 group flex-wrap">
+              <h2 className="text-sm sm:text-base font-semibold text-foreground truncate max-w-[200px] sm:max-w-xs">
+                {conceptoLimpio}
               </h2>
+              {cuotaTexto && (
+                <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-muted text-muted-foreground border border-border/60 shrink-0">
+                  {cuotaTexto}
+                </span>
+              )}
               <button
                 type="button"
                 onClick={onStartEditConcepto}

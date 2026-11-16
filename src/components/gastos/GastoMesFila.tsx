@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
 import { CheckSquare, Square, FastForward, CheckCircle2, Trash2, Check } from 'lucide-react';
 
 interface GastoMesFilaProps {
@@ -58,7 +58,7 @@ export function GastoMesFila({
       {/* 2. Concepto & Categoría */}
       <td className="py-2.5 px-3">
         <div className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[200px] md:max-w-xs" title={gasto.concepto}>
-          {gasto.concepto}
+          {limpiarConceptoCuota(gasto.concepto)}
         </div>
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
           <span

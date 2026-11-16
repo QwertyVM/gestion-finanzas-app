@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
 import { CheckSquare, Square, Check, Trash2 } from 'lucide-react';
 
 interface GastoMesCardMobileProps {
@@ -60,7 +60,7 @@ export function GastoMesCardMobile({
 
           <div className="min-w-0 flex-1">
             <h4 className="font-semibold text-foreground text-xs leading-snug line-clamp-1" title={gasto.concepto}>
-              {gasto.concepto}
+              {limpiarConceptoCuota(gasto.concepto)}
             </h4>
             <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5 flex-wrap">
               <span

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
 import { GripVertical, CheckSquare, Square, Check } from 'lucide-react';
 
 interface SeccionEgresoFilaProps {
@@ -83,7 +83,7 @@ export function SeccionEgresoFila({
       {/* 3. Concepto & Detalle */}
       <td className="py-2.5 px-3">
         <div className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[200px] md:max-w-xs" title={item.concepto}>
-          {item.concepto}
+          {limpiarConceptoCuota(item.concepto)}
         </div>
         <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5 truncate">
           <span

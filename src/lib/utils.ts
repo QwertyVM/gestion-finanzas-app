@@ -29,6 +29,11 @@ export function getCurrentPeriodo(): string {
   return `${year}-${month}`;
 }
 
+export function limpiarConceptoCuota(concepto: string | null | undefined): string {
+  if (!concepto) return '';
+  return concepto.replace(/\s*\(Cuota\s+\d+\/\d+\)/i, '').trim();
+}
+
 // ==========================================
 // CLASIFICACIÓN VISUAL Y DE NEGOCIO DE EGRESOS
 // ==========================================

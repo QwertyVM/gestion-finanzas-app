@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
 import { Trash2 } from 'lucide-react';
 import { GastoSiguienteCardMobile } from './GastoSiguienteCardMobile';
 
@@ -100,7 +100,7 @@ export function GastosSiguienteMesTabla({
                           </div>
                         </td>
                         <td className="py-3 px-3.5 font-medium text-foreground">
-                          {g.concepto}
+                          {limpiarConceptoCuota(g.concepto)}
                         </td>
                         <td className="py-3 px-3.5 text-muted-foreground text-xs">
                           {g.categoria || 'Sin categoría'}
