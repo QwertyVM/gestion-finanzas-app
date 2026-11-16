@@ -4,6 +4,7 @@ import React from 'react';
 import type { ResumenDivisasEgresos } from '@/lib/finanzas-service';
 import { formatMoney } from '@/lib/utils';
 import { Coins, CheckCircle2, ArrowRight } from 'lucide-react';
+import { ResumenDivisasDistribucionBar } from './ResumenDivisasDistribucionBar';
 
 interface ResumenDivisasCardProps {
   divisas?: ResumenDivisasEgresos | null;
@@ -11,7 +12,7 @@ interface ResumenDivisasCardProps {
 }
 
 export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCardProps) {
-  if (!divisas) return null;
+  if (!divisas || !divisas.tieneMultiplesMonedas) return null;
 
   const { soles, dolares, consolidado } = divisas;
 
@@ -42,34 +43,10 @@ export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCar
       </div>
 
       {/* Barra visual de distribución bimodal */}
-      <div className="space-y-1.5">
-        <div className="w-full h-2 rounded-full bg-muted/60 overflow-hidden flex shadow-inner">
-          {soles.porcentaje > 0 && (
-            <div
-              style={{ width: `${soles.porcentaje}%` }}
-              className="bg-emerald-500 h-full transition-all duration-300"
-              title={`Soles: ${soles.porcentaje}%`}
-            />
-          )}
-          {dolares.porcentaje > 0 && (
-            <div
-              style={{ width: `${dolares.porcentaje}%` }}
-              className="bg-sky-500 h-full transition-all duration-300"
-              title={`Dólares: ${dolares.porcentaje}%`}
-            />
-          )}
-        </div>
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground px-0.5">
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
-            <span>Soles ({soles.porcentaje}%)</span>
-          </span>
-          <span className="flex items-center gap-1.5">
-            <span className="w-2 h-2 rounded-full bg-sky-500 inline-block" />
-            <span>Dólares ({dolares.porcentaje}%)</span>
-          </span>
-        </div>
-      </div>
+      <ResumenDivisasDistribucionBar
+        porcentajeSoles={soles.porcentaje}
+        porcentajeDolares={dolares.porcentaje}
+      />
 
       {/* Grid de 3 Tarjetas Atómicas */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -95,6 +72,14 @@ export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCar
                 {formatMoney(soles.pendiente, moneda)}
               </span>
             </div>
+            {soles.adelantado > 0 && (
+              <div className="flex justify-between text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                <span>⚡ Adelantado:</span>
+                <span className="font-mono">
+                  {formatMoney(soles.adelantado, moneda)}
+                </span>
+              </div>
+            )}
             {soles.pagado > 0 && (
               <div className="flex justify-between text-[11px]">
                 <span>Ya pagado:</span>
@@ -138,6 +123,22 @@ export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCar
                 ≈ {formatMoney(dolares.pendiente, moneda)}
               </span>
             </div>
+            {dolares.adelantadoUSD > 0 && (
+              <div className="flex justify-between text-[11px] text-amber-600 dark:text-amber-400 font-medium">
+                <span>⚡ Adelantado:</span>
+                <span className="font-mono">
+                  ${dolares.adelantadoUSD.toFixed(2)} USD
+                </span>
+              </div>
+            )}
+            {dolares.pagadoUSD > 0 && (
+              <div className="flex justify-between text-[11px]">
+                <span>Ya pagado:</span>
+                <span className="font-mono text-muted-foreground">
+                  ${dolares.pagadoUSD.toFixed(2)} USD
+                </span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -170,7 +171,7 @@ export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCar
             </div>
             {consolidado.totalAdelantadoPEN > 0 && (
               <div className="flex justify-between text-[11px] text-amber-600 dark:text-amber-400 font-medium">
-                <span>Adelantado:</span>
+                <span>⚡ Adelantado:</span>
                 <span className="font-mono">
                   {formatMoney(consolidado.totalAdelantadoPEN, moneda)}
                 </span>
@@ -182,4 +183,3 @@ export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCar
     </div>
   );
 }
-

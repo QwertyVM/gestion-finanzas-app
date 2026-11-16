@@ -679,8 +679,8 @@ export function DashboardClient() {
         openRecordModal={openRecordModal}
       />
 
-      {/* 1.1 RESUMEN POR MONEDA (SOLES & DÓLARES) */}
-      {resumen.resumenDivisas && (
+        {/* 1.1 RESUMEN POR MONEDA (SOLES & DÓLARES) - Solo se muestra si hay múltiples monedas */ }
+      {resumen.resumenDivisas?.tieneMultiplesMonedas && (
         <ResumenDivisasCard
           divisas={resumen.resumenDivisas}
           moneda={moneda}

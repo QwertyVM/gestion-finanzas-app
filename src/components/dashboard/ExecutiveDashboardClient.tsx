@@ -342,12 +342,12 @@ export function ExecutiveDashboardClient() {
             {metricasMacro?.nivelCompromiso && (
               <span
                 className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${metricasMacro.nivelCompromiso === 'BAJO'
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60'
-                    : metricasMacro.nivelCompromiso === 'MODERADO'
-                      ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60'
-                      : metricasMacro.nivelCompromiso === 'ALTO'
-                        ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60'
-                        : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60'
+                  ? 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/60'
+                  : metricasMacro.nivelCompromiso === 'MODERADO'
+                    ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60'
+                    : metricasMacro.nivelCompromiso === 'ALTO'
+                      ? 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/60'
+                      : 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/60'
                   }`}
                 title={`Nivel de compromiso: ${metricasMacro.porcentajeComprometido}% de egresos fijos y deudas`}
               >
@@ -367,8 +367,8 @@ export function ExecutiveDashboardClient() {
             onClick={irMesAnterior}
             disabled={!puedeIrMesAnterior}
             className={`p-1 rounded transition ${puedeIrMesAnterior
-                ? 'hover:text-foreground text-muted-foreground cursor-pointer'
-                : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
+              ? 'hover:text-foreground text-muted-foreground cursor-pointer'
+              : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
               }`}
             title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
           >
@@ -399,8 +399,8 @@ export function ExecutiveDashboardClient() {
           type="button"
           onClick={() => setTabActiva('general')}
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${tabActiva === 'general'
-              ? 'bg-background text-foreground shadow-xs border border-border/80'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+            ? 'bg-background text-foreground shadow-xs border border-border/80'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
             }`}
         >
           <BarChart3 className="w-3.5 h-3.5" />
@@ -411,8 +411,8 @@ export function ExecutiveDashboardClient() {
           type="button"
           onClick={() => setTabActiva('categorias')}
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${tabActiva === 'categorias'
-              ? 'bg-background text-foreground shadow-xs border border-border/80'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+            ? 'bg-background text-foreground shadow-xs border border-border/80'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
             }`}
         >
           <Tag className="w-3.5 h-3.5" />
@@ -426,8 +426,8 @@ export function ExecutiveDashboardClient() {
           type="button"
           onClick={() => setTabActiva('tags')}
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition ${tabActiva === 'tags'
-              ? 'bg-background text-foreground shadow-xs border border-border/80'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+            ? 'bg-background text-foreground shadow-xs border border-border/80'
+            : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
             }`}
         >
           <Layers className="w-3.5 h-3.5" />
@@ -502,8 +502,8 @@ export function ExecutiveDashboardClient() {
             </div>
           </div>
 
-          {/* RESUMEN DE EGRESOS POR MONEDA (SOLES & DÓLARES) */}
-          {resumen.resumenDivisas && (
+            {/* RESUMEN DE EGRESOS POR MONEDA (SOLES & DÓLARES) - Solo si hay múltiples monedas */ }
+          {resumen.resumenDivisas?.tieneMultiplesMonedas && (
             <ResumenDivisasCard divisas={resumen.resumenDivisas} moneda={moneda} />
           )}
 
@@ -761,18 +761,18 @@ export function ExecutiveDashboardClient() {
                           <td className="py-2.5 px-3 text-center whitespace-nowrap">
                             <span
                               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${p.estado === 'PAGADO'
-                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                                  : p.estado === 'ADELANTADO'
-                                    ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
-                                    : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                : p.estado === 'ADELANTADO'
+                                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
                                 }`}
                             >
                               <span
                                 className={`w-1.5 h-1.5 rounded-full ${p.estado === 'PAGADO'
-                                    ? 'bg-emerald-500'
-                                    : p.estado === 'ADELANTADO'
-                                      ? 'bg-indigo-500'
-                                      : 'bg-amber-500'
+                                  ? 'bg-emerald-500'
+                                  : p.estado === 'ADELANTADO'
+                                    ? 'bg-indigo-500'
+                                    : 'bg-amber-500'
                                   }`}
                               />
                               {p.estado === 'PAGADO' ? 'Pagado' : p.estado === 'ADELANTADO' ? 'Adelantado' : 'Pendiente'}
@@ -1021,8 +1021,8 @@ export function ExecutiveDashboardClient() {
                     key={c.id}
                     onClick={() => setCategoriaSeleccionadaId(esSeleccionada ? null : c.id)}
                     className={`rounded-xl p-4 border transition-all cursor-pointer flex flex-col justify-between gap-3 ${esSeleccionada
-                        ? 'border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10'
-                        : 'border-border/80 bg-background hover:border-border hover:shadow-xs'
+                      ? 'border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10'
+                      : 'border-border/80 bg-background hover:border-border hover:shadow-xs'
                       }`}
                   >
                     <div>
@@ -1147,12 +1147,12 @@ export function ExecutiveDashboardClient() {
                           <div className="flex items-center gap-1.5 mb-0.5">
                             <span
                               className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold border ${item.clasificacion === 'FIJO'
-                                  ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300'
-                                  : item.clasificacion === 'PRESTAMO'
-                                    ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
-                                    : item.clasificacion === 'CUOTA'
-                                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300'
-                                      : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300'
+                                ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300'
+                                : item.clasificacion === 'PRESTAMO'
+                                  ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
+                                  : item.clasificacion === 'CUOTA'
+                                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                    : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300'
                                 }`}
                             >
                               {item.badgeLabel}
@@ -1172,10 +1172,10 @@ export function ExecutiveDashboardClient() {
                           </span>
                           <span
                             className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-medium mt-1 ${item.estado === 'PAGADO'
-                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                                : item.estado === 'ADELANTADO'
-                                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
-                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                              : item.estado === 'ADELANTADO'
+                                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
                               }`}
                           >
                             {item.estado === 'PAGADO' ? 'Pagado' : item.estado === 'ADELANTADO' ? 'Adelantado' : 'Pendiente'}
@@ -1204,22 +1204,22 @@ export function ExecutiveDashboardClient() {
                           <td className="py-2.5 px-3 whitespace-nowrap">
                             <span
                               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${item.clasificacion === 'FIJO'
-                                  ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60'
-                                  : item.clasificacion === 'PRESTAMO'
-                                    ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60'
-                                    : item.clasificacion === 'CUOTA'
-                                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60'
-                                      : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/60'
+                                ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60'
+                                : item.clasificacion === 'PRESTAMO'
+                                  ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60'
+                                  : item.clasificacion === 'CUOTA'
+                                    ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60'
+                                    : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/60'
                                 }`}
                             >
                               <span
                                 className={`w-1.5 h-1.5 rounded-full ${item.clasificacion === 'FIJO'
-                                    ? 'bg-sky-500'
-                                    : item.clasificacion === 'PRESTAMO'
-                                      ? 'bg-purple-500'
-                                      : item.clasificacion === 'CUOTA'
-                                        ? 'bg-indigo-500'
-                                        : 'bg-teal-500'
+                                  ? 'bg-sky-500'
+                                  : item.clasificacion === 'PRESTAMO'
+                                    ? 'bg-purple-500'
+                                    : item.clasificacion === 'CUOTA'
+                                      ? 'bg-indigo-500'
+                                      : 'bg-teal-500'
                                   }`}
                               />
                               {item.badgeLabel}
@@ -1240,18 +1240,18 @@ export function ExecutiveDashboardClient() {
                           <td className="py-2.5 px-3 text-center whitespace-nowrap">
                             <span
                               className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${item.estado === 'PAGADO'
-                                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                                  : item.estado === 'ADELANTADO'
-                                    ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
-                                    : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                                : item.estado === 'ADELANTADO'
+                                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                  : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
                                 }`}
                             >
                               <span
                                 className={`w-1.5 h-1.5 rounded-full ${item.estado === 'PAGADO'
-                                    ? 'bg-emerald-500'
-                                    : item.estado === 'ADELANTADO'
-                                      ? 'bg-indigo-500'
-                                      : 'bg-amber-500'
+                                  ? 'bg-emerald-500'
+                                  : item.estado === 'ADELANTADO'
+                                    ? 'bg-indigo-500'
+                                    : 'bg-amber-500'
                                   }`}
                               />
                               {item.estado === 'PAGADO' ? 'Pagado' : item.estado === 'ADELANTADO' ? 'Adelantado' : 'Pendiente'}
@@ -1392,20 +1392,20 @@ export function ExecutiveDashboardClient() {
                 key={tag.id}
                 onClick={() => setFiltroTagActivo(filtroTagActivo === tag.id ? 'TODOS' : tag.id)}
                 className={`rounded-xl p-5 border transition-all cursor-pointer flex flex-col justify-between gap-4 ${filtroTagActivo === tag.id
-                    ? 'ring-2 ring-primary bg-primary/5 dark:bg-primary/10 border-primary'
-                    : 'bg-card border-border/80 hover:border-border hover:shadow-xs'
+                  ? 'ring-2 ring-primary bg-primary/5 dark:bg-primary/10 border-primary'
+                  : 'bg-card border-border/80 hover:border-border hover:shadow-xs'
                   }`}
               >
                 <div>
                   <div className="flex items-center justify-between gap-2">
                     <span
                       className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold border ${tag.id === 'FIJO'
-                          ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60'
-                          : tag.id === 'PRESTAMO'
-                            ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60'
-                            : tag.id === 'CUOTA'
-                              ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60'
-                              : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/60'
+                        ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60'
+                        : tag.id === 'PRESTAMO'
+                          ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60'
+                          : tag.id === 'CUOTA'
+                            ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60'
+                            : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/60'
                         }`}
                     >
                       <span className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.colorHex }} />
@@ -1624,8 +1624,8 @@ export function ExecutiveDashboardClient() {
                   type="button"
                   onClick={() => setFiltroTagActivo('TODOS')}
                   className={`px-2.5 py-1 rounded-md transition ${filtroTagActivo === 'TODOS'
-                      ? 'bg-background text-foreground shadow-xs font-bold'
-                      : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-background text-foreground shadow-xs font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   Todos ({resumen.egresosConsolidados.length})
@@ -1634,8 +1634,8 @@ export function ExecutiveDashboardClient() {
                   type="button"
                   onClick={() => setFiltroTagActivo('FIJO')}
                   className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 ${filtroTagActivo === 'FIJO'
-                      ? 'bg-sky-500 text-white shadow-xs font-bold'
-                      : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-sky-500 text-white shadow-xs font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-sky-400" />
@@ -1645,8 +1645,8 @@ export function ExecutiveDashboardClient() {
                   type="button"
                   onClick={() => setFiltroTagActivo('PRESTAMO')}
                   className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 ${filtroTagActivo === 'PRESTAMO'
-                      ? 'bg-purple-600 text-white shadow-xs font-bold'
-                      : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-purple-600 text-white shadow-xs font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-purple-400" />
@@ -1656,8 +1656,8 @@ export function ExecutiveDashboardClient() {
                   type="button"
                   onClick={() => setFiltroTagActivo('CUOTA')}
                   className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 ${filtroTagActivo === 'CUOTA'
-                      ? 'bg-indigo-600 text-white shadow-xs font-bold'
-                      : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-indigo-600 text-white shadow-xs font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-indigo-400" />
@@ -1667,8 +1667,8 @@ export function ExecutiveDashboardClient() {
                   type="button"
                   onClick={() => setFiltroTagActivo('VARIABLE')}
                   className={`px-2.5 py-1 rounded-md transition flex items-center gap-1.5 ${filtroTagActivo === 'VARIABLE'
-                      ? 'bg-teal-600 text-white shadow-xs font-bold'
-                      : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-teal-600 text-white shadow-xs font-bold'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
@@ -1687,12 +1687,12 @@ export function ExecutiveDashboardClient() {
                       <div className="flex items-center gap-1.5 mb-0.5">
                         <span
                           className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-bold border ${item.clasificacion === 'FIJO'
-                              ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300'
-                              : item.clasificacion === 'PRESTAMO'
-                                ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
-                                : item.clasificacion === 'CUOTA'
-                                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300'
-                                  : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300'
+                            ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300'
+                            : item.clasificacion === 'PRESTAMO'
+                              ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300'
+                              : item.clasificacion === 'CUOTA'
+                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300'
+                                : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300'
                             }`}
                         >
                           {item.badgeLabel}
@@ -1716,10 +1716,10 @@ export function ExecutiveDashboardClient() {
                       </span>
                       <span
                         className={`inline-flex items-center gap-1 px-1.5 py-0.2 rounded-full text-[9px] font-medium mt-1 ${item.estado === 'PAGADO'
-                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                            : item.estado === 'ADELANTADO'
-                              ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
-                              : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                          ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                          : item.estado === 'ADELANTADO'
+                            ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                            : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
                           }`}
                       >
                         {item.estado === 'PAGADO' ? 'Pagado' : item.estado === 'ADELANTADO' ? 'Adelantado' : 'Pendiente'}
@@ -1748,22 +1748,22 @@ export function ExecutiveDashboardClient() {
                       <td className="py-2.5 px-3 whitespace-nowrap">
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold border ${item.clasificacion === 'FIJO'
-                              ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60'
-                              : item.clasificacion === 'PRESTAMO'
-                                ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60'
-                                : item.clasificacion === 'CUOTA'
-                                  ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60'
-                                  : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/60'
+                            ? 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800/60'
+                            : item.clasificacion === 'PRESTAMO'
+                              ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-300 dark:border-purple-800/60'
+                              : item.clasificacion === 'CUOTA'
+                                ? 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/60'
+                                : 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-950/40 dark:text-teal-300 dark:border-teal-800/60'
                             }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${item.clasificacion === 'FIJO'
-                                ? 'bg-sky-500'
-                                : item.clasificacion === 'PRESTAMO'
-                                  ? 'bg-purple-500'
-                                  : item.clasificacion === 'CUOTA'
-                                    ? 'bg-indigo-500'
-                                    : 'bg-teal-500'
+                              ? 'bg-sky-500'
+                              : item.clasificacion === 'PRESTAMO'
+                                ? 'bg-purple-500'
+                                : item.clasificacion === 'CUOTA'
+                                  ? 'bg-indigo-500'
+                                  : 'bg-teal-500'
                               }`}
                           />
                           {item.badgeLabel}
@@ -1790,18 +1790,18 @@ export function ExecutiveDashboardClient() {
                       <td className="py-2.5 px-3 text-center whitespace-nowrap">
                         <span
                           className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium ${item.estado === 'PAGADO'
-                              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-                              : item.estado === 'ADELANTADO'
-                                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
-                                : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                            ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                            : item.estado === 'ADELANTADO'
+                              ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300'
+                              : 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
                             }`}
                         >
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${item.estado === 'PAGADO'
-                                ? 'bg-emerald-500'
-                                : item.estado === 'ADELANTADO'
-                                  ? 'bg-indigo-500'
-                                  : 'bg-amber-500'
+                              ? 'bg-emerald-500'
+                              : item.estado === 'ADELANTADO'
+                                ? 'bg-indigo-500'
+                                : 'bg-amber-500'
                               }`}
                           />
                           {item.estado === 'PAGADO' ? 'Pagado' : item.estado === 'ADELANTADO' ? 'Adelantado' : 'Pendiente'}

@@ -101,6 +101,7 @@ export interface DesgloseDolaresDetalle extends DesgloseMonedaDetalle {
 export interface ResumenDivisasEgresos {
   soles: DesgloseMonedaDetalle;
   dolares: DesgloseDolaresDetalle;
+  tieneMultiplesMonedas: boolean;
   consolidado: {
     totalEgresosPEN: number;
     totalPendientePEN: number;
@@ -1592,6 +1593,7 @@ export function calcularResumenDivisas(
   const sTotalNum = Number(sTotal.toFixed(2));
   const dTotalPENNum = Number(dTotalPEN.toFixed(2));
   const totalConsolidado = Number((sTotalNum + dTotalPENNum).toFixed(2));
+  const tieneMultiplesMonedas = sConteo > 0 && dConteo > 0;
 
   return {
     soles: {
@@ -1615,6 +1617,7 @@ export function calcularResumenDivisas(
       porcentaje: totalConsolidado > 0 ? Number(((dTotalPENNum / totalConsolidado) * 100).toFixed(1)) : 0,
       conteo: dConteo,
     },
+    tieneMultiplesMonedas,
     consolidado: {
       totalEgresosPEN: totalConsolidado,
       totalPendientePEN: Number((sPendiente + dPendientePEN).toFixed(2)),
