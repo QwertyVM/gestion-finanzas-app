@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, formatPeriodoLabel } from '@/lib/utils';
 import { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import { FijoMetodoPagoSelector } from './FijoMetodoPagoSelector';
 import { Check, Pencil, Trash2 } from 'lucide-react';
@@ -63,6 +63,10 @@ export function FijoCardMobile({
               style={{ backgroundColor: cf.categoriaColor || '#64748b' }}
             />
             <span className="truncate">{cf.categoria || 'Sin categoría'}</span>
+            <span className="text-[10px] opacity-40">·</span>
+            <span className="text-[10px] text-muted-foreground">
+              {cf.mesFin ? `Hasta ${formatPeriodoLabel(cf.mesFin)}` : 'Indefinido'}
+            </span>
           </div>
         </div>
 

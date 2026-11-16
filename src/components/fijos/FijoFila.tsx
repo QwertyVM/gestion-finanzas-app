@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { formatMoney } from '@/lib/utils';
+import { formatMoney, formatPeriodoLabel } from '@/lib/utils';
 import { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import { FijoMetodoPagoSelector } from './FijoMetodoPagoSelector';
 import { FijoAcciones } from './FijoAcciones';
@@ -65,6 +65,11 @@ export function FijoFila({
       <td className="py-2.5 px-3">
         <div className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[220px] md:max-w-xs" title={cf.concepto}>
           {cf.concepto}
+        </div>
+        <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-muted/60 text-muted-foreground font-normal">
+            {cf.mesFin ? `Hasta ${formatPeriodoLabel(cf.mesFin)}` : 'Indefinido'}
+          </span>
         </div>
       </td>
 
