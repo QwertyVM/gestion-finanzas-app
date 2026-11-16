@@ -38,12 +38,18 @@ export function ProyeccionAnualClient() {
     loadAnio();
   }, [anioSeleccionado]);
 
-  const totalIngresos = datosAnio.reduce((acc, m) => acc + (m.ingresos || 0), 0);
-  const totalFijos = datosAnio.reduce((acc, m) => acc + (m.fijos || 0), 0);
-  const totalPrestamos = datosAnio.reduce((acc, m) => acc + (m.prestamos || 0), 0);
-  const totalGastos = datosAnio.reduce((acc, m) => acc + (m.gastos || 0), 0);
-  const totalEgresos = datosAnio.reduce((acc, m) => acc + (m.totalEgresos || 0), 0);
-  const totalDisponible = datosAnio.reduce((acc, m) => acc + (m.disponible || 0), 0);
+  // Solo sumar los meses que tienen registro explícito hasta el periodo actual
+  const currentPeriodoStr = periodo || '2026-11';
+  const mesesConRegistro = datosAnio.filter(
+    (m) => m.periodo <= currentPeriodoStr && (m.ingresos > 0 || m.totalEgresos > 0)
+  );
+
+  const totalIngresos = mesesConRegistro.reduce((acc, m) => acc + (m.ingresos || 0), 0);
+  const totalFijos = mesesConRegistro.reduce((acc, m) => acc + (m.fijos || 0), 0);
+  const totalPrestamos = mesesConRegistro.reduce((acc, m) => acc + (m.prestamos || 0), 0);
+  const totalGastos = mesesConRegistro.reduce((acc, m) => acc + (m.gastos || 0), 0);
+  const totalEgresos = mesesConRegistro.reduce((acc, m) => acc + (m.totalEgresos || 0), 0);
+  const totalDisponible = mesesConRegistro.reduce((acc, m) => acc + (m.disponible || 0), 0);
   const tasaAhorroPromedio = totalIngresos > 0 ? (totalDisponible / totalIngresos) * 100 : 0;
 
   const handleSelectMes = (mesPeriodo: string) => {
@@ -66,21 +72,9 @@ export function ProyeccionAnualClient() {
           </p>
         </div>
 
-        {/* Selector de año */}
-        <div className="inline-flex items-center gap-0.5 bg-muted/60 p-0.5 rounded-lg text-xs self-start sm:self-auto">
-          {[2026, 2027, 2028].map((yr) => (
-            <button
-              key={yr}
-              onClick={() => setAnioSeleccionado(yr)}
-              className={`px-3 py-1.5 rounded-md text-xs font-semibold transition ${
-                anioSeleccionado === yr
-                  ? 'bg-card text-foreground shadow-xs'
-                  : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {yr}
-            </button>
-          ))}
+        {/* Año activo */}
+        <div className="inline-flex items-center gap-1.5 bg-muted/60 px-3 py-1.5 rounded-lg text-xs font-semibold text-foreground self-start sm:self-auto">
+          <span>Año {anioSeleccionado}</span>
         </div>
       </div>
 

@@ -77,8 +77,8 @@ export async function GET(request: NextRequest) {
         cuotasMes.length > 0 ||
         gastosMes.length > 0;
 
-      // Si es un mes pasado sin actividad registrada, no proyectar valores estimados
-      if (esMesPasado && !tieneDataRegistrada) {
+      // Si no hay actividad registrada, no proyectar valores estimados
+      if (!tieneDataRegistrada) {
         resultado.push({
           periodo,
           mesNombre: NOMBRES_MESES[mes - 1],
@@ -94,21 +94,6 @@ export async function GET(request: NextRequest) {
           esUtilidad: false,
         });
         continue;
-      }
-
-      // Proyección de ingresos (solo para mes actual y futuros si no se registraron)
-      if (totalIngresos === 0 && !esMesPasado) {
-        totalIngresos += sueldoBase;
-      }
-
-      // Proyección de costos fijos (solo para mes actual y futuros si no hay registros específicos)
-      if (totalFijosMes === 0 && !esMesPasado) {
-        const vigentes = costosFijosActivos.filter((f) => {
-          const inicioValido = !f.mesInicio || f.mesInicio <= periodo;
-          const finValido = !f.mesFin || f.mesFin >= periodo;
-          return inicioValido && finValido;
-        });
-        totalFijosMes = vigentes.reduce((acc, f) => acc + Number(f.monto), 0);
       }
 
       const adelantoFijos = fijosMes.filter((r) => r.estado === 'ADELANTADO').reduce((acc, r) => acc + Number(r.monto), 0);
