@@ -18,42 +18,39 @@ jobs:
       - name: Checkout del repositorio
         uses: actions/checkout@v4
 
+      - name: Configurar Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Instalar dependencias del proyecto
+        run: npm ci || npm install --no-audit
+
+      - name: Generar cliente Prisma
+        run: npx prisma generate
+
       - name: Instalar cliente de PostgreSQL
         run: |
           sudo apt-get update -y
-          sudo apt-get install -y postgresql-client
+          sudo apt-get install -y postgresql-client || true
 
       - name: Preparar carpeta de respaldos
         run: mkdir -p backups
 
-      - name: Generar Dump de PostgreSQL (Neon)
+      - name: Ejecutar Respaldo de Base de Datos
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           if [ -z "$DATABASE_URL" ]; then
             echo "❌ Error: El secret DATABASE_URL no está configurado en GitHub Secrets."
+            echo "👉 Para solucionarlo: Ve a tu repositorio en GitHub -> Settings -> Secrets and variables -> Actions y agrega el secret 'DATABASE_URL' con tu cadena de conexión de Neon."
             exit 1
           fi
-
-          TIMESTAMP=$(date +'%Y-%m-%d_%H%M%S')
-          BACKUP_FILE="backups/db_backup_${TIMESTAMP}.sql.gz"
-
-          echo "⏳ Generando copia de seguridad..."
-          pg_dump "$DATABASE_URL" \
-            --clean \
-            --if-exists \
-            --no-owner \
-            --no-privileges \
-            --encoding=utf8 \
-            | gzip > "$BACKUP_FILE"
-
-          SIZE=$(ls -lh "$BACKUP_FILE" | awk '{print $5}')
-          echo "✅ Respaldo creado exitosamente: $BACKUP_FILE ($SIZE)"
-
-          echo "BACKUP_FILE=$BACKUP_FILE" >> $GITHUB_ENV
-          echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+          node scripts/backup-db.mjs
 
       - name: Subir como Artefacto (Descargable por 30 días)
+        if: success() && env.BACKUP_FILE != ''
         uses: actions/upload-artifact@v4
         with:
           name: db-backup-${{ env.TIMESTAMP }}
@@ -61,6 +58,7 @@ jobs:
           retention-days: 30
 
       - name: Crear Release con Respaldo Permanente en GitHub
+        if: success() && env.BACKUP_FILE != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -68,6 +66,5 @@ jobs:
           echo "Publicando release con tag $TAG..."
           gh release create "$TAG" "$BACKUP_FILE" \
             --title "Copia BD - $(date +'%Y-%m-%d')" \
-            --notes "Respaldo automático diario de la base de datos PostgreSQL (Neon). Generado el $(date +'%Y-%m-%d %H:%M:%S UTC')." \
+            --notes "Respaldo automático de la base de datos PostgreSQL (Neon). Generado el $(date +'%Y-%m-%d %H:%M:%S UTC')." \
             --prerelease || echo "⚠️ Advertencia: No se pudo crear el release en GitHub. El respaldo permanece disponible en la sección de Artefactos."
-

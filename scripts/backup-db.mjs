@@ -30,7 +30,7 @@ if (fs.existsSync(envPath)) {
 
 const databaseUrl = process.env.DATABASE_URL;
 if (!databaseUrl) {
-  console.error('❌ Error: DATABASE_URL no está definida en .env');
+  console.error('❌ Error: DATABASE_URL no está configurada.');
   process.exit(1);
 }
 
@@ -41,10 +41,20 @@ if (!fs.existsSync(backupsDir)) {
 
 const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
 
+function setGithubEnv(file) {
+  if (process.env.GITHUB_ENV) {
+    try {
+      fs.appendFileSync(process.env.GITHUB_ENV, `BACKUP_FILE=${file}\nTIMESTAMP=${timestamp}\n`);
+    } catch {
+      // Ignorar si no se puede escribir en GITHUB_ENV
+    }
+  }
+}
+
 // Verificar si pg_dump está disponible
 let hasPgDump = false;
 try {
-  execSync('which pg_dump', { stdio: 'ignore' });
+  execSync('pg_dump --version', { stdio: 'ignore' });
   hasPgDump = true;
 } catch {
   hasPgDump = false;
@@ -52,22 +62,25 @@ try {
 
 if (hasPgDump) {
   const sqlFile = path.join(backupsDir, `db_backup_${timestamp}.sql.gz`);
-  console.log('⏳ Ejecutando pg_dump...');
+  // En Neon, pg_dump requiere conexión directa sin pooler (-pooler)
+  const dumpUrl = databaseUrl.replace('-pooler', '');
+  console.log('⏳ Ejecutando pg_dump (acceso directo Neon)...');
   try {
     execSync(
-      `pg_dump "${databaseUrl}" --clean --if-exists --no-owner --no-privileges | gzip > "${sqlFile}"`,
+      `pg_dump "${dumpUrl}" --clean --if-exists --no-owner --no-privileges | gzip > "${sqlFile}"`,
       { stdio: 'inherit' }
     );
     console.log(`✅ Respaldo SQL completado con éxito: ${sqlFile}`);
+    setGithubEnv(sqlFile);
     process.exit(0);
   } catch (err) {
-    console.warn('⚠️ Falló pg_dump, intentando exportación JSON directa...');
+    console.warn('⚠️ Falló pg_dump, activando respaldo de contingencia vía Prisma JSON...');
   }
 } else {
-  console.log('ℹ️  pg_dump no está instalado localmente. Exportando todas las tablas a JSON...');
+  console.log('ℹ️  pg_dump no está disponible en el entorno. Generando exportación completa vía Prisma...');
 }
 
-// Fallback: Exportación completa de todas las tablas de PostgreSQL
+// Fallback: Exportación completa de todas las tablas de PostgreSQL vía Prisma
 const prisma = new PrismaClient();
 
 async function runJsonBackup() {
@@ -100,6 +113,7 @@ async function runJsonBackup() {
     const size = (fs.statSync(jsonFile).size / 1024).toFixed(2);
     console.log(`\n✅ Respaldo JSON completado con éxito (${size} KB, ${backupData.totalRows} filas totales):`);
     console.log(`📁 ${jsonFile}`);
+    setGithubEnv(jsonFile);
   } catch (error) {
     console.error('❌ Error al generar respaldo JSON:', error);
     process.exit(1);
