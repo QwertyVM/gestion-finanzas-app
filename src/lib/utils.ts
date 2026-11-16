@@ -15,7 +15,10 @@ export const NOMBRES_MESES = [
   "Julio", "Agosto", "Setiembre", "Octubre", "Noviembre", "Diciembre"
 ];
 
-export function formatPeriodoLabel(periodo: string): string {
+export function formatPeriodoLabel(periodo?: string | null): string {
+  if (!periodo || typeof periodo !== "string" || !periodo.includes("-")) {
+    return periodo || "";
+  }
   const [yearStr, monthStr] = periodo.split("-");
   const monthIdx = parseInt(monthStr, 10) - 1;
   const mesNombre = NOMBRES_MESES[monthIdx] || monthStr;

@@ -25,7 +25,7 @@ export function FinanzasProvider({ children }: { children: React.ReactNode }) {
 
   const handlePeriodoReset = useCallback(() => {
     selection.setSelectedItems(new Map());
-  }, [selection]);
+  }, [selection.setSelectedItems]);
 
   const periodoState = useFinanzasPeriodo({
     usuarioActual,

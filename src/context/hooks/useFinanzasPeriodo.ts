@@ -163,6 +163,8 @@ export function useFinanzasPeriodo({
         fetchResumen(periodo, false);
       }
       onPeriodoChange?.();
+    } else if (!authLoading && !usuarioActual?.id) {
+      setLoading(false);
     }
   }, [authLoading, usuarioActual?.id]);
 
