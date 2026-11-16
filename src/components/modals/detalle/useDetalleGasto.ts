@@ -57,8 +57,11 @@ export function useDetalleGasto(
       setClasificacionLocal(item.clasificacion || obtenerClasificacionEgreso(item));
       setMontoEditInput(item.monto.toString());
       setEditandoMonto(false);
+      const baseCon = (item.totalCuotas && item.totalCuotas > 1)
+        ? (item.concepto || '').replace(/\s*\(Cuota\s+\d+\/\d+\)/i, '').trim()
+        : (item.concepto || '');
       setConceptoLocal(item.concepto || '');
-      setConceptoEditInput(item.concepto || '');
+      setConceptoEditInput(baseCon);
       setEditandoConcepto(false);
       setNotasLocal(item.notas || '');
 
@@ -156,6 +159,26 @@ export function useDetalleGasto(
     }
   };
 
+  const handleStartEditConcepto = () => {
+    if (item) {
+      const base = (item.totalCuotas && item.totalCuotas > 1)
+        ? (conceptoLocal || item.concepto).replace(/\s*\(Cuota\s+\d+\/\d+\)/i, '').trim()
+        : (conceptoLocal || item.concepto);
+      setConceptoEditInput(base);
+    }
+    setEditandoConcepto(true);
+  };
+
+  const handleCancelEditConcepto = () => {
+    if (item) {
+      const base = (item.totalCuotas && item.totalCuotas > 1)
+        ? (conceptoLocal || item.concepto).replace(/\s*\(Cuota\s+\d+\/\d+\)/i, '').trim()
+        : (conceptoLocal || item.concepto);
+      setConceptoEditInput(base);
+    }
+    setEditandoConcepto(false);
+  };
+
   const handleGuardarConcepto = async () => {
     if (!item || savingConcepto || !conceptoEditInput.trim()) return;
     const nuevo = conceptoEditInput.trim();
@@ -170,12 +193,17 @@ export function useDetalleGasto(
         await fetch(url, {
           method,
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, concepto: nuevo }),
+          body: JSON.stringify({ id, concepto: nuevo, actualizarSerie: true }),
         });
         toast.success('Descripción actualizada');
         await refresh();
       }
-      setConceptoLocal(nuevo);
+      const base = nuevo.replace(/\s*\(Cuota\s+\d+\/\d+\)/i, '').trim();
+      const nuevoFormateado = (item.totalCuotas && item.totalCuotas > 1)
+        ? `${base} (Cuota ${item.cuotaActual || 1}/${item.totalCuotas})`
+        : nuevo;
+      setConceptoLocal(nuevoFormateado);
+      setConceptoEditInput(base);
       setEditandoConcepto(false);
     } catch {
       toast.error('Error al actualizar descripción');
@@ -360,6 +388,8 @@ export function useDetalleGasto(
     conceptoLocal,
     editandoConcepto,
     setEditandoConcepto,
+    handleStartEditConcepto,
+    handleCancelEditConcepto,
     conceptoEditInput,
     setConceptoEditInput,
     savingConcepto,
