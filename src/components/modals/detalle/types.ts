@@ -49,11 +49,17 @@ export interface DetalleItemData {
   mesFin?: string | null;
 }
 
+export interface MonedaDetalleInfo {
+  monedaOriginal: 'PEN' | 'USD';
+  montoOriginal?: number | null;
+  tipoCambio?: number;
+}
+
 export interface ModalDetalleGastoProps {
   item: DetalleItemData | null;
   onClose: () => void;
   onCambiarEstado?: (item: DetalleItemData, nuevoEstado: string) => Promise<void>;
-  onGuardarMonto?: (item: DetalleItemData, nuevoMonto: number) => Promise<void>;
+  onGuardarMonto?: (item: DetalleItemData, nuevoMonto: number, monedaInfo?: MonedaDetalleInfo) => Promise<void>;
   onEliminarGasto?: (item: DetalleItemData) => Promise<void>;
   onCambiarMetodoPago?: (
     item: DetalleItemData,
@@ -72,6 +78,12 @@ export interface ModalDetalleGastoProps {
   ) => Promise<void>;
   onGuardarConcepto?: (item: DetalleItemData, nuevoConcepto: string) => Promise<void>;
   onGuardarNotas?: (item: DetalleItemData, nuevasNotas: string) => Promise<void>;
+  onGuardarFechaPeriodo?: (
+    item: DetalleItemData,
+    nuevaFecha: string,
+    nuevoPeriodo: string,
+    aplicarSerie?: boolean
+  ) => Promise<void>;
   monedaSimbolo?: string;
   tarjetas?: Array<{
     id: string;

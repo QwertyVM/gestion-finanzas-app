@@ -319,15 +319,40 @@ export function GastosClient() {
           await handleCambiarEstadoItem(item.dbId, nuevoEstado);
           setDetalleGasto((prev) => (prev ? { ...prev, estado: nuevoEstado as any } : null));
         }}
-        onGuardarMonto={async (item, nuevoMonto) => {
+        onGuardarMonto={async (item, nuevoMonto, monedaInfo) => {
           try {
+            const body: any = {
+              id: item.dbId,
+              monto: nuevoMonto,
+              ...(monedaInfo
+                ? {
+                    monedaOriginal: monedaInfo.monedaOriginal,
+                    montoOriginal: monedaInfo.montoOriginal,
+                    tipoCambio: monedaInfo.tipoCambio,
+                  }
+                : {}),
+            };
             const res = await fetch('/api/gastos', {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ id: item.dbId, monto: nuevoMonto }),
+              body: JSON.stringify(body),
             });
             if (!res.ok) throw new Error('Error al actualizar monto');
-            setDetalleGasto((prev) => (prev ? { ...prev, monto: nuevoMonto } : null));
+            setDetalleGasto((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    monto: nuevoMonto,
+                    ...(monedaInfo
+                      ? {
+                          monedaOriginal: monedaInfo.monedaOriginal,
+                          montoOriginal: monedaInfo.montoOriginal,
+                          tipoCambio: monedaInfo.tipoCambio,
+                        }
+                      : {}),
+                  }
+                : null
+            );
             await refresh();
           } catch (err: any) {
             toast.error('Error al actualizar monto');

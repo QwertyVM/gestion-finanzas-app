@@ -3,23 +3,29 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useFinanzas } from '@/context/FinanzasContext';
-import { DetalleItemData } from './types';
-import { obtenerClasificacionEgreso, ClasificacionEgreso } from '@/lib/utils';
+import { DetalleItemData, MonedaDetalleInfo } from './types';
+import { obtenerClasificacionEgreso, ClasificacionEgreso, formatPeriodoLabel } from '@/lib/utils';
 
 export function useDetalleGasto(
   item: DetalleItemData | null,
   onClose: () => void,
   onCambiarEstado?: (item: DetalleItemData, nuevoEstado: string) => Promise<void>,
-  onGuardarMonto?: (item: DetalleItemData, nuevoMonto: number) => Promise<void>,
+  onGuardarMonto?: (item: DetalleItemData, nuevoMonto: number, monedaInfo?: MonedaDetalleInfo) => Promise<void>,
   onEliminarGasto?: (item: DetalleItemData) => Promise<void>,
   onCambiarClasificacion?: (item: DetalleItemData, nuevaClasificacion: 'FIJO' | 'VARIABLE') => Promise<void>,
   onCambiarCategoria?: (item: DetalleItemData, nuevaCategoriaId: string, aplicarSerie?: boolean) => Promise<void>,
   onGuardarConcepto?: (item: DetalleItemData, nuevoConcepto: string) => Promise<void>,
   onGuardarNotas?: (item: DetalleItemData, nuevasNotas: string) => Promise<void>,
+  onGuardarFechaPeriodo?: (item: DetalleItemData, nuevaFecha: string, nuevoPeriodo: string, aplicarSerie?: boolean) => Promise<void>,
   monedaSimbolo = 'S/'
 ) {
   const { refresh, periodo } = useFinanzas();
   const [updating, setUpdating] = useState(false);
+
+  // Fecha y Periodo
+  const [fechaGastoLocal, setFechaGastoLocal] = useState(item?.fechaGasto || '');
+  const [periodoPagoLocal, setPeriodoPagoLocal] = useState(item?.periodoPago || '');
+  const [savingFechaPeriodo, setSavingFechaPeriodo] = useState(false);
 
   // Monto
   const [editandoMonto, setEditandoMonto] = useState(false);
@@ -64,6 +70,8 @@ export function useDetalleGasto(
       setConceptoEditInput(baseCon);
       setEditandoConcepto(false);
       setNotasLocal(item.notas || '');
+      setFechaGastoLocal(item.fechaGasto || '');
+      setPeriodoPagoLocal(item.periodoPago || '');
 
       const isUsd = item.monedaOriginal === 'USD' || item.concepto.includes('$');
       setModoEdicion(isUsd ? 'DOLARES' : 'SOLES');
@@ -240,21 +248,39 @@ export function useDetalleGasto(
   const handleGuardarMonto = async () => {
     if (!item || !onGuardarMonto) return;
     let val: number;
+    let monedaOriginal: 'PEN' | 'USD' = 'PEN';
+    let montoOriginal: number | null = null;
+    let tipoCambio: number = 4.0;
+
     if (modoEdicion === 'DOLARES') {
       const usdVal = parseFloat(montoUsdEdit);
       const tcVal = parseFloat(tcEdit) || 4.0;
       if (isNaN(usdVal) || usdVal < 0) return toast.error('Ingresa un monto válido');
       val = Number((usdVal * tcVal).toFixed(2));
+      monedaOriginal = 'USD';
+      montoOriginal = usdVal;
+      tipoCambio = tcVal;
     } else {
       val = parseFloat(montoEditInput);
+      monedaOriginal = 'PEN';
+      montoOriginal = null;
+      tipoCambio = parseFloat(tcEdit) || 4.0;
     }
     if (isNaN(val) || val < 0) return toast.error('Ingresa un monto válido');
 
     try {
       setSavingMonto(true);
-      await onGuardarMonto(item, val);
+      await onGuardarMonto(item, val, { monedaOriginal, montoOriginal, tipoCambio });
+      item.monto = val;
+      item.monedaOriginal = monedaOriginal;
+      item.montoOriginal = montoOriginal;
+      item.tipoCambio = tipoCambio;
       setEditandoMonto(false);
-      toast.success(`Monto actualizado a ${monedaSimbolo} ${val.toFixed(2)}`);
+      toast.success(
+        monedaOriginal === 'USD'
+          ? `Monto actualizado a $${montoOriginal?.toFixed(2)} USD (S/ ${val.toFixed(2)})`
+          : `Monto actualizado a ${monedaSimbolo} ${val.toFixed(2)}`
+      );
     } catch {
       toast.error('Error al actualizar monto');
     } finally {
@@ -376,6 +402,56 @@ export function useDetalleGasto(
     await refresh();
   };
 
+  const handleGuardarFechaPeriodo = async (
+    nuevaFecha: string,
+    nuevoPeriodo: string,
+    aplicarSerie = true
+  ) => {
+    if (!item || savingFechaPeriodo) return;
+    try {
+      setSavingFechaPeriodo(true);
+      if (onGuardarFechaPeriodo) {
+        await onGuardarFechaPeriodo(item, nuevaFecha, nuevoPeriodo, aplicarSerie);
+      } else {
+        const id = item.dbId || item.id.replace('fijo-', '');
+        const res = await fetch('/api/gastos', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            id,
+            fechaGasto: nuevaFecha ? new Date(`${nuevaFecha}T12:00:00`) : undefined,
+            periodoPago: nuevoPeriodo || undefined,
+            actualizarSerie: aplicarSerie,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.error || 'Error al actualizar fecha y periodo');
+        }
+        await refresh();
+      }
+
+      const isoFecha = nuevaFecha ? new Date(`${nuevaFecha}T12:00:00`).toISOString() : fechaGastoLocal;
+      setFechaGastoLocal(isoFecha);
+      setPeriodoPagoLocal(nuevoPeriodo || periodoPagoLocal);
+      item.fechaGasto = isoFecha;
+      item.periodoPago = nuevoPeriodo || item.periodoPago;
+
+      const mesLabel = formatPeriodoLabel(nuevoPeriodo);
+      if (nuevoPeriodo && nuevoPeriodo !== periodo) {
+        toast.success(`Gasto trasladado a ${mesLabel}`);
+        onClose();
+      } else {
+        toast.success(`Fecha actualizada para ${mesLabel}`);
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar fecha');
+      throw err;
+    } finally {
+      setSavingFechaPeriodo(false);
+    }
+  };
+
   return {
     updating,
     clasificacionLocal,
@@ -396,6 +472,10 @@ export function useDetalleGasto(
     handleGuardarConcepto,
     notasLocal,
     handleGuardarNotas,
+    fechaGastoLocal,
+    periodoPagoLocal,
+    savingFechaPeriodo,
+    handleGuardarFechaPeriodo,
     editandoMonto,
     setEditandoMonto,
     montoEditInput,

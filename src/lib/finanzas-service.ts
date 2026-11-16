@@ -95,6 +95,7 @@ export interface DesgloseDolaresDetalle extends DesgloseMonedaDetalle {
   pendienteUSD: number;
   pagadoUSD: number;
   adelantadoUSD: number;
+  tipoCambio: number;
   tipoCambioPromedio: number;
 }
 
@@ -764,32 +765,32 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
     if (cf.mesFin && periodo > cf.mesFin) continue;
 
     const reg = cf.registrosMes[0];
-    const montoNum = reg ? Number(reg.monto) : Number(cf.monto);
-    totalCostosFijos += montoNum;
+    let montoNum = reg ? Number(reg.monto) : Number(cf.monto);
 
     let monedaOriginal = 'PEN';
     let montoOriginal: number | null = null;
-    let tipoCambio = Number(config.tipoCambioUSD);
+    const tcConfig = Number(config.tipoCambioUSD || 4.00);
+    let tipoCambio = tcConfig;
 
     if (reg?.notas && reg.notas.includes('USD: $')) {
       const mUsd = reg.notas.match(/USD:\s*\$([0-9.]+)/);
-      const mTc = reg.notas.match(/TC:\s*S\/\s*([0-9.]+)/);
       if (mUsd) {
         monedaOriginal = 'USD';
         montoOriginal = parseFloat(mUsd[1]);
-        if (mTc) tipoCambio = parseFloat(mTc[1]);
-        else if (montoOriginal > 0) tipoCambio = Number((montoNum / montoOriginal).toFixed(2));
       }
     } else {
       const usdMatch = cf.concepto.match(/\$([0-9]+(?:\.[0-9]+)?)/);
       if (usdMatch) {
         monedaOriginal = 'USD';
         montoOriginal = parseFloat(usdMatch[1]);
-        if (montoOriginal > 0 && montoNum > 0) {
-          tipoCambio = Number((montoNum / montoOriginal).toFixed(2));
-        }
       }
     }
+
+    if (monedaOriginal === 'USD' && montoOriginal && montoOriginal > 0) {
+      tipoCambio = tcConfig;
+      montoNum = Number((montoOriginal * tcConfig).toFixed(2));
+    }
+    totalCostosFijos += montoNum;
 
     const metodoPago = reg?.metodoPago || cf.metodoPago || MetodoPago.EFECTIVO_DEBITO;
     const tarjetaObj = metodoPago === MetodoPago.TARJETA_CREDITO
@@ -851,14 +852,13 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
 
     let pMonedaOriginal = 'PEN';
     let pMontoOriginal: number | null = null;
-    let pTipoCambio = Number(config.tipoCambioUSD);
+    const pTcConfig = Number(config.tipoCambioUSD || 4.00);
+    let pTipoCambio = pTcConfig;
     const pUsdMatch = p.concepto.match(/\$([0-9]+(?:\.[0-9]+)?)/);
     if (pUsdMatch) {
       pMonedaOriginal = 'USD';
       pMontoOriginal = parseFloat(pUsdMatch[1]);
-      if (pMontoOriginal > 0 && Number(p.montoCuota) > 0) {
-        pTipoCambio = Number((Number(p.montoCuota) / pMontoOriginal).toFixed(2));
-      }
+      pTipoCambio = pTcConfig;
     }
 
     const pCatNombre = 'Préstamos & Créditos';
@@ -870,7 +870,10 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
     });
 
     if (cuotaMes) {
-      const montoNum = Number(cuotaMes.monto);
+      let montoNum = Number(cuotaMes.monto);
+      if (pMonedaOriginal === 'USD' && pMontoOriginal && pMontoOriginal > 0) {
+        montoNum = Number((pMontoOriginal * pTipoCambio).toFixed(2));
+      }
       totalPrestamos += montoNum;
       prestamos.push({
         id: p.id,
@@ -908,13 +911,18 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
         ? `Inicia en ${formatPeriodoLabel(proximaCuota.periodo)}`
         : 'Finalizado';
 
+      let montoCuotaPreview = Number(p.montoCuota);
+      if (pMonedaOriginal === 'USD' && pMontoOriginal && pMontoOriginal > 0) {
+        montoCuotaPreview = Number((pMontoOriginal * pTipoCambio).toFixed(2));
+      }
+
       prestamos.push({
         id: p.id,
         cuotaId: proximaCuota?.id || `preview-${p.id}`,
         banco: p.banco,
         concepto: p.concepto,
         montoTotal: Number(p.montoTotal),
-        montoCuota: Number(p.montoCuota),
+        montoCuota: montoCuotaPreview,
         cuotaActual: proximaCuota?.numeroCuota || 1,
         cuotasTotales: p.cuotasTotales,
         tasaInteresAnual: Number(p.tasaInteresAnual),
@@ -944,14 +952,109 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
   // 4. Tarjetas
   const tarjetasCredito = [];
   let totalTarjetas = 0;
+  const tcConfigGlobal = Number(config.tipoCambioUSD || 4.00);
 
   for (const t of tarjetasDb) {
-    const gastosMes = t.gastos;
-    const totalMes = gastosMes.reduce((acc, g) => acc + Number(g.monto), 0);
+    const gastosPeriodo = t.gastos.map((g) => {
+      const esUSD = g.monedaOriginal === 'USD';
+      const montoUSD = esUSD
+        ? (g.montoOriginal ? Number(g.montoOriginal) : (Number(g.monto) / (Number(g.tipoCambio) || tcConfigGlobal)))
+        : null;
+      const montoCalculado = esUSD && montoUSD != null
+        ? Number((montoUSD * tcConfigGlobal).toFixed(2))
+        : Number(g.monto);
+
+      const esCuota = (g.totalCuotas || 1) > 1;
+      const gCatNombre = g.categoria?.nombre || 'General';
+      const gCatMeta = obtenerColorCategoriaBackend(gCatNombre);
+      const gCatColor = g.categoria?.color || gCatMeta.color;
+      const gCatIcono = g.categoria?.icono || (esCuota ? 'Layers' : gCatMeta.icono);
+      const gClasif = clasificarItemBackend({
+        tipo: 'TARJETA',
+        concepto: g.concepto,
+        categoria: gCatNombre,
+        totalCuotas: g.totalCuotas,
+        clasificacionBD: g.clasificacion,
+      });
+
+      return {
+        id: g.id,
+        concepto: g.concepto,
+        monto: montoCalculado,
+        monedaOriginal: g.monedaOriginal,
+        montoOriginal: montoUSD,
+        tipoCambio: esUSD ? tcConfigGlobal : Number(g.tipoCambio),
+        fechaGasto: g.fechaGasto.toISOString(),
+        periodoPago: g.periodoPago,
+        categoria: gCatNombre,
+        categoriaId: g.categoriaId || null,
+        categoriaColor: gCatColor,
+        categoriaIcono: gCatIcono,
+        clasificacion: gClasif.clasificacion,
+        colorHex: gClasif.colorHex,
+        colorKey: gClasif.colorKey,
+        badgeLabel: gClasif.badgeLabel,
+        tipoLabel: gClasif.tipoLabel,
+        estado: g.estado,
+        cuotaActual: g.cuotaActual,
+        totalCuotas: g.totalCuotas,
+        fechaPagoReal: g.fechaPagoReal ? g.fechaPagoReal.toISOString() : null,
+        notas: g.notas || null,
+        orden: g.orden ?? 0,
+      };
+    });
+
+    const totalMes = gastosPeriodo.reduce((acc, g) => acc + g.monto, 0);
     totalTarjetas += totalMes;
 
     const gastosNext = gastosNextAll.filter((g) => g.tarjetaId === t.id);
-    const totalNext = gastosNext.reduce((acc, g) => acc + Number(g.monto), 0);
+    const gastosSiguientePeriodo = gastosNext.map((g) => {
+      const esUSD = g.monedaOriginal === 'USD';
+      const montoUSD = esUSD
+        ? (g.montoOriginal ? Number(g.montoOriginal) : (Number(g.monto) / (Number(g.tipoCambio) || tcConfigGlobal)))
+        : null;
+      const montoCalculado = esUSD && montoUSD != null
+        ? Number((montoUSD * tcConfigGlobal).toFixed(2))
+        : Number(g.monto);
+
+      const esCuota = (g.totalCuotas || 1) > 1;
+      const gCatNombre = g.categoria?.nombre || 'General';
+      const gCatMeta = obtenerColorCategoriaBackend(gCatNombre);
+      const gCatColor = g.categoria?.color || gCatMeta.color;
+      const gCatIcono = g.categoria?.icono || (esCuota ? 'Layers' : gCatMeta.icono);
+      const gClasif = clasificarItemBackend({
+        tipo: 'TARJETA',
+        concepto: g.concepto,
+        categoria: gCatNombre,
+        totalCuotas: g.totalCuotas,
+        clasificacionBD: g.clasificacion,
+      });
+
+      return {
+        id: g.id,
+        concepto: g.concepto,
+        monto: montoCalculado,
+        monedaOriginal: g.monedaOriginal,
+        montoOriginal: montoUSD,
+        tipoCambio: esUSD ? tcConfigGlobal : Number(g.tipoCambio),
+        fechaGasto: g.fechaGasto.toISOString(),
+        periodoPago: g.periodoPago,
+        categoria: gCatNombre,
+        categoriaId: g.categoriaId || null,
+        categoriaColor: gCatColor,
+        categoriaIcono: gCatIcono,
+        clasificacion: gClasif.clasificacion,
+        colorHex: gClasif.colorHex,
+        colorKey: gClasif.colorKey,
+        badgeLabel: gClasif.badgeLabel,
+        tipoLabel: gClasif.tipoLabel,
+        estado: g.estado,
+        cuotaActual: g.cuotaActual,
+        totalCuotas: g.totalCuotas,
+        notas: g.notas || null,
+      };
+    });
+    const totalNext = gastosSiguientePeriodo.reduce((acc, g) => acc + g.monto, 0);
 
     tarjetasCredito.push({
       id: t.id,
@@ -965,85 +1068,9 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
       totalRegistros: ((t as any)._count?.gastos || 0) + ((t as any)._count?.costosFijos || 0),
       cantidadGastos: (t as any)._count?.gastos || 0,
       cantidadCostosFijos: (t as any)._count?.costosFijos || 0,
-      gastosPeriodo: gastosMes.map((g) => {
-        const esCuota = (g.totalCuotas || 1) > 1;
-        const gCatNombre = g.categoria?.nombre || 'General';
-        const gCatMeta = obtenerColorCategoriaBackend(gCatNombre);
-        const gCatColor = g.categoria?.color || gCatMeta.color;
-        const gCatIcono = g.categoria?.icono || (esCuota ? 'Layers' : gCatMeta.icono);
-        const gClasif = clasificarItemBackend({
-          tipo: 'TARJETA',
-          concepto: g.concepto,
-          categoria: gCatNombre,
-          totalCuotas: g.totalCuotas,
-          clasificacionBD: g.clasificacion,
-        });
-
-        return {
-          id: g.id,
-          concepto: g.concepto,
-          monto: Number(g.monto),
-          monedaOriginal: g.monedaOriginal,
-          montoOriginal: g.montoOriginal ? Number(g.montoOriginal) : null,
-          tipoCambio: Number(g.tipoCambio),
-          fechaGasto: g.fechaGasto.toISOString(),
-          periodoPago: g.periodoPago,
-          categoria: gCatNombre,
-          categoriaId: g.categoriaId || null,
-          categoriaColor: gCatColor,
-          categoriaIcono: gCatIcono,
-          clasificacion: gClasif.clasificacion,
-          colorHex: gClasif.colorHex,
-          colorKey: gClasif.colorKey,
-          badgeLabel: gClasif.badgeLabel,
-          tipoLabel: gClasif.tipoLabel,
-          estado: g.estado,
-          cuotaActual: g.cuotaActual,
-          totalCuotas: g.totalCuotas,
-          fechaPagoReal: g.fechaPagoReal ? g.fechaPagoReal.toISOString() : null,
-          notas: g.notas || null,
-          orden: g.orden ?? 0,
-        };
-      }),
+      gastosPeriodo,
       totalSiguientePeriodo: totalNext,
-      gastosSiguientePeriodo: gastosNext.map((g) => {
-        const esCuota = (g.totalCuotas || 1) > 1;
-        const gCatNombre = g.categoria?.nombre || 'General';
-        const gCatMeta = obtenerColorCategoriaBackend(gCatNombre);
-        const gCatColor = g.categoria?.color || gCatMeta.color;
-        const gCatIcono = g.categoria?.icono || (esCuota ? 'Layers' : gCatMeta.icono);
-        const gClasif = clasificarItemBackend({
-          tipo: 'TARJETA',
-          concepto: g.concepto,
-          categoria: gCatNombre,
-          totalCuotas: g.totalCuotas,
-          clasificacionBD: g.clasificacion,
-        });
-
-        return {
-          id: g.id,
-          concepto: g.concepto,
-          monto: Number(g.monto),
-          monedaOriginal: g.monedaOriginal,
-          montoOriginal: g.montoOriginal ? Number(g.montoOriginal) : null,
-          tipoCambio: Number(g.tipoCambio),
-          fechaGasto: g.fechaGasto.toISOString(),
-          periodoPago: g.periodoPago,
-          categoria: gCatNombre,
-          categoriaId: g.categoriaId || null,
-          categoriaColor: gCatColor,
-          categoriaIcono: gCatIcono,
-          clasificacion: gClasif.clasificacion,
-          colorHex: gClasif.colorHex,
-          colorKey: gClasif.colorKey,
-          badgeLabel: gClasif.badgeLabel,
-          tipoLabel: gClasif.tipoLabel,
-          estado: g.estado,
-          cuotaActual: g.cuotaActual,
-          totalCuotas: g.totalCuotas,
-          notas: g.notas || null,
-        };
-      }),
+      gastosSiguientePeriodo,
     });
   }
 
@@ -1060,13 +1087,21 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
       clasificacionBD: g.clasificacion,
     });
 
+    const esUSD = g.monedaOriginal === 'USD';
+    const montoUSD = esUSD
+      ? (g.montoOriginal ? Number(g.montoOriginal) : (Number(g.monto) / (Number(g.tipoCambio) || tcConfigGlobal)))
+      : null;
+    const montoCalculado = esUSD && montoUSD != null
+      ? Number((montoUSD * tcConfigGlobal).toFixed(2))
+      : Number(g.monto);
+
     return {
       id: g.id,
       concepto: g.concepto,
-      monto: Number(g.monto),
+      monto: montoCalculado,
       monedaOriginal: g.monedaOriginal,
-      montoOriginal: g.montoOriginal ? Number(g.montoOriginal) : null,
-      tipoCambio: Number(g.tipoCambio),
+      montoOriginal: montoUSD,
+      tipoCambio: esUSD ? tcConfigGlobal : Number(g.tipoCambio),
       fechaGasto: g.fechaGasto.toISOString(),
       periodoPago: g.periodoPago,
       metodoPago: g.metodoPago,
@@ -1537,7 +1572,7 @@ export async function getResumenMensual(periodo: string, usuarioId?: string): Pr
 export function calcularResumenDivisas(
   egresosConsolidados: EgresoConsolidado[],
   totalEgresos: number,
-  tipoCambioDefecto: number = 4.0
+  tipoCambioConfigurado: number = 4.0
 ): ResumenDivisasEgresos {
   let sTotal = 0;
   let sPendiente = 0;
@@ -1546,34 +1581,26 @@ export function calcularResumenDivisas(
   let sConteo = 0;
 
   let dTotalUSD = 0;
-  let dTotalPEN = 0;
   let dPendienteUSD = 0;
-  let dPendientePEN = 0;
   let dPagadoUSD = 0;
-  let dPagadoPEN = 0;
   let dAdelantadoUSD = 0;
-  let dAdelantadoPEN = 0;
   let dConteo = 0;
 
   for (const item of egresosConsolidados) {
     if (item.monedaOriginal === 'USD') {
-      const tc = item.tipoCambio && item.tipoCambio > 0 ? item.tipoCambio : tipoCambioDefecto;
-      const montoUSD = item.montoOriginal != null ? item.montoOriginal : (item.monto / tc);
-      const montoPEN = item.monto;
+      const montoUSD = item.montoOriginal != null
+        ? item.montoOriginal
+        : Number((item.monto / tipoCambioConfigurado).toFixed(2));
 
       dTotalUSD += montoUSD;
-      dTotalPEN += montoPEN;
       dConteo += 1;
 
       if (item.estado === EstadoPago.PENDIENTE) {
         dPendienteUSD += montoUSD;
-        dPendientePEN += montoPEN;
       } else if (item.estado === EstadoPago.PAGADO) {
         dPagadoUSD += montoUSD;
-        dPagadoPEN += montoPEN;
       } else if (item.estado === EstadoPago.ADELANTADO) {
         dAdelantadoUSD += montoUSD;
-        dAdelantadoPEN += montoPEN;
       }
     } else {
       const montoPEN = item.monto;
@@ -1591,9 +1618,18 @@ export function calcularResumenDivisas(
   }
 
   const sTotalNum = Number(sTotal.toFixed(2));
-  const dTotalPENNum = Number(dTotalPEN.toFixed(2));
+  const dTotalUSDNum = Number(dTotalUSD.toFixed(2));
+  const dTotalPENNum = Number((dTotalUSDNum * tipoCambioConfigurado).toFixed(2));
+  const dPendientePENNum = Number((Number(dPendienteUSD.toFixed(2)) * tipoCambioConfigurado).toFixed(2));
+  const dPagadoPENNum = Number((Number(dPagadoUSD.toFixed(2)) * tipoCambioConfigurado).toFixed(2));
+  const dAdelantadoPENNum = Number((Number(dAdelantadoUSD.toFixed(2)) * tipoCambioConfigurado).toFixed(2));
+
   const totalConsolidado = Number((sTotalNum + dTotalPENNum).toFixed(2));
-  const tieneMultiplesMonedas = sConteo > 0 && dConteo > 0;
+  const dPendienteUSDNum = Number(dPendienteUSD.toFixed(2));
+  // Solo se considera que tiene múltiples monedas si existen compromisos en USD pendientes de pago.
+  // Si los egresos en dólares ya fueron adelantados o pagados (dPendienteUSDNum === 0), no hay divisa extranjera por liquidar
+  // y por ende ya no debe mostrarse el resumen de divisas en el dashboard.
+  const tieneMultiplesMonedas = sConteo > 0 && dConteo > 0 && dPendienteUSDNum > 0;
 
   return {
     soles: {
@@ -1605,24 +1641,25 @@ export function calcularResumenDivisas(
       conteo: sConteo,
     },
     dolares: {
-      totalUSD: Number(dTotalUSD.toFixed(2)),
+      totalUSD: dTotalUSDNum,
       total: dTotalPENNum,
       pendienteUSD: Number(dPendienteUSD.toFixed(2)),
-      pendiente: Number(dPendientePEN.toFixed(2)),
+      pendiente: dPendientePENNum,
       pagadoUSD: Number(dPagadoUSD.toFixed(2)),
-      pagado: Number(dPagadoPEN.toFixed(2)),
+      pagado: dPagadoPENNum,
       adelantadoUSD: Number(dAdelantadoUSD.toFixed(2)),
-      adelantado: Number(dAdelantadoPEN.toFixed(2)),
-      tipoCambioPromedio: dTotalUSD > 0 ? Number((dTotalPENNum / dTotalUSD).toFixed(3)) : tipoCambioDefecto,
+      adelantado: dAdelantadoPENNum,
+      tipoCambio: tipoCambioConfigurado,
+      tipoCambioPromedio: tipoCambioConfigurado,
       porcentaje: totalConsolidado > 0 ? Number(((dTotalPENNum / totalConsolidado) * 100).toFixed(1)) : 0,
       conteo: dConteo,
     },
     tieneMultiplesMonedas,
     consolidado: {
       totalEgresosPEN: totalConsolidado,
-      totalPendientePEN: Number((sPendiente + dPendientePEN).toFixed(2)),
-      totalPagadoPEN: Number((sPagado + dPagadoPEN).toFixed(2)),
-      totalAdelantadoPEN: Number((sAdelantado + dAdelantadoPEN).toFixed(2)),
+      totalPendientePEN: Number((Number(sPendiente.toFixed(2)) + dPendientePENNum).toFixed(2)),
+      totalPagadoPEN: Number((Number(sPagado.toFixed(2)) + dPagadoPENNum).toFixed(2)),
+      totalAdelantadoPEN: Number((Number(sAdelantado.toFixed(2)) + dAdelantadoPENNum).toFixed(2)),
       totalCompromisos: sConteo + dConteo,
       cuadraSumatoria: Math.abs(totalConsolidado - totalEgresos) < 0.05,
     },

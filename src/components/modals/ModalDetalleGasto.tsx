@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import type { DetalleItemData, ModalDetalleGastoProps } from './detalle/types';
+import type { DetalleItemData, ModalDetalleGastoProps, MonedaDetalleInfo } from './detalle/types';
 import { useDetalleGasto } from './detalle/useDetalleGasto';
 import { DetalleHeader } from './detalle/DetalleHeader';
 import { DetalleMontoHero } from './detalle/DetalleMontoHero';
@@ -12,7 +12,7 @@ import { DetalleCuotasProgress } from './detalle/DetalleCuotasProgress';
 import { DetallePropiedadesPrestamo } from './detalle/DetallePropiedadesPrestamo';
 import { DetalleFooterAcciones } from './detalle/DetalleFooterAcciones';
 
-export type { DetalleItemData, ModalDetalleGastoProps };
+export type { DetalleItemData, ModalDetalleGastoProps, MonedaDetalleInfo };
 
 export function ModalDetalleGasto({
   item,
@@ -25,6 +25,7 @@ export function ModalDetalleGasto({
   onCambiarCategoria,
   onGuardarConcepto,
   onGuardarNotas,
+  onGuardarFechaPeriodo,
   monedaSimbolo = 'S/',
   tarjetas = [],
 }: ModalDetalleGastoProps) {
@@ -38,6 +39,7 @@ export function ModalDetalleGasto({
     onCambiarCategoria,
     onGuardarConcepto,
     onGuardarNotas,
+    onGuardarFechaPeriodo,
     monedaSimbolo
   );
 
@@ -119,8 +121,11 @@ export function ModalDetalleGasto({
             item={item}
             notasLocal={d.notasLocal}
             tarjetas={tarjetas}
+            fechaGastoLocal={d.fechaGastoLocal}
+            periodoPagoLocal={d.periodoPagoLocal}
             onCambiarMetodoPago={onCambiarMetodoPago}
             onGuardarNotas={d.handleGuardarNotas}
+            onGuardarFechaPeriodo={d.handleGuardarFechaPeriodo}
             categoriaNombre={d.categoriaNombreLocal}
             categoriaColor={d.categoriaColorLocal}
             categoriaId={d.categoriaIdLocal}

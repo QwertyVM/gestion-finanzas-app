@@ -3,7 +3,7 @@
 import React, { useState, useMemo } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
 import { formatPeriodoLabel } from '@/lib/utils';
-import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDetalleGasto';
+import { ModalDetalleGasto, DetalleItemData, MonedaDetalleInfo } from '@/components/modals/ModalDetalleGasto';
 import { TableSkeleton } from '@/components/common/Skeleton';
 import {
   ChevronLeft,
@@ -181,28 +181,60 @@ export function FijosClient() {
   };
 
   // Handlers para el Modal de Detalle
-  const handleGuardarMontoModal = async (item: DetalleItemData, nuevoMonto: number) => {
+  const handleGuardarMontoModal = async (
+    item: DetalleItemData,
+    nuevoMonto: number,
+    monedaInfo?: MonedaDetalleInfo
+  ) => {
     try {
       if (item.tipo === 'FIJO') {
-        await fetch('/api/fijos', {
+        const res = await fetch('/api/fijos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ costoFijoId: item.dbId, periodo, monto: nuevoMonto }),
         });
+        if (!res.ok) throw new Error('Error al actualizar fijo');
       } else if (item.tipo === 'PRESTAMO') {
-        await fetch('/api/prestamos', {
+        const res = await fetch('/api/prestamos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cuotaId: item.dbId, monto: nuevoMonto }),
         });
+        if (!res.ok) throw new Error('Error al actualizar cuota de préstamo');
       } else {
-        await fetch('/api/gastos', {
-          method: 'PUT',
+        const body: any = {
+          id: item.dbId,
+          monto: nuevoMonto,
+          ...(monedaInfo
+            ? {
+                monedaOriginal: monedaInfo.monedaOriginal,
+                montoOriginal: monedaInfo.montoOriginal,
+                tipoCambio: monedaInfo.tipoCambio,
+              }
+            : {}),
+        };
+        const res = await fetch('/api/gastos', {
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: item.dbId, monto: nuevoMonto }),
+          body: JSON.stringify(body),
         });
+        if (!res.ok) throw new Error('Error al actualizar gasto');
       }
-      setDetalleItem((prev) => (prev ? { ...prev, monto: nuevoMonto } : null));
+      setDetalleItem((prev) =>
+        prev
+          ? {
+              ...prev,
+              monto: nuevoMonto,
+              ...(monedaInfo
+                ? {
+                    monedaOriginal: monedaInfo.monedaOriginal,
+                    montoOriginal: monedaInfo.montoOriginal,
+                    tipoCambio: monedaInfo.tipoCambio,
+                  }
+                : {}),
+            }
+          : null
+      );
       await refresh();
     } catch {
       toast.error('Error al actualizar monto');

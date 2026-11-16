@@ -6,7 +6,7 @@ import {
   formatMoney,
   ClasificacionEgreso,
 } from '@/lib/utils';
-import { ModalDetalleGasto, DetalleItemData } from '@/components/modals/ModalDetalleGasto';
+import { ModalDetalleGasto, DetalleItemData, MonedaDetalleInfo } from '@/components/modals/ModalDetalleGasto';
 import { TableSkeleton } from '@/components/common/Skeleton';
 import { FloatingSumBar } from '@/components/common/FloatingSumBar';
 import {
@@ -86,6 +86,9 @@ export function DashboardClient() {
         concepto: cf.concepto,
         categoria: cf.categoria,
         monto: cf.monto,
+        monedaOriginal: cf.monedaOriginal,
+        montoOriginal: cf.montoOriginal,
+        tipoCambio: cf.tipoCambio,
         diaVencimiento: cf.diaVencimiento,
         estado: cf.estado,
         fechaPagoReal: cf.fechaPagoReal,
@@ -105,6 +108,9 @@ export function DashboardClient() {
         banco: p.banco,
         categoria: 'Préstamo',
         monto: p.montoCuota,
+        monedaOriginal: p.monedaOriginal,
+        montoOriginal: p.montoOriginal,
+        tipoCambio: p.tipoCambio,
         cuotaActual: p.cuotaActual,
         cuotasTotales: p.cuotasTotales,
         totalCuotas: p.cuotasTotales,
@@ -124,6 +130,9 @@ export function DashboardClient() {
           concepto: g.concepto,
           categoria: g.categoria,
           monto: g.monto,
+          monedaOriginal: g.monedaOriginal,
+          montoOriginal: g.montoOriginal,
+          tipoCambio: g.tipoCambio,
           fechaGasto: g.fechaGasto,
           periodoPago: g.periodoPago,
           cuotaActual: g.cuotaActual,
@@ -142,6 +151,9 @@ export function DashboardClient() {
         concepto: g.concepto,
         categoria: g.categoria,
         monto: g.monto,
+        monedaOriginal: g.monedaOriginal,
+        montoOriginal: g.montoOriginal,
+        tipoCambio: g.tipoCambio,
         fechaGasto: g.fechaGasto,
         periodoPago: g.periodoPago,
         metodoPago: g.metodoPago,
@@ -379,28 +391,61 @@ export function DashboardClient() {
     }
   };
 
-  const handleGuardarMontoModal = async (item: DetalleItemData, nuevoMonto: number) => {
+  const handleGuardarMontoModal = async (
+    item: DetalleItemData,
+    nuevoMonto: number,
+    monedaInfo?: MonedaDetalleInfo
+  ) => {
     try {
       if (item.tipo === 'FIJO') {
-        await fetch('/api/fijos', {
+        const body: any = { costoFijoId: item.dbId, periodo, monto: nuevoMonto };
+        const res = await fetch('/api/fijos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ costoFijoId: item.dbId, periodo, monto: nuevoMonto }),
+          body: JSON.stringify(body),
         });
+        if (!res.ok) throw new Error('Error al actualizar monto fijo');
       } else if (item.tipo === 'PRESTAMO') {
-        await fetch('/api/prestamos', {
+        const res = await fetch('/api/prestamos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ cuotaId: item.dbId, monto: nuevoMonto }),
         });
+        if (!res.ok) throw new Error('Error al actualizar cuota de préstamo');
       } else {
-        await fetch('/api/gastos', {
-          method: 'PUT',
+        const body: any = {
+          id: item.dbId,
+          monto: nuevoMonto,
+          ...(monedaInfo
+            ? {
+                monedaOriginal: monedaInfo.monedaOriginal,
+                montoOriginal: monedaInfo.montoOriginal,
+                tipoCambio: monedaInfo.tipoCambio,
+              }
+            : {}),
+        };
+        const res = await fetch('/api/gastos', {
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: item.dbId, monto: nuevoMonto }),
+          body: JSON.stringify(body),
         });
+        if (!res.ok) throw new Error('Error al actualizar gasto');
       }
-      setDetalleItem((prev) => (prev ? { ...prev, monto: nuevoMonto } : null));
+      setDetalleItem((prev) =>
+        prev
+          ? {
+              ...prev,
+              monto: nuevoMonto,
+              ...(monedaInfo
+                ? {
+                    monedaOriginal: monedaInfo.monedaOriginal,
+                    montoOriginal: monedaInfo.montoOriginal,
+                    tipoCambio: monedaInfo.tipoCambio,
+                  }
+                : {}),
+            }
+          : null
+      );
       await refresh();
     } catch {
       toast.error('Error al actualizar monto');

@@ -12,7 +12,7 @@ interface ResumenDivisasCardProps {
 }
 
 export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCardProps) {
-  if (!divisas || !divisas.tieneMultiplesMonedas) return null;
+  if (!divisas || !divisas.tieneMultiplesMonedas || divisas.dolares.pendienteUSD <= 0) return null;
 
   const { soles, dolares, consolidado } = divisas;
 
@@ -29,7 +29,7 @@ export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCar
               Resumen de Egresos por Moneda
             </h3>
             <p className="text-xs text-muted-foreground">
-              Cuánto debes en Soles y Dólares con sumatoria validada al total de egresos.
+              Cuánto debes en Soles y Dólares al tipo de cambio de tu cuenta ({moneda} {dolares.tipoCambio.toFixed(2)}).
             </p>
           </div>
         </div>
@@ -107,7 +107,7 @@ export function ResumenDivisasCard({ divisas, moneda = 'S/' }: ResumenDivisasCar
               <span className="text-xs font-normal text-muted-foreground">USD</span>
             </div>
             <div className="text-[11px] text-muted-foreground mt-0.5 font-mono">
-              ≈ {formatMoney(dolares.total, moneda)} (TC ~ {dolares.tipoCambioPromedio.toFixed(2)})
+              ≈ {formatMoney(dolares.total, moneda)} (TC cuenta: {moneda} {dolares.tipoCambio.toFixed(2)})
             </div>
           </div>
           <div className="pt-2 border-t border-border/40 text-xs text-muted-foreground space-y-0.5">

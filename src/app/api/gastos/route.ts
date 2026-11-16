@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { registrarNuevoGasto } from '@/lib/finanzas-service';
-import { calcularPeriodoFacturacion } from '@/lib/billing-cycles';
+import { calcularPeriodoFacturacion, calcularCuotasPeriodos } from '@/lib/billing-cycles';
 import prisma from '@/lib/prisma';
 import { getAuthenticatedUser } from '@/lib/auth';
 
@@ -73,7 +73,23 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const { id, monto, concepto, estado, notas, clasificacion, metodoPago, tarjetaId, periodoPago, categoriaId, actualizarSerie } = await request.json();
+    const {
+      id,
+      monto,
+      monedaOriginal,
+      montoOriginal,
+      tipoCambio,
+      concepto,
+      estado,
+      notas,
+      clasificacion,
+      metodoPago,
+      tarjetaId,
+      periodoPago,
+      categoriaId,
+      actualizarSerie,
+      fechaGasto,
+    } = await request.json();
 
     const gastoActual = await prisma.gasto.findFirst({
       where: { id, usuarioId: user.id },
@@ -84,6 +100,11 @@ export async function PATCH(request: NextRequest) {
 
     const updateData: any = {};
     if (monto !== undefined) updateData.monto = parseFloat(monto);
+    if (monedaOriginal !== undefined) updateData.monedaOriginal = monedaOriginal;
+    if (montoOriginal !== undefined) {
+      updateData.montoOriginal = montoOriginal === null ? null : parseFloat(montoOriginal);
+    }
+    if (tipoCambio !== undefined) updateData.tipoCambio = parseFloat(tipoCambio);
     if (concepto !== undefined) {
       const tieneCuotas = (gastoActual.totalCuotas && gastoActual.totalCuotas > 1) || !!gastoActual.gastoPadreId;
       if (tieneCuotas && actualizarSerie !== false) {
@@ -175,15 +196,102 @@ export async function PATCH(request: NextRequest) {
       }
     }
 
+    if (fechaGasto !== undefined) {
+      const nuevaFecha = new Date(fechaGasto);
+      updateData.fechaGasto = nuevaFecha;
+
+      if (periodoPago === undefined && metodoPago === undefined && tarjetaId === undefined) {
+        if (gastoActual.metodoPago === 'TARJETA_CREDITO' && gastoActual.tarjetaId) {
+          const tarjeta = await prisma.tarjetaCredito.findUnique({ where: { id: gastoActual.tarjetaId } });
+          if (tarjeta) {
+            const calculo = calcularPeriodoFacturacion(
+              nuevaFecha,
+              tarjeta.diaCorte || 10,
+              tarjeta.diaPago || 30
+            );
+            updateData.periodoPago = calculo.periodoPago;
+          }
+        } else {
+          const anio = nuevaFecha.getFullYear();
+          const mes = String(nuevaFecha.getMonth() + 1).padStart(2, '0');
+          updateData.periodoPago = `${anio}-${mes}`;
+        }
+      }
+    }
+
     if (periodoPago !== undefined) {
       updateData.periodoPago = periodoPago;
+    }
+
+    // Si tiene cuotas y se actualiza la fecha o periodo para toda la serie
+    const tieneCuotas = (gastoActual.totalCuotas && gastoActual.totalCuotas > 1) || !!gastoActual.gastoPadreId;
+    if (tieneCuotas && actualizarSerie !== false && (updateData.periodoPago || updateData.fechaGasto)) {
+      const pId = gastoActual.gastoPadreId || gastoActual.id;
+      const cuotasSerie = await prisma.gasto.findMany({
+        where: {
+          usuarioId: user.id,
+          OR: [{ id: pId }, { gastoPadreId: pId }],
+        },
+        orderBy: { cuotaActual: 'asc' },
+      });
+
+      if (cuotasSerie.length > 1) {
+        const periodoBase = updateData.periodoPago || gastoActual.periodoPago;
+        const cuotaOffset = (gastoActual.cuotaActual || 1) - 1;
+        const [anioStr, mesStr] = periodoBase.split('-');
+        const baseDate = new Date(parseInt(anioStr, 10), parseInt(mesStr, 10) - 1 - cuotaOffset, 1);
+        const periodoCuota1 = `${baseDate.getFullYear()}-${String(baseDate.getMonth() + 1).padStart(2, '0')}`;
+        const periodosNuevos = calcularCuotasPeriodos(periodoCuota1, cuotasSerie.length);
+
+        for (let i = 0; i < cuotasSerie.length; i++) {
+          const c = cuotasSerie[i];
+          const cUpdate: any = {};
+          if (updateData.fechaGasto) cUpdate.fechaGasto = updateData.fechaGasto;
+          if (periodosNuevos[i]) cUpdate.periodoPago = periodosNuevos[i];
+          await prisma.gasto.update({
+            where: { id: c.id },
+            data: cUpdate,
+          });
+        }
+      }
+    }
+
+    // Si tiene cuotas y se actualiza la moneda o monto original para toda la serie
+    if (tieneCuotas && actualizarSerie !== false && (monedaOriginal !== undefined || montoOriginal !== undefined || tipoCambio !== undefined)) {
+      const pId = gastoActual.gastoPadreId || gastoActual.id;
+      const cuotasSerie = await prisma.gasto.findMany({
+        where: {
+          usuarioId: user.id,
+          OR: [{ id: pId }, { gastoPadreId: pId }],
+        },
+      });
+      for (const c of cuotasSerie) {
+        const cUpdate: any = {};
+        if (monedaOriginal !== undefined) cUpdate.monedaOriginal = monedaOriginal;
+        if (tipoCambio !== undefined) cUpdate.tipoCambio = parseFloat(tipoCambio);
+        if (montoOriginal !== undefined) {
+          cUpdate.montoOriginal = montoOriginal === null ? null : parseFloat(montoOriginal);
+        }
+        await prisma.gasto.update({
+          where: { id: c.id },
+          data: cUpdate,
+        });
+      }
     }
 
     const res = await prisma.gasto.updateMany({
       where: { id, usuarioId: user.id },
       data: updateData,
     });
-    return NextResponse.json({ success: true, count: res.count });
+    return NextResponse.json({
+      success: true,
+      count: res.count,
+      periodoPago: updateData.periodoPago || gastoActual.periodoPago,
+      fechaGasto: updateData.fechaGasto || gastoActual.fechaGasto,
+      monedaOriginal: updateData.monedaOriginal !== undefined ? updateData.monedaOriginal : gastoActual.monedaOriginal,
+      montoOriginal: updateData.montoOriginal !== undefined ? updateData.montoOriginal : gastoActual.montoOriginal,
+      tipoCambio: updateData.tipoCambio !== undefined ? updateData.tipoCambio : gastoActual.tipoCambio,
+    });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
