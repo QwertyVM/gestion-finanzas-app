@@ -28,12 +28,13 @@ export async function GET(request: NextRequest) {
 
     for (const g of gastos) {
       const baseConcepto = g.concepto.replace(/\s*\(Cuota\s+\d+\/\d+\)/i, '').trim();
-      const key = `${g.tarjetaId || 'no_card'}_${baseConcepto.toLowerCase()}`;
+      const rootId = g.gastoPadreId || g.id;
+      const key = rootId || `${g.tarjetaId || 'no_card'}_${baseConcepto.toLowerCase()}`;
 
       if (!groups.has(key)) {
         groups.set(key, {
           key,
-          padreId: g.gastoPadreId || g.id,
+          padreId: rootId,
           primerGastoId: g.id,
           conceptoBase: baseConcepto,
           tarjetaId: g.tarjetaId,
@@ -48,6 +49,9 @@ export async function GET(request: NextRequest) {
       }
 
       const grp = groups.get(key);
+      if (g.cuotaActual === 1 || !g.gastoPadreId) {
+        grp.conceptoBase = baseConcepto;
+      }
       grp.cuotas.push({
         id: g.id,
         cuotaActual: g.cuotaActual,
