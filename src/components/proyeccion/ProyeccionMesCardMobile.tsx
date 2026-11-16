@@ -34,6 +34,7 @@ export function ProyeccionMesCardMobile({
 }: ProyeccionMesCardMobileProps) {
   const positivo = mes.disponible >= 0;
   const margen = mes.ingresos > 0 ? (mes.disponible / mes.ingresos) * 100 : 0;
+  const sinActividad = mes.ingresos === 0 && mes.totalEgresos === 0;
 
   return (
     <div
@@ -87,17 +88,23 @@ export function ProyeccionMesCardMobile({
           </span>
         </div>
 
-        <span
-          className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
-            margen >= 20
-              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-              : margen > 0
-                ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
-                : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
-          }`}
-        >
-          {margen.toFixed(0)}% Ahorro
-        </span>
+        {sinActividad ? (
+          <span className="text-[11px] font-medium text-muted-foreground px-2 py-0.5 rounded-full bg-muted/50">
+            Sin actividad
+          </span>
+        ) : (
+          <span
+            className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${
+              margen >= 20
+                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                : margen > 0
+                  ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                  : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+            }`}
+          >
+            {margen.toFixed(0)}% Ahorro
+          </span>
+        )}
       </div>
 
       {/* Desglose de flujo */}

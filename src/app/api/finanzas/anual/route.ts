@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
-import { NOMBRES_MESES } from '@/lib/utils';
+import { NOMBRES_MESES, getCurrentPeriodo } from '@/lib/utils';
 import { getAuthenticatedUser } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
@@ -18,6 +18,7 @@ export async function GET(request: NextRequest) {
     const anioPrefijo = `${anio}-`;
     const uId = user.id;
     const usuario = user;
+    const currentPeriodo = getCurrentPeriodo();
 
     const [
       ingresosYear,
@@ -49,28 +50,13 @@ export async function GET(request: NextRequest) {
 
     for (let mes = 1; mes <= 12; mes++) {
       const periodo = `${anio}-${String(mes).padStart(2, '0')}`;
+      const esMesPasado = periodo < currentPeriodo;
 
       // Ingresos del mes
       const ingresosMes = ingresosYear.filter((i) => i.periodo === periodo);
       let totalIngresos = ingresosMes.reduce((acc, curr) => acc + Number(curr.monto), 0);
       const tieneGrati = ingresosMes.some((i) => i.tipo === 'GRATIFICACION');
       const tieneUtilidad = ingresosMes.some((i) => i.tipo === 'UTILIDADES');
-
-      if (totalIngresos === 0) {
-        totalIngresos += sueldoBase;
-      }
-
-      // Costos fijos
-      const fijosMes = registrosFijosYear.filter((r) => r.periodo === periodo);
-      let totalFijosMes = fijosMes.reduce((acc, r) => acc + Number(r.monto), 0);
-      if (totalFijosMes === 0) {
-        const vigentes = costosFijosActivos.filter((f) => {
-          const inicioValido = !f.mesInicio || f.mesInicio <= periodo;
-          const finValido = !f.mesFin || f.mesFin >= periodo;
-          return inicioValido && finValido;
-        });
-        totalFijosMes = vigentes.reduce((acc, f) => acc + Number(f.monto), 0);
-      }
 
       // Cuotas de préstamos
       const cuotasMes = cuotasYear.filter((c) => c.periodo === periodo);
@@ -79,6 +65,51 @@ export async function GET(request: NextRequest) {
       // Gastos
       const gastosMes = gastosYear.filter((g) => g.periodoPago === periodo);
       const totalGastos = gastosMes.reduce((acc, g) => acc + Number(g.monto), 0);
+
+      // Costos fijos
+      const fijosMes = registrosFijosYear.filter((r) => r.periodo === periodo);
+      let totalFijosMes = fijosMes.reduce((acc, r) => acc + Number(r.monto), 0);
+
+      // Determinar si hay datos registrados explícitamente en este periodo
+      const tieneDataRegistrada =
+        ingresosMes.length > 0 ||
+        fijosMes.length > 0 ||
+        cuotasMes.length > 0 ||
+        gastosMes.length > 0;
+
+      // Si es un mes pasado sin actividad registrada, no proyectar valores estimados
+      if (esMesPasado && !tieneDataRegistrada) {
+        resultado.push({
+          periodo,
+          mesNombre: NOMBRES_MESES[mes - 1],
+          anio,
+          mesNumero: mes,
+          ingresos: 0,
+          fijos: 0,
+          prestamos: 0,
+          gastos: 0,
+          totalEgresos: 0,
+          disponible: 0,
+          esGrati: false,
+          esUtilidad: false,
+        });
+        continue;
+      }
+
+      // Proyección de ingresos (solo para mes actual y futuros si no se registraron)
+      if (totalIngresos === 0 && !esMesPasado) {
+        totalIngresos += sueldoBase;
+      }
+
+      // Proyección de costos fijos (solo para mes actual y futuros si no hay registros específicos)
+      if (totalFijosMes === 0 && !esMesPasado) {
+        const vigentes = costosFijosActivos.filter((f) => {
+          const inicioValido = !f.mesInicio || f.mesInicio <= periodo;
+          const finValido = !f.mesFin || f.mesFin >= periodo;
+          return inicioValido && finValido;
+        });
+        totalFijosMes = vigentes.reduce((acc, f) => acc + Number(f.monto), 0);
+      }
 
       const adelantoFijos = fijosMes.filter((r) => r.estado === 'ADELANTADO').reduce((acc, r) => acc + Number(r.monto), 0);
       const adelantoCuotas = cuotasMes.filter((c) => c.estado === 'ADELANTADO').reduce((acc, c) => acc + Number(c.monto), 0);

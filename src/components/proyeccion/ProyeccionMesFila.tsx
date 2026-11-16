@@ -34,6 +34,7 @@ export function ProyeccionMesFila({
 }: ProyeccionMesFilaProps) {
   const positivo = m.disponible >= 0;
   const margen = m.ingresos > 0 ? (m.disponible / m.ingresos) * 100 : 0;
+  const sinActividad = m.ingresos === 0 && m.totalEgresos === 0;
   const esMesActual = m.periodo === periodoActual;
 
   return (
@@ -92,17 +93,21 @@ export function ProyeccionMesFila({
       </td>
 
       <td className="py-3 px-3.5 text-center whitespace-nowrap">
-        <span
-          className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-            margen >= 20
-              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-              : margen > 0
-              ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
-              : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
-          }`}
-        >
-          {margen.toFixed(0)}%
-        </span>
+        {sinActividad ? (
+          <span className="text-xs text-muted-foreground font-medium">-</span>
+        ) : (
+          <span
+            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
+              margen >= 20
+                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
+                : margen > 0
+                ? 'bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300'
+                : 'bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300'
+            }`}
+          >
+            {margen.toFixed(0)}%
+          </span>
+        )}
       </td>
 
       <td
