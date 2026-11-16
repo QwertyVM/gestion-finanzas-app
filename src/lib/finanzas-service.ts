@@ -558,24 +558,20 @@ export interface ResumenFinanciero {
       periodos12.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
     }
 
-    // Resolver usuario activo para la instancia financiera
-    let usuario = null;
-    if (usuarioId) {
-      usuario = await prisma.usuario.findUnique({ where: { id: usuarioId } });
-      // Resolver usuario activo para la instancia financiera (usar objeto directo si ya fue validado en la sesión)
-      let usuario: any = null;
-      if (usuarioOrId && typeof usuarioOrId === 'object' && usuarioOrId.id) {
-        usuario = usuarioOrId;
-      } else if (typeof usuarioOrId === 'string') {
-        usuario = await prisma.usuario.findUnique({ where: { id: usuarioOrId } });
-      }
-      if (!usuario) {
-        usuario = await prisma.usuario.findFirst({ where: { activo: true }, orderBy: { createdAt: 'asc' } });
-      }
-      if (!usuario) {
-        throw new Error('Usuario no encontrado para generar el resumen financiero');
-      }
-      const uId = usuario.id;
+  // Resolver usuario activo para la instancia financiera (usar objeto directo si ya fue validado en la sesión)
+  let usuario: any = null;
+  if (usuarioOrId && typeof usuarioOrId === 'object' && usuarioOrId.id) {
+    usuario = usuarioOrId;
+  } else if (typeof usuarioOrId === 'string') {
+    usuario = await prisma.usuario.findUnique({ where: { id: usuarioOrId } });
+  }
+  if (!usuario) {
+    usuario = await prisma.usuario.findFirst({ where: { activo: true }, orderBy: { createdAt: 'asc' } });
+  }
+  if (!usuario) {
+    throw new Error('Usuario no encontrado para generar el resumen financiero');
+  }
+  const uId = usuario.id;
 
       // CONSULTAS ULTRA-OPTIMIZADAS EN PARALELO FILTRADAS POR USUARIO
       const [
@@ -669,75 +665,45 @@ export interface ResumenFinanciero {
         }),
       ]);
 
-      // Obtener el periodo mínimo con registros para el usuario
-      const [minIngreso, minGasto, minFijo, minCuota] = await Promise.all([
-        prisma.ingresoMes.findFirst({
-          where: { usuarioId: uId },
-          orderBy: { periodo: 'asc' },
-          select: { periodo: true },
-        }),
-        prisma.gasto.findFirst({
-          where: { usuarioId: uId },
-          orderBy: { periodoPago: 'asc' },
-          select: { periodoPago: true },
-        }),
-        prisma.registroCostoFijoMes.findFirst({
-          where: { costoFijo: { usuarioId: uId } },
-          orderBy: { periodo: 'asc' },
-          select: { periodo: true },
-        }),
-        prisma.cuotaPrestamo.findFirst({
-          where: { prestamo: { usuarioId: uId } },
-          orderBy: { periodo: 'asc' },
-          select: { periodo: true },
-        }),
-      ]);
-      const periodosExistentes = [
-        minIngreso?.periodo,
-        minGasto?.periodoPago,
-        minFijo?.periodo,
-        minCuota?.periodo,
-      ].filter(Boolean) as string[];
-      // Obtener el periodo mínimo con registros para el usuario (con caché en memoria para eliminar 4 roundtrips a la BD)
-      let minPeriodo = '2026-10';
-      const cachedMin = minPeriodoCache.get(uId);
-      const now = Date.now();
-      if (cachedMin && cachedMin.expiresAt > now) {
-        minPeriodo = cachedMin.minPeriodo;
-      } else {
-        const [minIngreso, minGasto, minFijo, minCuota] = await Promise.all([
-          prisma.ingresoMes.findFirst({
-            where: { usuarioId: uId },
-            orderBy: { periodo: 'asc' },
-            select: { periodo: true },
-          }),
-          prisma.gasto.findFirst({
-            where: { usuarioId: uId },
-            orderBy: { periodoPago: 'asc' },
-            select: { periodoPago: true },
-          }),
-          prisma.registroCostoFijoMes.findFirst({
-            where: { costoFijo: { usuarioId: uId } },
-            orderBy: { periodo: 'asc' },
-            select: { periodo: true },
-          }),
-          prisma.cuotaPrestamo.findFirst({
-            where: { prestamo: { usuarioId: uId } },
-            orderBy: { periodo: 'asc' },
-            select: { periodo: true },
-          }),
-        ]);
-        const periodosExistentes = [
-          minIngreso?.periodo,
-          minGasto?.periodoPago,
-          minFijo?.periodo,
-          minCuota?.periodo,
-        ].filter(Boolean) as string[];
+  // Obtener el periodo mínimo con registros para el usuario (con caché en memoria para eliminar 4 roundtrips a la BD)
+  let minPeriodo = '2026-10';
+  const cachedMin = minPeriodoCache.get(uId);
+  const now = Date.now();
+  if (cachedMin && cachedMin.expiresAt > now) {
+    minPeriodo = cachedMin.minPeriodo;
+  } else {
+    const [minIngreso, minGasto, minFijo, minCuota] = await Promise.all([
+      prisma.ingresoMes.findFirst({
+        where: { usuarioId: uId },
+        orderBy: { periodo: 'asc' },
+        select: { periodo: true },
+      }),
+      prisma.gasto.findFirst({
+        where: { usuarioId: uId },
+        orderBy: { periodoPago: 'asc' },
+        select: { periodoPago: true },
+      }),
+      prisma.registroCostoFijoMes.findFirst({
+        where: { costoFijo: { usuarioId: uId } },
+        orderBy: { periodo: 'asc' },
+        select: { periodo: true },
+      }),
+      prisma.cuotaPrestamo.findFirst({
+        where: { prestamo: { usuarioId: uId } },
+        orderBy: { periodo: 'asc' },
+        select: { periodo: true },
+      }),
+    ]);
+    const periodosExistentes = [
+      minIngreso?.periodo,
+      minGasto?.periodoPago,
+      minFijo?.periodo,
+      minCuota?.periodo,
+    ].filter(Boolean) as string[];
 
-        const minPeriodo = periodosExistentes.length > 0 ? periodosExistentes.sort()[0] : '2026-10';
-        minPeriodo = periodosExistentes.length > 0 ? periodosExistentes.sort()[0] : '2026-10';
-        minPeriodoCache.set(uId, { minPeriodo, expiresAt: now + 30 * 60 * 1000 });
-      }
+    minPeriodo = periodosExistentes.length > 0 ? periodosExistentes.sort()[0] : '2026-10';
+    minPeriodoCache.set(uId, { minPeriodo, expiresAt: now + 30 * 60 * 1000 });
+  }
 
       const config = {
         id: usuario.id,
