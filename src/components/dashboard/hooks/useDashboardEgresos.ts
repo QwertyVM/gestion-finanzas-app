@@ -147,6 +147,7 @@ export function useDashboardEgresos() {
     const config = [
       {
         id: 'FIJOS',
+        clasificacion: 'FIJO',
         titulo: 'Compras fijas',
         descripcion: 'Gastos recurrentes y servicios regulares',
         icono: Home,
@@ -159,6 +160,7 @@ export function useDashboardEgresos() {
       },
       {
         id: 'PRESTAMOS',
+        clasificacion: 'PRESTAMO',
         titulo: 'Préstamos bancarios',
         descripcion: 'Cuotas mensuales de financiamiento y créditos',
         icono: Landmark,
@@ -171,6 +173,7 @@ export function useDashboardEgresos() {
       },
       {
         id: 'CUOTAS',
+        clasificacion: 'CUOTA',
         titulo: 'Compras a cuotas',
         descripcion: 'Compras en cuotas con tarjeta de crédito',
         icono: Layers,
@@ -183,6 +186,7 @@ export function useDashboardEgresos() {
       },
       {
         id: 'VARIABLES',
+        clasificacion: 'VARIABLE',
         titulo: 'Otras compras / Gastos variables',
         descripcion: 'Compras directas del mes y consumos variables',
         icono: ShoppingBag,
@@ -197,7 +201,9 @@ export function useDashboardEgresos() {
 
     return config
       .map((conf) => {
-        const items = egresosFiltrados.filter((e) => e.clasificacion === conf.id);
+        const items = egresosFiltrados.filter(
+          (e) => e.clasificacion === conf.clasificacion || e.clasificacion === conf.id
+        );
         const subtotal = items.reduce((acc, curr) => acc + (curr.monto || 0), 0);
         return {
           ...conf,
@@ -209,7 +215,12 @@ export function useDashboardEgresos() {
           colapsada: !!seccionesColapsadas[conf.id],
         };
       })
-      .filter((sec) => filtroEgreso === 'TODOS' || filtroEgreso === sec.id);
+      .filter((sec) => {
+        if (filtroEgreso === 'TODOS') {
+          return sec.filteredCount > 0;
+        }
+        return filtroEgreso === sec.id;
+      });
   }, [egresosFiltrados, filtroEgreso, seccionesColapsadas]);
 
   const handleSelectAll = () => {
