@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const periodo = searchParams.get('periodo') || getCurrentPeriodo();
     const categoriaId = searchParams.get('categoriaId');
 
-    const resumen = await getResumenMensual(periodo, user.id);
+    const resumen = await getResumenMensual(periodo, user);
     const analisis = resumen.analisisCategorias;
 
     let categorias = analisis.categorias;

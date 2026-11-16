@@ -29,7 +29,17 @@ import { UserMenu } from './UserMenu';
 
 export function Sidebar() {
   const pathname = usePathname();
-  const { periodo, irMesAnterior, irMesSiguiente, puedeIrMesAnterior, openRecordModal, usuarioActual, cerrarSesion } = useFinanzas();
+  const {
+    periodo,
+    irMesAnterior,
+    irMesSiguiente,
+    puedeIrMesAnterior,
+    prefetchMesAnterior,
+    prefetchMesSiguiente,
+    openRecordModal,
+    usuarioActual,
+    cerrarSesion,
+  } = useFinanzas();
   const { theme, setTheme } = useTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -159,12 +169,12 @@ export function Sidebar() {
           <div className="flex items-center justify-between gap-1">
             <button
               onClick={irMesAnterior}
+              onMouseEnter={prefetchMesAnterior}
               disabled={!puedeIrMesAnterior}
-              className={`p-1.5 rounded-lg transition ${
-                puedeIrMesAnterior
+              className={`p-1.5 rounded-lg transition ${puedeIrMesAnterior
                   ? 'hover:bg-background text-muted-foreground hover:text-foreground cursor-pointer'
                   : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
-              }`}
+                }`}
               title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
             >
               <ChevronLeft className="w-3.5 h-3.5" />
@@ -183,6 +193,7 @@ export function Sidebar() {
 
             <button
               onClick={irMesSiguiente}
+              onMouseEnter={prefetchMesSiguiente}
               className="p-1.5 hover:bg-background text-muted-foreground hover:text-foreground rounded-lg transition"
               title="Mes siguiente"
             >
@@ -208,11 +219,10 @@ export function Sidebar() {
                       key={link.href}
                       href={link.href}
                       onClick={handleLinkClick}
-                      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-colors ${
-                        isActive
+                      className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg text-xs transition-colors ${isActive
                           ? 'bg-foreground text-background font-medium'
                           : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-                      }`}
+                        }`}
                     >
                       <Icon className="w-4 h-4 shrink-0" />
                       <span className="truncate">{link.label}</span>

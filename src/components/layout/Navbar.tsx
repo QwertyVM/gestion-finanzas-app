@@ -27,7 +27,16 @@ import { UserMenu } from './UserMenu';
 
 export function Navbar() {
   const pathname = usePathname();
-  const { periodo, irMesAnterior, irMesSiguiente, puedeIrMesAnterior, usuarioActual, cerrarSesion } = useFinanzas();
+  const {
+    periodo,
+    irMesAnterior,
+    irMesSiguiente,
+    puedeIrMesAnterior,
+    prefetchMesAnterior,
+    prefetchMesSiguiente,
+    usuarioActual,
+    cerrarSesion,
+  } = useFinanzas();
   const { theme, setTheme } = useTheme();
 
   const navLinks = [
@@ -66,12 +75,12 @@ export function Navbar() {
           <div className="flex items-center gap-1 bg-secondary/80 px-2 py-1 rounded-xl border border-border shadow-inner">
             <button
               onClick={irMesAnterior}
+              onMouseEnter={prefetchMesAnterior}
               disabled={!puedeIrMesAnterior}
-              className={`p-1 rounded-lg transition ${
-                puedeIrMesAnterior
+              className={`p-1 rounded-lg transition ${puedeIrMesAnterior
                   ? 'hover:bg-background text-muted-foreground hover:text-foreground cursor-pointer'
                   : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
-              }`}
+                }`}
               title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
             >
               <ChevronLeft className="w-4 h-4" />
@@ -95,6 +104,7 @@ export function Navbar() {
 
             <button
               onClick={irMesSiguiente}
+              onMouseEnter={prefetchMesSiguiente}
               className="p-1 hover:bg-background text-muted-foreground hover:text-foreground rounded-lg transition"
               title="Mes siguiente"
             >
@@ -111,11 +121,10 @@ export function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${
-                    isActive
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition ${isActive
                       ? 'bg-secondary text-foreground shadow-sm border border-border'
                       : 'text-muted-foreground hover:text-foreground hover:bg-secondary/50'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                   <span>{link.label}</span>
@@ -160,11 +169,10 @@ export function Navbar() {
             <Link
               key={link.href}
               href={link.href}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition ${
-                isActive
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap shrink-0 transition ${isActive
                   ? 'bg-secondary text-foreground shadow-sm'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <Icon className="w-3.5 h-3.5" />
               <span>{link.label}</span>

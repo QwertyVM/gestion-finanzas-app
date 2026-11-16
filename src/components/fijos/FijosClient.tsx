@@ -21,7 +21,17 @@ import { ModalCrearPrestamo } from './modals/ModalCrearPrestamo';
 import { ModalEditarPrestamo } from './modals/ModalEditarPrestamo';
 
 export function FijosClient() {
-  const { periodo, irMesAnterior, irMesSiguiente, puedeIrMesAnterior, resumen, loading, refresh } = useFinanzas();
+  const {
+    periodo,
+    irMesAnterior,
+    irMesSiguiente,
+    puedeIrMesAnterior,
+    prefetchMesAnterior,
+    prefetchMesSiguiente,
+    resumen,
+    loading,
+    refresh,
+  } = useFinanzas();
   const [detalleItem, setDetalleItem] = useState<DetalleItemData | null>(null);
   const [loadingAction, setLoadingAction] = useState<string | null>(null);
 
@@ -207,10 +217,10 @@ export function FijosClient() {
           monto: nuevoMonto,
           ...(monedaInfo
             ? {
-                monedaOriginal: monedaInfo.monedaOriginal,
-                montoOriginal: monedaInfo.montoOriginal,
-                tipoCambio: monedaInfo.tipoCambio,
-              }
+              monedaOriginal: monedaInfo.monedaOriginal,
+              montoOriginal: monedaInfo.montoOriginal,
+              tipoCambio: monedaInfo.tipoCambio,
+            }
             : {}),
         };
         const res = await fetch('/api/gastos', {
@@ -223,16 +233,16 @@ export function FijosClient() {
       setDetalleItem((prev) =>
         prev
           ? {
-              ...prev,
-              monto: nuevoMonto,
-              ...(monedaInfo
-                ? {
-                    monedaOriginal: monedaInfo.monedaOriginal,
-                    montoOriginal: monedaInfo.montoOriginal,
-                    tipoCambio: monedaInfo.tipoCambio,
-                  }
-                : {}),
-            }
+            ...prev,
+            monto: nuevoMonto,
+            ...(monedaInfo
+              ? {
+                monedaOriginal: monedaInfo.monedaOriginal,
+                montoOriginal: monedaInfo.montoOriginal,
+                tipoCambio: monedaInfo.tipoCambio,
+              }
+              : {}),
+          }
           : null
       );
       await refresh();
@@ -290,16 +300,16 @@ export function FijosClient() {
       setDetalleItem((prev) =>
         prev
           ? {
-              ...prev,
-              tipo: nuevoMetodo === 'TARJETA_CREDITO' ? 'TARJETA' : 'DIRECTO',
-              metodoPago: nuevoMetodo,
-              tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? (tarjetaId || null) : null,
-              tarjetaNombre: tObj?.nombre || null,
-              tarjetaBanco: tObj?.banco || null,
-              tarjetaColor: tObj?.color || null,
-              tarjetaDiaCorte: tObj?.diaCorte,
-              tarjetaDiaPago: tObj?.diaPago,
-            }
+            ...prev,
+            tipo: nuevoMetodo === 'TARJETA_CREDITO' ? 'TARJETA' : 'DIRECTO',
+            metodoPago: nuevoMetodo,
+            tarjetaId: nuevoMetodo === 'TARJETA_CREDITO' ? (tarjetaId || null) : null,
+            tarjetaNombre: tObj?.nombre || null,
+            tarjetaBanco: tObj?.banco || null,
+            tarjetaColor: tObj?.color || null,
+            tarjetaDiaCorte: tObj?.diaCorte,
+            tarjetaDiaPago: tObj?.diaPago,
+          }
           : null
       );
       toast.success('Forma de pago actualizada');
@@ -339,12 +349,12 @@ export function FijosClient() {
                 <button
                   type="button"
                   onClick={irMesAnterior}
+                  onMouseEnter={prefetchMesAnterior}
                   disabled={!puedeIrMesAnterior}
-                  className={`p-1 rounded transition ${
-                    puedeIrMesAnterior
+                  className={`p-1 rounded transition ${puedeIrMesAnterior
                       ? 'hover:text-foreground text-muted-foreground cursor-pointer'
                       : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
-                  }`}
+                    }`}
                   title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
                   aria-label="Mes anterior"
                 >
@@ -356,6 +366,7 @@ export function FijosClient() {
                 <button
                   type="button"
                   onClick={irMesSiguiente}
+                  onMouseEnter={prefetchMesSiguiente}
                   className="p-1 hover:text-foreground text-muted-foreground rounded transition"
                   title="Mes siguiente"
                   aria-label="Mes siguiente"

@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     const periodo = searchParams.get('periodo') || getCurrentPeriodo();
     const clasificacion = searchParams.get('clasificacion'); // 'FIJO' | 'PRESTAMO' | 'CUOTA' | 'VARIABLE' | 'PRESTAMOS_CUOTAS'
 
-    const resumen = await getResumenMensual(periodo, user.id);
+    const resumen = await getResumenMensual(periodo, user);
 
     let egresos = resumen.egresosConsolidados;
 

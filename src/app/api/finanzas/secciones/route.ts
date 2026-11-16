@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const periodo = searchParams.get('periodo') || getCurrentPeriodo();
 
-    const resumen = await getResumenMensual(periodo, user.id);
+    const resumen = await getResumenMensual(periodo, user);
 
     return NextResponse.json({
       periodo,

@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import type { SaludFinancieraKPIs } from '@/lib/finanzas-service';
 import { formatMoney, formatPeriodoLabel } from '@/lib/utils';
+import { useFinanzas } from '@/context/FinanzasContext';
 import { ChevronLeft, ChevronRight, Plus, Minus, Sparkles, ArrowRight, ShieldCheck } from 'lucide-react';
 
 interface ResumenHeroKpisProps {
@@ -30,6 +31,7 @@ export function ResumenHeroKpis({
   totalAdelantado = 0, cantidadIngresos, moneda, esMesEspecial,
   labelEspecial, salud, openRecordModal,
 }: ResumenHeroKpisProps) {
+  const { prefetchMesAnterior, prefetchMesSiguiente } = useFinanzas();
   const disponibleEsPositivo = disponibleNeto >= 0;
 
   return (
@@ -46,6 +48,7 @@ export function ResumenHeroKpis({
                 <button
                   type="button"
                   onClick={irMesAnterior}
+                  onMouseEnter={prefetchMesAnterior}
                   disabled={!puedeIrMesAnterior}
                   className={`transition ${
                     puedeIrMesAnterior
@@ -62,6 +65,7 @@ export function ResumenHeroKpis({
                 <button
                   type="button"
                   onClick={irMesSiguiente}
+                  onMouseEnter={prefetchMesSiguiente}
                   className="hover:text-foreground text-muted-foreground transition"
                   title="Mes siguiente"
                 >

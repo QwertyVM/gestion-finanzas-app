@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const periodo = searchParams.get('periodo') || getCurrentPeriodo();
 
-    // Aislamiento estricto: el usuario siempre es el de la sesión criptográfica activa
-    const data = await getResumenMensual(periodo, user.id);
+    // Aislamiento estricto y alto rendimiento: se pasa el usuario autenticado directamente para ahorrar un roundtrip a la BD
+    const data = await getResumenMensual(periodo, user);
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('Error al obtener resumen financiero:', error);
