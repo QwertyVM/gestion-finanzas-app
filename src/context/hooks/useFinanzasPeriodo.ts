@@ -39,8 +39,15 @@ export function useFinanzasPeriodo({
   useEffect(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('finanzapp_periodo');
+      const minP = '2026-10';
       if (saved && /^\d{4}-\d{2}$/.test(saved)) {
-        setPeriodoState(saved);
+        if (saved < minP) {
+          const actual = getCurrentPeriodo();
+          setPeriodoState(actual);
+          localStorage.setItem('finanzapp_periodo', actual);
+        } else {
+          setPeriodoState(saved);
+        }
       }
     }
   }, []);
@@ -81,6 +88,15 @@ export function useFinanzasPeriodo({
         if (requestId === activeRequestIdRef.current) {
           setResumen(data);
           setLoading(false);
+
+          // Si el periodo actual quedó por debajo del minPeriodo del usuario, corregir inmediatamente
+          if (data.minPeriodo && targetPeriodo < data.minPeriodo) {
+            const fallback = data.minPeriodo;
+            setPeriodoState(fallback);
+            if (typeof window !== 'undefined') {
+              localStorage.setItem('finanzapp_periodo', fallback);
+            }
+          }
         }
       } catch (err: any) {
         if (intentos > 1) {
@@ -122,7 +138,8 @@ export function useFinanzasPeriodo({
 
   const setPeriodo = useCallback(
     (p: string) => {
-      const target = resumen?.minPeriodo && p < resumen.minPeriodo ? resumen.minPeriodo : p;
+      const minP = resumen?.minPeriodo || '2026-10';
+      const target = p < minP ? minP : p;
       setPeriodoState(target);
       if (typeof window !== 'undefined') {
         localStorage.setItem('finanzapp_periodo', target);

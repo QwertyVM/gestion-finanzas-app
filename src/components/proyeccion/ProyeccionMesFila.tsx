@@ -3,39 +3,44 @@
 import React from 'react';
 import { formatMoney } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
+import type { TipoMesProyeccion } from '@/app/api/finanzas/anual/route';
 
 export interface MesProyeccion {
   periodo: string;
   mesNombre: string;
   anio: number;
   mesNumero: number;
+  tipoMes?: TipoMesProyeccion;
   ingresos: number;
   fijos: number;
   prestamos: number;
   gastos: number;
   totalEgresos: number;
   disponible: number;
+  tasaAhorro?: number;
   esGrati: boolean;
   esUtilidad: boolean;
 }
 
 interface ProyeccionMesFilaProps {
   mes: MesProyeccion;
-  periodoActual: string;
+  mesActualPeriodo: string;
   moneda: string;
   onSelectMes: (periodo: string) => void;
 }
 
 export function ProyeccionMesFila({
   mes: m,
-  periodoActual,
+  mesActualPeriodo,
   moneda,
   onSelectMes,
 }: ProyeccionMesFilaProps) {
   const positivo = m.disponible >= 0;
-  const margen = m.ingresos > 0 ? (m.disponible / m.ingresos) * 100 : 0;
-  const sinActividad = m.ingresos === 0 && m.totalEgresos === 0;
-  const esMesActual = m.periodo === periodoActual;
+  const margen = m.tasaAhorro !== undefined ? m.tasaAhorro : (m.ingresos > 0 ? (m.disponible / m.ingresos) * 100 : 0);
+  const sinActividad = m.tipoMes === 'PASADO_SIN_ACTIVIDAD' || (m.ingresos === 0 && m.totalEgresos === 0);
+  const esMesActual = m.tipoMes === 'ACTUAL' || m.periodo === mesActualPeriodo;
+  const esHistorico = m.tipoMes === 'HISTORICO';
+  const esProyectado = m.tipoMes === 'PROYECTADO';
 
   return (
     <tr
@@ -49,28 +54,38 @@ export function ProyeccionMesFila({
       }`}
     >
       <td className="py-3 px-3.5">
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
           <span className="font-semibold text-foreground text-sm">{m.mesNombre}</span>
-          <span className="text-xs text-muted-foreground">{m.anio}</span>
+          <span className="text-xs text-muted-foreground mr-1">{m.anio}</span>
           {esMesActual && (
-            <span className="text-xs px-1.5 py-0.5 rounded font-semibold bg-foreground text-background">
+            <span className="text-[11px] px-1.5 py-0.5 rounded font-semibold bg-foreground text-background">
               Actual
             </span>
           )}
+          {!esMesActual && esHistorico && (
+            <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-muted text-muted-foreground border border-border/50">
+              Cerrado
+            </span>
+          )}
+          {esProyectado && (
+            <span className="text-[11px] px-1.5 py-0.5 rounded font-medium bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200/60 dark:border-sky-800/40">
+              Esperado
+            </span>
+          )}
           {m.esGrati && (
-            <span className="text-xs px-2 py-0.5 rounded font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+            <span className="text-[11px] px-2 py-0.5 rounded font-semibold bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
               Gratificación
             </span>
           )}
           {m.esUtilidad && (
-            <span className="text-xs px-2 py-0.5 rounded font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+            <span className="text-[11px] px-2 py-0.5 rounded font-semibold bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
               Utilidades
             </span>
           )}
         </div>
       </td>
 
-      <td className="py-3 px-3.5 text-right font-mono font-bold text-foreground text-sm sm:text-base whitespace-nowrap">
+      <td className="py-3 px-3.5 text-right font-mono font-bold text-foreground text-sm whitespace-nowrap">
         {formatMoney(m.ingresos, moneda)}
       </td>
 
@@ -90,7 +105,7 @@ export function ProyeccionMesFila({
         {formatMoney(m.totalEgresos, moneda)}
       </td>
 
-      <td className="py-3 px-3.5 text-right font-mono font-bold text-sm sm:text-base whitespace-nowrap">
+      <td className="py-3 px-3.5 text-right font-mono font-bold text-sm whitespace-nowrap">
         <span className={positivo ? 'text-foreground' : 'text-rose-600'}>
           {formatMoney(m.disponible, moneda)}
         </span>

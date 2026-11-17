@@ -1,24 +1,28 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useFinanzas } from '@/context/FinanzasContext';
 import { Skeleton } from '@/components/common/Skeleton';
-import { Settings, Sparkles } from 'lucide-react';
-import { ProyeccionMesFila, MesProyeccion } from './ProyeccionMesFila';
-import { ProyeccionTotalesFooter } from './ProyeccionTotalesFooter';
+import { MesProyeccion } from './ProyeccionMesFila';
 import { ProyeccionMesCardMobile } from './ProyeccionMesCardMobile';
+import { ProyeccionKpisResumen } from './ProyeccionKpisResumen';
+import { ProyeccionTablaDesktop } from './ProyeccionTablaDesktop';
+import { ProyeccionBannerEmpty } from './ProyeccionBannerEmpty';
+import { getCurrentPeriodo, NOMBRES_MESES } from '@/lib/utils';
+import type { TotalesProyeccion } from '@/app/api/finanzas/anual/route';
 
 export function ProyeccionAnualClient() {
   const router = useRouter();
-  const { periodo, setPeriodo, resumen } = useFinanzas();
+  const { setPeriodo, resumen } = useFinanzas();
   const [datosAnio, setDatosAnio] = useState<MesProyeccion[]>([]);
+  const [totalesActual, setTotalesActual] = useState<TotalesProyeccion | undefined>(undefined);
+  const [totalesProyectado, setTotalesProyectado] = useState<TotalesProyeccion | undefined>(undefined);
   const [loading, setLoading] = useState(true);
 
-  const initialYear = periodo ? parseInt(periodo.split('-')[0], 10) : 2026;
+  const realCurrentPeriodo = getCurrentPeriodo();
+  const initialYear = realCurrentPeriodo ? parseInt(realCurrentPeriodo.split('-')[0], 10) : 2026;
   const [anioSeleccionado, setAnioSeleccionado] = useState(initialYear || 2026);
-
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
 
   useEffect(() => {
@@ -28,7 +32,14 @@ export function ProyeccionAnualClient() {
         const res = await fetch(`/api/finanzas/anual?anio=${anioSeleccionado}`);
         if (!res.ok) throw new Error('Error al cargar datos anuales');
         const data = await res.json();
-        setDatosAnio(data);
+
+        if (Array.isArray(data)) {
+          setDatosAnio(data);
+        } else {
+          setDatosAnio(data.meses || []);
+          setTotalesActual(data.totalesActual);
+          setTotalesProyectado(data.totalesProyectado);
+        }
       } catch (e) {
         console.error(e);
       } finally {
@@ -38,28 +49,36 @@ export function ProyeccionAnualClient() {
     loadAnio();
   }, [anioSeleccionado]);
 
-  // Para el año actual (2026), sumar los meses con registro a la fecha (Octubre y Noviembre).
-  // Para un año de proyección futura (2027), sumar los meses proyectados del año.
-  const currentPeriodoStr = periodo || '2026-11';
-  const esAnioFuturo = anioSeleccionado > 2026;
-  const mesesParaTotal = datosAnio.filter(
-    (m) => (esAnioFuturo || m.periodo <= currentPeriodoStr) && (m.ingresos > 0 || m.totalEgresos > 0)
-  );
+  const fallbackTotales = useMemo(() => {
+    const meses = datosAnio.filter((m) => m.tipoMes !== 'PASADO_SIN_ACTIVIDAD' && (m.ingresos > 0 || m.totalEgresos > 0));
+    const totalIngresos = meses.reduce((acc, m) => acc + (m.ingresos || 0), 0);
+    const totalFijos = meses.reduce((acc, m) => acc + (m.fijos || 0), 0);
+    const totalPrestamos = meses.reduce((acc, m) => acc + (m.prestamos || 0), 0);
+    const totalGastos = meses.reduce((acc, m) => acc + (m.gastos || 0), 0);
+    const totalEgresos = meses.reduce((acc, m) => acc + (m.totalEgresos || 0), 0);
+    const totalDisponible = meses.reduce((acc, m) => acc + (m.disponible || 0), 0);
+    return {
+      totalIngresos,
+      totalFijos,
+      totalPrestamos,
+      totalGastos,
+      totalEgresos,
+      totalDisponible,
+      tasaAhorroPromedio: totalIngresos > 0 ? (totalDisponible / totalIngresos) * 100 : 0,
+      cantidadMeses: meses.length,
+    };
+  }, [datosAnio]);
 
-  const totalIngresos = mesesParaTotal.reduce((acc, m) => acc + (m.ingresos || 0), 0);
-  const totalFijos = mesesParaTotal.reduce((acc, m) => acc + (m.fijos || 0), 0);
-  const totalPrestamos = mesesParaTotal.reduce((acc, m) => acc + (m.prestamos || 0), 0);
-  const totalGastos = mesesParaTotal.reduce((acc, m) => acc + (m.gastos || 0), 0);
-  const totalEgresos = mesesParaTotal.reduce((acc, m) => acc + (m.totalEgresos || 0), 0);
-  const totalDisponible = mesesParaTotal.reduce((acc, m) => acc + (m.disponible || 0), 0);
-  const tasaAhorroPromedio = totalIngresos > 0 ? (totalDisponible / totalIngresos) * 100 : 0;
+  const totProyectadoFinal = totalesProyectado || fallbackTotales;
+  const mesActualIdx = parseInt(realCurrentPeriodo.split('-')[1], 10) - 1;
+  const mesActualNombre = NOMBRES_MESES[mesActualIdx] || 'Noviembre';
 
   const handleSelectMes = (mesPeriodo: string) => {
     setPeriodo(mesPeriodo);
     router.push('/');
   };
 
-  const estaEnCero = !loading && totalIngresos === 0 && totalEgresos === 0;
+  const estaEnCero = !loading && totProyectadoFinal.totalIngresos === 0 && totProyectadoFinal.totalEgresos === 0;
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
@@ -70,7 +89,7 @@ export function ProyeccionAnualClient() {
             Proyección Anual & Flujo de Caja
           </h1>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Previsión de liquidez considerando Gratificaciones (Jul/Dic) y Utilidades (Mar).
+            Previsión de liquidez y compromisos futuros vs real ejecutado a la fecha.
           </p>
         </div>
 
@@ -92,31 +111,19 @@ export function ProyeccionAnualClient() {
         </div>
       </div>
 
-      {/* Banner de inicio en cero si aún no ha configurado sueldo ni egresos */}
-      {estaEnCero && (
-        <div className="bg-muted/30 border border-border/70 rounded-xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-start gap-3">
-            <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0 mt-0.5">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-foreground">
-                Proyección anual inicializada en {moneda} 0.00
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Configura tu sueldo base en tu perfil para proyectar tus ingresos, gratificaciones y márgenes de ahorro.
-              </p>
-            </div>
-          </div>
-          <Link
-            href="/perfil"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-foreground text-background rounded-lg hover:opacity-90 transition shrink-0"
-          >
-            <Settings className="w-3.5 h-3.5" />
-            Configurar en Mi Perfil
-          </Link>
-        </div>
+      {/* Tarjetas KPI de Comparación Actual vs Esperado */}
+      {!loading && !estaEnCero && (
+        <ProyeccionKpisResumen
+          anio={anioSeleccionado}
+          totalesActual={totalesActual}
+          totalesProyectado={totProyectadoFinal}
+          mesActualNombre={mesActualNombre}
+          moneda={moneda}
+        />
       )}
+
+      {/* Banner si aún no hay datos configurados */}
+      {estaEnCero && <ProyeccionBannerEmpty moneda={moneda} />}
 
       {loading ? (
         <div className="bg-card border border-border/80 rounded-xl p-4 space-y-3">
@@ -144,52 +151,23 @@ export function ProyeccionAnualClient() {
                 key={m.periodo}
                 mes={m}
                 moneda={moneda}
-                esMesActual={m.periodo === periodo}
+                esMesActual={m.periodo === realCurrentPeriodo}
                 onSelectMes={handleSelectMes}
               />
             ))}
           </div>
 
-          {/* Vista desktop */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left text-sm border-collapse">
-              <thead className="bg-muted/40 text-muted-foreground text-xs border-b border-border/60">
-                <tr>
-                  <th scope="col" className="py-3 px-3.5 font-semibold text-foreground">Mes</th>
-                  <th scope="col" className="py-3 px-3.5 text-right font-semibold text-foreground">Ingresos</th>
-                  <th scope="col" className="py-3 px-3.5 text-right font-semibold text-sky-600 dark:text-sky-400">Fijos</th>
-                  <th scope="col" className="py-3 px-3.5 text-right font-semibold text-purple-600 dark:text-purple-400">Préstamos</th>
-                  <th scope="col" className="py-3 px-3.5 text-right font-semibold text-teal-600 dark:text-teal-400">Tarjetas & Var</th>
-                  <th scope="col" className="py-3 px-3.5 text-right font-semibold text-foreground">Egresos</th>
-                  <th scope="col" className="py-3 px-3.5 text-right font-semibold text-foreground">Disponible</th>
-                  <th scope="col" className="py-3 px-3.5 text-center font-semibold text-foreground">% Ahorro</th>
-                  <th scope="col" className="py-3 px-3.5 text-center font-semibold text-foreground"><span className="sr-only">Acciones</span></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border/40">
-                {datosAnio.map((m) => (
-                  <ProyeccionMesFila
-                    key={m.periodo}
-                    mes={m}
-                    periodoActual={periodo}
-                    moneda={moneda}
-                    onSelectMes={handleSelectMes}
-                  />
-                ))}
-              </tbody>
-              <ProyeccionTotalesFooter
-                anio={anioSeleccionado}
-                totalIngresos={totalIngresos}
-                totalFijos={totalFijos}
-                totalPrestamos={totalPrestamos}
-                totalGastos={totalGastos}
-                totalEgresos={totalEgresos}
-                totalDisponible={totalDisponible}
-                tasaAhorroPromedio={tasaAhorroPromedio}
-                moneda={moneda}
-              />
-            </table>
-          </div>
+          {/* Vista desktop estructurada */}
+          <ProyeccionTablaDesktop
+            datosAnio={datosAnio}
+            realCurrentPeriodo={realCurrentPeriodo}
+            moneda={moneda}
+            onSelectMes={handleSelectMes}
+            anio={anioSeleccionado}
+            totalesActual={totalesActual}
+            totalesProyectado={totProyectadoFinal}
+            mesActualNombre={mesActualNombre}
+          />
         </div>
       )}
     </div>

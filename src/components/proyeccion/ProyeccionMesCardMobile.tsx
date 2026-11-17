@@ -3,21 +3,7 @@
 import React from 'react';
 import { formatMoney } from '@/lib/utils';
 import { ArrowRight } from 'lucide-react';
-
-export interface MesProyeccion {
-  periodo: string;
-  mesNombre: string;
-  anio: number;
-  mesNumero: number;
-  ingresos: number;
-  fijos: number;
-  prestamos: number;
-  gastos: number;
-  totalEgresos: number;
-  disponible: number;
-  esGrati: boolean;
-  esUtilidad: boolean;
-}
+import type { MesProyeccion } from './ProyeccionMesFila';
 
 interface ProyeccionMesCardMobileProps {
   mes: MesProyeccion;
@@ -33,8 +19,10 @@ export function ProyeccionMesCardMobile({
   onSelectMes,
 }: ProyeccionMesCardMobileProps) {
   const positivo = mes.disponible >= 0;
-  const margen = mes.ingresos > 0 ? (mes.disponible / mes.ingresos) * 100 : 0;
-  const sinActividad = mes.ingresos === 0 && mes.totalEgresos === 0;
+  const margen = mes.tasaAhorro !== undefined ? mes.tasaAhorro : (mes.ingresos > 0 ? (mes.disponible / mes.ingresos) * 100 : 0);
+  const sinActividad = mes.tipoMes === 'PASADO_SIN_ACTIVIDAD' || (mes.ingresos === 0 && mes.totalEgresos === 0);
+  const esHistorico = mes.tipoMes === 'HISTORICO';
+  const esProyectado = mes.tipoMes === 'PROYECTADO';
 
   return (
     <div
@@ -52,10 +40,20 @@ export function ProyeccionMesCardMobile({
         <div>
           <div className="flex items-center gap-1.5 flex-wrap">
             <h3 className="font-semibold text-sm text-foreground">{mes.mesNombre}</h3>
-            <span className="text-xs text-muted-foreground">{mes.anio}</span>
+            <span className="text-xs text-muted-foreground mr-1">{mes.anio}</span>
             {esMesActual && (
               <span className="text-[10px] px-1.5 py-0.2 rounded font-semibold bg-foreground text-background">
                 Actual
+              </span>
+            )}
+            {!esMesActual && esHistorico && (
+              <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-muted text-muted-foreground border border-border/50">
+                Cerrado
+              </span>
+            )}
+            {esProyectado && (
+              <span className="text-[10px] px-1.5 py-0.2 rounded font-medium bg-sky-50 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300 border border-sky-200/60 dark:border-sky-800/40">
+                Esperado
               </span>
             )}
             {mes.esGrati && (
