@@ -3,6 +3,7 @@
 import React from 'react';
 import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
 import { CheckSquare, Square, Check, Trash2 } from 'lucide-react';
+import { CategoriaTagBadge } from '@/components/common/CategoriaTagBadge';
 
 interface GastoMesCardMobileProps {
   gasto: any;
@@ -62,18 +63,14 @@ export function GastoMesCardMobile({
             <h4 className="font-semibold text-foreground text-xs leading-snug line-clamp-1" title={gasto.concepto}>
               {limpiarConceptoCuota(gasto.concepto)}
             </h4>
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5 flex-wrap">
-              <span
-                className="w-1.5 h-1.5 rounded-full shrink-0"
-                style={{ backgroundColor: gasto.categoriaColor || '#64748b' }}
+            <div className="mt-1">
+              <CategoriaTagBadge
+                categoria={gasto.categoria}
+                tag={gasto.tag}
+                categoriaColor={gasto.categoriaColor}
               />
-              <span className="truncate">{gasto.categoria || 'Sin categoría'}</span>
-              {gasto.tag && (
-                <span className="text-[10px] px-1 py-0.2 rounded bg-muted/70 text-muted-foreground border border-border/40 shrink-0 font-medium">
-                  #{gasto.tag}
-                </span>
-              )}
-              <span className="opacity-40">·</span>
+            </div>
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-1 flex-wrap">
               <span className="font-mono">{fechaFormateada}</span>
               {gasto.ingresoConcepto && (
                 <>

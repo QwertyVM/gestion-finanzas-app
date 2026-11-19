@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tag, Edit2, Check, X, Loader2 } from 'lucide-react';
+import { CategoriaTagBadge } from '@/components/common/CategoriaTagBadge';
 
 interface CategoriaItem {
   id: string;
@@ -98,14 +99,11 @@ export function DetalleCategoriaSelector({
       </div>
 
       {!editando ? (
-        <div className="flex items-center gap-2">
-          <span
-            className="w-2.5 h-2.5 rounded-full shrink-0"
-            style={{ backgroundColor: categoriaColor || '#64748b' }}
+        <div className="pt-0.5">
+          <CategoriaTagBadge
+            categoria={categoriaNombre}
+            categoriaColor={categoriaColor}
           />
-          <span className="font-semibold text-foreground truncate">
-            {categoriaNombre || 'Sin categoría'}
-          </span>
         </div>
       ) : (
         <div className="space-y-2 mt-1">

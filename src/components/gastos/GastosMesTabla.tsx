@@ -94,6 +94,7 @@ export function GastosMesTabla({
                 <span className="sr-only">Seleccionar</span>
               </th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Concepto</th>
+              <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Categoría (50/30/20)</th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Método</th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Fecha</th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Cuota</th>
@@ -118,7 +119,7 @@ export function GastosMesTabla({
           </tbody>
           <tfoot className="bg-muted/20 border-t border-border/60 text-xs">
             <tr>
-              <td colSpan={5} className="py-2.5 px-3 text-muted-foreground text-xs">
+              <td colSpan={6} className="py-2.5 px-3 text-muted-foreground text-xs">
                 <span>{stats.total} gastos</span>
                 <span className="mx-1.5 opacity-40">·</span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-medium">{stats.pagados} pagados</span>

@@ -5,6 +5,7 @@ import { formatMoney, formatPeriodoLabel } from '@/lib/utils';
 import { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import { FijoMetodoPagoSelector } from './FijoMetodoPagoSelector';
 import { Check, Pencil, Trash2 } from 'lucide-react';
+import { CategoriaTagBadge } from '@/components/common/CategoriaTagBadge';
 
 interface FijoCardMobileProps {
   cf: any;
@@ -59,21 +60,15 @@ export function FijoCardMobile({
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <h4 className="font-semibold text-xs text-foreground truncate">{cf.concepto}</h4>
-          <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
-            <span
-              className="w-1.5 h-1.5 rounded-full shrink-0"
-              style={{ backgroundColor: cf.categoriaColor || '#64748b' }}
+          <div className="mt-1">
+            <CategoriaTagBadge
+              categoria={cf.categoria}
+              tag={cf.tag}
+              categoriaColor={cf.categoriaColor}
             />
-            <span className="truncate">{cf.categoria || 'Sin categoría'}</span>
-            {cf.tag && (
-              <span className="text-[10px] px-1 py-0.2 rounded bg-muted/70 text-muted-foreground border border-border/40 shrink-0 font-medium">
-                #{cf.tag}
-              </span>
-            )}
-            <span className="text-[10px] opacity-40">·</span>
-            <span className="text-[10px] text-muted-foreground">
-              {cf.mesFin ? `Hasta ${formatPeriodoLabel(cf.mesFin)}` : 'Indefinido'}
-            </span>
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground mt-1">
+            <span>{cf.mesFin ? `Hasta ${formatPeriodoLabel(cf.mesFin)}` : 'Indefinido'}</span>
           </div>
         </div>
 

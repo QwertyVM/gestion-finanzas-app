@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
-import { CheckSquare, Square, FastForward, CheckCircle2, Trash2, Check } from 'lucide-react';
+import { CheckSquare, Square, Check, Trash2 } from 'lucide-react';
+import { CategoriaTagBadge } from '@/components/common/CategoriaTagBadge';
 
 interface GastoMesFilaProps {
   gasto: any;
@@ -55,31 +56,27 @@ export function GastoMesFila({
         </button>
       </td>
 
-      {/* 2. Concepto & Categoría */}
+      {/* 2. Concepto */}
       <td className="py-2.5 px-3">
         <div className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[200px] md:max-w-xs" title={gasto.concepto}>
           {limpiarConceptoCuota(gasto.concepto)}
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
-          <span
-            className="w-1.5 h-1.5 rounded-full shrink-0"
-            style={{ backgroundColor: gasto.categoriaColor || '#64748b' }}
-          />
-          <span className="truncate">{gasto.categoria || 'Sin categoría'}</span>
-          {gasto.tag && (
-            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium bg-muted/70 text-muted-foreground border border-border/40 shrink-0">
-              #{gasto.tag}
+        {gasto.ingresoConcepto && (
+          <div className="mt-1">
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shrink-0">
+              💰 {gasto.ingresoConcepto}
             </span>
-          )}
-          {gasto.ingresoConcepto && (
-            <>
-              <span className="opacity-40">·</span>
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shrink-0">
-                💰 {gasto.ingresoConcepto}
-              </span>
-            </>
-          )}
-        </div>
+          </div>
+        )}
+      </td>
+
+      {/* 3. Categoría (50/30/20) & Subcategoría */}
+      <td className="py-2.5 px-3 whitespace-nowrap">
+        <CategoriaTagBadge
+          categoria={gasto.categoria}
+          tag={gasto.tag}
+          categoriaColor={gasto.categoriaColor}
+        />
       </td>
 
       {/* 3. Método de Pago */}

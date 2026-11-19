@@ -4,6 +4,7 @@ import React from 'react';
 import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
 import { Trash2 } from 'lucide-react';
 import { GastoSiguienteCardMobile } from './GastoSiguienteCardMobile';
+import { CategoriaTagBadge } from '@/components/common/CategoriaTagBadge';
 
 interface GastosSiguienteMesTablaProps {
   tarjetas: any[];
@@ -102,8 +103,12 @@ export function GastosSiguienteMesTabla({
                         <td className="py-3 px-3.5 font-medium text-foreground">
                           {limpiarConceptoCuota(g.concepto)}
                         </td>
-                        <td className="py-3 px-3.5 text-muted-foreground text-xs">
-                          {g.categoria || 'Sin categoría'}
+                        <td className="py-3 px-3.5 whitespace-nowrap">
+                          <CategoriaTagBadge
+                            categoria={g.categoria}
+                            tag={g.tag}
+                            categoriaColor={g.categoriaColor}
+                          />
                         </td>
                         <td className="py-3 px-3.5 text-center text-muted-foreground whitespace-nowrap text-xs">
                           {new Date(g.fechaGasto).toLocaleDateString('es-PE', {

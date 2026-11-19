@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
           tarjetaColor: g.tarjeta?.color || '#4f46e5',
           categoriaNombre: g.categoria?.nombre || 'Compras',
           categoriaColor: g.categoria?.color || '#64748b',
+          tag: g.tag || null,
           montoCuota: Number(g.monto),
           totalCuotas: g.totalCuotas || 1,
           cuotas: [],

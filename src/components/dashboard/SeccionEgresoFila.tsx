@@ -4,6 +4,7 @@ import React from 'react';
 import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
 import { GripVertical, CheckSquare, Square, Check } from 'lucide-react';
 import { SelectorIngresoPill } from './SelectorIngresoPill';
+import { CategoriaTagBadge } from '@/components/common/CategoriaTagBadge';
 
 interface SeccionEgresoFilaProps {
   item: any;
@@ -90,17 +91,12 @@ export function SeccionEgresoFila({
         <div className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[200px] md:max-w-xs" title={item.concepto}>
           {limpiarConceptoCuota(item.concepto)}
         </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5 truncate">
-          <span
-            className="w-1.5 h-1.5 rounded-full shrink-0"
-            style={{ backgroundColor: item.categoriaColor || '#64748b' }}
+        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-1 flex-wrap">
+          <CategoriaTagBadge
+            categoria={item.categoria}
+            tag={item.tag}
+            categoriaColor={item.categoriaColor}
           />
-          <span className="text-foreground/80 font-medium">{item.categoria}</span>
-          {item.tag && (
-            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium bg-muted/70 text-muted-foreground border border-border/40 shrink-0">
-              #{item.tag}
-            </span>
-          )}
           {subtextoLimpio && (
             <>
               <span className="opacity-40">·</span>
@@ -176,11 +172,7 @@ export function SeccionEgresoFila({
           <button
             type="button"
             onClick={() => onToggleEstadoItem(item, isAdelantado ? 'PENDIENTE' : 'ADELANTADO')}
-            className={`h-6.5 px-2 rounded text-[11px] transition font-medium ${
-              isAdelantado
-                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 font-semibold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-            }`}
+            className={`h-6.5 px-2 rounded text-[11px] transition font-medium ${isAdelantado ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'}`}
             title="Alternar Adelantado"
           >
             {isAdelantado ? 'Adelantado' : 'Adelantar'}
@@ -189,11 +181,7 @@ export function SeccionEgresoFila({
           <button
             type="button"
             onClick={() => onToggleEstadoItem(item, isPagado ? 'PENDIENTE' : 'PAGADO')}
-            className={`h-6.5 px-2.5 rounded-md text-[11px] font-semibold transition inline-flex items-center gap-1 ${
-              isPagado
-                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40 hover:bg-emerald-100/70'
-                : 'bg-foreground text-background hover:opacity-85 shadow-2xs'
-            }`}
+            className={`h-6.5 px-2.5 rounded-md text-[11px] font-semibold transition inline-flex items-center gap-1 ${isPagado ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40 hover:bg-emerald-100/70' : 'bg-foreground text-background hover:opacity-85 shadow-2xs'}`}
             title="Alternar Pagado"
           >
             {isPagado && <Check className="w-3 h-3 stroke-[2.5]" />}

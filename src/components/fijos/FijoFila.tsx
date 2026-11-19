@@ -5,6 +5,7 @@ import { formatMoney, formatPeriodoLabel } from '@/lib/utils';
 import { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import { FijoMetodoPagoSelector } from './FijoMetodoPagoSelector';
 import { FijoAcciones } from './FijoAcciones';
+import { CategoriaTagBadge } from '@/components/common/CategoriaTagBadge';
 
 interface FijoFilaProps {
   cf: any;
@@ -76,19 +77,12 @@ export function FijoFila({
       </td>
 
       {/* 2. Categoría */}
-      <td className="py-2.5 px-3 text-muted-foreground whitespace-nowrap text-xs">
-        <div className="flex items-center gap-1.5 max-w-[170px] truncate">
-          <span
-            className="w-2 h-2 rounded-full shrink-0"
-            style={{ backgroundColor: cf.categoriaColor || '#64748b' }}
-          />
-          <span className="truncate">{cf.categoria || 'General'}</span>
-          {cf.tag && (
-            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium bg-muted/70 text-muted-foreground border border-border/40 shrink-0">
-              #{cf.tag}
-            </span>
-          )}
-        </div>
+      <td className="py-2.5 px-3 whitespace-nowrap text-xs">
+        <CategoriaTagBadge
+          categoria={cf.categoria}
+          tag={cf.tag}
+          categoriaColor={cf.categoriaColor}
+        />
       </td>
 
       {/* 3. Monto */}

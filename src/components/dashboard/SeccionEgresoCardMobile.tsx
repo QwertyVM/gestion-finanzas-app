@@ -4,6 +4,7 @@ import React from 'react';
 import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
 import { CheckSquare, Square, Check } from 'lucide-react';
 import { SelectorIngresoPill } from './SelectorIngresoPill';
+import { CategoriaTagBadge } from '@/components/common/CategoriaTagBadge';
 
 interface SeccionEgresoCardMobileProps {
   item: any;
@@ -65,17 +66,12 @@ export function SeccionEgresoCardMobile({
             <h4 className="font-semibold text-foreground text-xs leading-snug line-clamp-1" title={item.concepto}>
               {limpiarConceptoCuota(item.concepto)}
             </h4>
-            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5 truncate">
-              <span
-                className="w-1.5 h-1.5 rounded-full shrink-0"
-                style={{ backgroundColor: item.categoriaColor || '#64748b' }}
+            <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-1 flex-wrap">
+              <CategoriaTagBadge
+                categoria={item.categoria}
+                tag={item.tag}
+                categoriaColor={item.categoriaColor}
               />
-              <span className="text-foreground/80 font-medium truncate">{item.categoria}</span>
-              {item.tag && (
-                <span className="text-[10px] px-1 py-0.2 rounded bg-muted/70 text-muted-foreground border border-border/40 shrink-0 font-medium">
-                  #{item.tag}
-                </span>
-              )}
               {item.cuotaActual ? (
                 <span
                   className={`text-[10px] font-semibold font-mono px-1.5 py-0.5 rounded border shrink-0 ${

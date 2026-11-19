@@ -3,6 +3,7 @@
 import React from 'react';
 import { formatMoney } from '@/lib/utils';
 import { AlertTriangle, ChevronDown, ChevronUp, Trash2 } from 'lucide-react';
+import { CategoriaTagBadge } from '@/components/common/CategoriaTagBadge';
 
 interface CompraCuotaCardProps {
   compra: any;
@@ -36,9 +37,11 @@ export function CompraCuotaCard({
               >
                 {compra.tarjetaNombre}
               </span>
-              <span className="text-[10px] text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                {compra.categoriaNombre}
-              </span>
+              <CategoriaTagBadge
+                categoria={compra.categoriaNombre}
+                tag={compra.tag}
+                categoriaColor={compra.categoriaColor}
+              />
               {tieneDuplicados && (
                 <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center gap-1">
                   <AlertTriangle className="w-3 h-3" />
