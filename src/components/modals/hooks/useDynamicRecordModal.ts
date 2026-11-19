@@ -175,9 +175,6 @@ export function useDynamicRecordModal() {
 
   const handleSelectCategoria = (cat: CategoriaItem) => {
     setCategoriaId(cat.id === categoriaId ? '' : cat.id);
-    if (!concepto.trim()) {
-      setConcepto(cat.nombre.split('/')[0].trim());
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

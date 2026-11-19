@@ -15,25 +15,25 @@ export interface CategoriaDef {
  */
 export const CATEGORIAS_50_30_20: CategoriaDef[] = [
   {
-    nombre: 'Necesidades (50%)',
+    nombre: '50% Necesidades',
     icono: 'ShieldCheck',
-    color: '#10b981', // Verde esmeralda
+    color: '#0284c7', // Sky
     esFijo: true,
     porcentajeObjetivo: 50,
     descripcion: 'Gastos esenciales e imprescindibles: vivienda, servicios, alimentación básica, salud, transporte y educación.',
   },
   {
-    nombre: 'Deseos (30%)',
+    nombre: '30% Estilo de Vida',
     icono: 'Sparkles',
-    color: '#f59e0b', // Ámbar / Dorado
+    color: '#0d9488', // Teal
     esFijo: false,
     porcentajeObjetivo: 30,
     descripcion: 'Estilo de vida, gustos y ocio: restaurantes, streaming, entretenimiento, delivery y compras personales.',
   },
   {
-    nombre: 'Ahorro / Inversión (20%)',
+    nombre: '20% Ahorro & Deuda',
     icono: 'PiggyBank',
-    color: '#3b82f6', // Azul / Índigo
+    color: '#7c3aed', // Purple
     esFijo: true,
     porcentajeObjetivo: 20,
     descripcion: 'Ahorro a futuro, fondo de emergencia, inversiones y amortización de deudas o créditos.',
@@ -48,6 +48,34 @@ export const CATEGORIAS_GENERALIZADAS = CATEGORIAS_50_30_20;
  * Los minitags permiten granularidad sin fragmentar las 3 macro categorías.
  */
 export const MINITAGS_POR_CATEGORIA: Record<string, string[]> = {
+  '50% Necesidades': [
+    'Vivienda',
+    'Servicios Básicos',
+    'Supermercado',
+    'Salud & Farmacia',
+    'Transporte',
+    'Educación',
+    'Hogar & Mantenimiento',
+  ],
+  '30% Estilo de Vida': [
+    'Restaurantes',
+    'Delivery',
+    'Streaming & Apps',
+    'Salidas & Ocio',
+    'Compras & Ropa',
+    'Tecnología & Gadgets',
+    'Viajes & Paseos',
+    'Cuidado Personal',
+    'Hobbies & Regalos',
+  ],
+  '20% Ahorro & Deuda': [
+    'Ahorro Mensual',
+    'Fondo de Emergencia',
+    'Inversión',
+    'Préstamos & Créditos',
+    'Amortización Deuda',
+  ],
+  // Alias de retrocompatibilidad
   'Necesidades (50%)': [
     'Vivienda',
     'Servicios Básicos',
@@ -111,7 +139,7 @@ export function mapearCategoriaANuevoModelo(
   const n = (nombreCatAntigua || '').toLowerCase();
   const c = (concepto || '').toLowerCase();
 
-  // 1. Ahorro / Inversión (20%)
+  // 1. 20% Ahorro & Deuda
   if (
     n.includes('préstamo') ||
     n.includes('prestamo') ||
@@ -120,12 +148,13 @@ export function mapearCategoriaANuevoModelo(
     n.includes('ahorro') ||
     n.includes('invers') ||
     n.includes('deuda') ||
+    n.includes('20') ||
     c.includes('préstamo') ||
     c.includes('prestamo') ||
     c.includes('crédito')
   ) {
     return {
-      categoriaDestino: 'Ahorro / Inversión (20%)',
+      categoriaDestino: '20% Ahorro & Deuda',
       tagSugerido:
         n.includes('préstamo') || n.includes('prestamo') || c.includes('préstamo')
           ? 'Préstamos & Créditos'
@@ -133,7 +162,7 @@ export function mapearCategoriaANuevoModelo(
     };
   }
 
-  // 2. Necesidades (50%)
+  // 2. 50% Necesidades
   if (
     n.includes('vivienda') ||
     n.includes('alquiler') ||
@@ -159,7 +188,9 @@ export function mapearCategoriaANuevoModelo(
     n.includes('vehic') ||
     c.includes('gasolina') ||
     n.includes('educa') ||
-    n.includes('curso')
+    n.includes('curso') ||
+      n.includes('necesidad') ||
+      n.includes('50')
   ) {
     let tag = 'Vivienda';
     if (n.includes('vivienda') || n.includes('alquiler') || c.includes('alquiler')) tag = 'Vivienda';
@@ -169,12 +200,12 @@ export function mapearCategoriaANuevoModelo(
     else if (n.includes('transporte') || n.includes('vehic')) tag = 'Transporte';
     else if (n.includes('educa')) tag = 'Educación';
     return {
-      categoriaDestino: 'Necesidades (50%)',
+      categoriaDestino: '50% Necesidades',
       tagSugerido: tag,
     };
   }
 
-  // 3. Deseos (30%)
+  // 3. 30% Estilo de Vida
   let tag = 'Compras & Ropa';
   if (n.includes('suscrip') || n.includes('stream') || c.includes('netflix') || c.includes('spotify') || c.includes('youtube')) tag = 'Streaming & Apps';
   else if (n.includes('salida') || n.includes('ocio') || c.includes('restauran') || c.includes('bar')) tag = 'Salidas & Ocio';
@@ -182,7 +213,7 @@ export function mapearCategoriaANuevoModelo(
   else if (n.includes('otro') || n.includes('imprevisto')) tag = 'Compras & Ropa';
 
   return {
-    categoriaDestino: 'Deseos (30%)',
+    categoriaDestino: '30% Estilo de Vida',
     tagSugerido: tag,
   };
 }
@@ -247,9 +278,9 @@ export async function migrarACategorias503020(targetUsuarioId?: string | null): 
       categoriasMap.set(catDef.nombre, upserted.id);
     }
 
-    const idNecesidades = categoriasMap.get('Necesidades (50%)')!;
-    const idDeseos = categoriasMap.get('Deseos (30%)')!;
-    const idAhorro = categoriasMap.get('Ahorro / Inversión (20%)')!;
+    const idNecesidades = categoriasMap.get('50% Necesidades')!;
+    const idDeseos = categoriasMap.get('30% Estilo de Vida')!;
+    const idAhorro = categoriasMap.get('20% Ahorro & Deuda')!;
 
     // 1.1 Asegurar que registros sin categoría también se asignen
     const fijosSinCat = await prisma.costoFijo.findMany({
@@ -258,11 +289,11 @@ export async function migrarACategorias503020(targetUsuarioId?: string | null): 
     for (const cf of fijosSinCat) {
       const { categoriaDestino, tagSugerido } = mapearCategoriaANuevoModelo(null, cf.concepto);
       const destinoId =
-        categoriaDestino === 'Necesidades (50%)'
-          ? idNecesidades
-          : categoriaDestino === 'Ahorro / Inversión (20%)'
-          ? idAhorro
-          : idDeseos;
+      categoriaDestino === '50% Necesidades' || categoriaDestino === 'Necesidades (50%)'
+        ? idNecesidades
+          : categoriaDestino === '20% Ahorro & Deuda' || categoriaDestino === 'Ahorro / Inversión (20%)'
+        ? idAhorro
+        : idDeseos;
       await prisma.costoFijo.update({
         where: { id: cf.id },
         data: {
@@ -278,11 +309,11 @@ export async function migrarACategorias503020(targetUsuarioId?: string | null): 
     for (const g of gastosSinCat) {
       const { categoriaDestino, tagSugerido } = mapearCategoriaANuevoModelo(null, g.concepto);
       const destinoId =
-        categoriaDestino === 'Necesidades (50%)'
-          ? idNecesidades
-          : categoriaDestino === 'Ahorro / Inversión (20%)'
-          ? idAhorro
-          : idDeseos;
+      categoriaDestino === '50% Necesidades' || categoriaDestino === 'Necesidades (50%)'
+        ? idNecesidades
+          : categoriaDestino === '20% Ahorro & Deuda' || categoriaDestino === 'Ahorro / Inversión (20%)'
+        ? idAhorro
+        : idDeseos;
       await prisma.gasto.update({
         where: { id: g.id },
         data: {
@@ -301,7 +332,7 @@ export async function migrarACategorias503020(targetUsuarioId?: string | null): 
       },
     });
 
-    const nombresCanonicos = ['Necesidades (50%)', 'Deseos (30%)', 'Ahorro / Inversión (20%)'];
+    const nombresCanonicos = ['50% Necesidades', '30% Estilo de Vida', '20% Ahorro & Deuda'];
 
     for (const cat of categoriasActuales) {
       if (nombresCanonicos.includes(cat.nombre)) {
@@ -335,11 +366,11 @@ export async function migrarACategorias503020(targetUsuarioId?: string | null): 
       for (const cf of cat.costosFijos) {
         const { categoriaDestino, tagSugerido } = mapearCategoriaANuevoModelo(cat.nombre, cf.concepto);
         const destinoId =
-          categoriaDestino === 'Necesidades (50%)'
-            ? idNecesidades
-            : categoriaDestino === 'Ahorro / Inversión (20%)'
-            ? idAhorro
-            : idDeseos;
+        categoriaDestino === '50% Necesidades' || categoriaDestino === 'Necesidades (50%)'
+          ? idNecesidades
+            : categoriaDestino === '20% Ahorro & Deuda' || categoriaDestino === 'Ahorro / Inversión (20%)'
+          ? idAhorro
+          : idDeseos;
 
         const nuevoTag = cf.tag || tagSugerido;
         tagEjemplo = nuevoTag;
@@ -357,11 +388,11 @@ export async function migrarACategorias503020(targetUsuarioId?: string | null): 
       for (const g of cat.gastos) {
         const { categoriaDestino, tagSugerido } = mapearCategoriaANuevoModelo(cat.nombre, g.concepto);
         const destinoId =
-          categoriaDestino === 'Necesidades (50%)'
-            ? idNecesidades
-            : categoriaDestino === 'Ahorro / Inversión (20%)'
-            ? idAhorro
-            : idDeseos;
+        categoriaDestino === '50% Necesidades' || categoriaDestino === 'Necesidades (50%)'
+          ? idNecesidades
+            : categoriaDestino === '20% Ahorro & Deuda' || categoriaDestino === 'Ahorro / Inversión (20%)'
+          ? idAhorro
+          : idDeseos;
 
         const nuevoTag = g.tag || tagSugerido;
         tagEjemplo = nuevoTag;

@@ -311,313 +311,313 @@ export function obtenerColorCategoriaBackend(nombre?: string | null): { color: s
 
   // 1. Modelo 50/30/20 canónico
   if (n.includes('necesidad') || n.includes('50')) {
-    return { color: '#10b981', icono: 'ShieldCheck' };
+    return { color: '#0284c7', icono: 'ShieldCheck' };
   }
-  if (n.includes('deseo') || n.includes('30')) {
-    return { color: '#f59e0b', icono: 'Sparkles' };
-  }
-  if (n.includes('ahorro') || n.includes('invers') || n.includes('20')) {
-    return { color: '#3b82f6', icono: 'PiggyBank' };
-  }
-
-  // Fallbacks de compatibilidad
-  if (n.includes('vivienda') || n.includes('alquiler') || n.includes('depa')) {
-    return { color: '#10b981', icono: 'Home' };
-  }
-  if (n.includes('servicio') || n.includes('luz') || n.includes('agua') || n.includes('net') || n.includes('gas')) {
-    return { color: '#3b82f6', icono: 'Zap' };
-  }
-  if (n.includes('alimen') || n.includes('super') || n.includes('mercado') || n.includes('comida')) {
-    return { color: '#f59e0b', icono: 'ShoppingCart' };
-  }
-  if (n.includes('transporte') || n.includes('vehic') || n.includes('auto') || n.includes('gasolina')) {
-    return { color: '#64748b', icono: 'Car' };
-  }
-  if (n.includes('suscrip') || n.includes('stream') || n.includes('netflix') || n.includes('spotify')) {
-    return { color: '#8b5cf6', icono: 'Tv' };
-  }
-  if (n.includes('salud') || n.includes('médic') || n.includes('medic') || n.includes('gym') || n.includes('personal')) {
-    return { color: '#ec4899', icono: 'HeartPulse' };
-  }
-  if (n.includes('préstamo') || n.includes('prestamo') || n.includes('crédito') || n.includes('banco') || n.includes('deuda')) {
-    return { color: '#6366f1', icono: 'Landmark' };
-  }
-  if (n.includes('educa') || n.includes('curso') || n.includes('estudio')) {
-    return { color: '#06b6d4', icono: 'GraduationCap' };
-  }
-  if (n.includes('salida') || n.includes('ocio') || n.includes('restauran') || n.includes('bar')) {
-    return { color: '#f97316', icono: 'Coffee' };
-  }
-  if (n.includes('familiar') || n.includes('compromiso') || n.includes('regalo')) {
-    return { color: '#f43f5e', icono: 'HeartPulse' };
-  }
-  return { color: '#64748b', icono: 'Tag' };
-}
-
-export function clasificarItemBackend(item: {
-  tipo: 'FIJO' | 'PRESTAMO' | 'TARJETA' | 'DIRECTO';
-  concepto?: string;
-  categoria?: string;
-  totalCuotas?: number;
-  /** Clasificación persistida en BD — tiene prioridad sobre el cálculo en runtime */
-  clasificacionBD?: ClasificacionEgreso | null;
-}): {
-  clasificacion: 'FIJO' | 'PRESTAMO' | 'CUOTA' | 'VARIABLE';
-  badgeLabel: string;
-  tipoLabel: string;
-  colorHex: string;
-  colorKey: 'sky' | 'purple' | 'indigo' | 'teal';
-  icono: string;
-} {
-  // Los préstamos siempre son PRESTAMO (provienen de su propio modelo, no de Gasto)
-  if (item.tipo === 'PRESTAMO') {
-    return {
-      clasificacion: 'PRESTAMO',
-      badgeLabel: 'Préstamo',
-      tipoLabel: 'Préstamo Bancario',
-      colorHex: '#7c3aed',
-      colorKey: 'purple',
-      icono: 'Landmark',
-    };
-  }
-
-  // Los CostoFijo siempre son FIJO (provienen de su propio modelo, no de Gasto)
-  if (item.tipo === 'FIJO') {
-    return {
-      clasificacion: 'FIJO',
-      badgeLabel: 'Fijo',
-      tipoLabel: 'Costo Fijo',
-      colorHex: '#0284c7',
-      colorKey: 'sky',
-      icono: 'Home',
-    };
-  }
-
-  // Si tiene cuotas (> 1) o está marcado como CUOTA, siempre es COMPRA A CUOTAS
-  if ((item.totalCuotas && item.totalCuotas > 1) || item.clasificacionBD === 'CUOTA') {
-    return {
-      clasificacion: 'CUOTA',
-      badgeLabel: 'Cuota',
-      tipoLabel: 'Compra en Cuotas',
-      colorHex: '#4f46e5',
-      colorKey: 'indigo',
-      icono: 'Layers',
-    };
-  }
-
-  // Para gastos de 1 cuota (TARJETA o DIRECTO): usar la clasificación persistida en BD como fuente de verdad
-  const clasificacion: 'FIJO' | 'PRESTAMO' | 'VARIABLE' =
-    (item.clasificacionBD === 'FIJO' || item.clasificacionBD === 'PRESTAMO' || item.clasificacionBD === 'VARIABLE')
-      ? item.clasificacionBD
-      : (esItemRecurrente(item.concepto || '', item.categoria || '') ? 'FIJO' : 'VARIABLE');
-
-  if (clasificacion === 'FIJO') {
-    return {
-      clasificacion: 'FIJO',
-      badgeLabel: 'Fijo',
-      tipoLabel: 'Costo Fijo',
-      colorHex: '#0284c7',
-      colorKey: 'sky',
-      icono: 'Home',
-    };
-  }
-
-  return {
-    clasificacion: 'VARIABLE',
-    badgeLabel: 'Variable',
-    tipoLabel: 'Compra / Variable',
-    colorHex: '#0d9488',
-    colorKey: 'teal',
-    icono: 'Banknote',
-  };
-}
-
-export interface ResumenFinanciero {
-  periodo: string;
-  minPeriodo?: string;
-  config: {
-    id: string;
-    nombre: string;
-    slug?: string;
-    color?: string;
-    avatar?: string | null;
-    monedaSimbolo: string;
-    sueldoBaseMensual: number;
-    diaPagoSueldo: number;
-    tipoCambioUSD: number;
-    metaAhorroMensual: number;
-  };
-  ingresos: Array<{
-    id: string;
-    periodo: string;
-    tipo: TipoIngreso;
-    concepto: string;
-    monto: number;
-    monedaOriginal: string;
-    montoOriginal?: number | null;
-    tipoCambio: number;
-    fechaEsperada: string;
-    recibido: boolean;
-    totalGastosAsignados?: number;
-    disponible?: number;
-    gastosAsignadosCount?: number;
-  }>;
-  hayMultiplesIngresos?: boolean;
-  totalIngresos: number;
-  costosFijos: Array<{
-    id: string;
-    concepto: string;
-    monto: number;
-    diaVencimiento: number;
-    categoria: string;
-    registroId?: string;
-    estado: EstadoPago;
-    fechaPagoReal?: string | null;
-    mesInicio?: string | null;
-    mesFin?: string | null;
-    notas?: string | null;
-    monedaOriginal?: string;
-    montoOriginal?: number | null;
-    tipoCambio?: number;
-    metodoPago: MetodoPago;
-    tarjetaId?: string | null;
-    tarjetaNombre?: string | null;
-    tarjetaBanco?: string | null;
-    tarjetaColor?: string | null;
-    tarjetaUltimosCuatro?: string | null;
-    orden?: number | null;
-  }>;
-  totalCostosFijos: number;
-  prestamos: Array<{
-    id: string;
-    cuotaId: string;
-    banco: string;
-    concepto: string;
-    montoTotal: number;
-    montoCuota: number;
-    cuotaActual: number;
-    cuotasTotales: number;
-    tasaInteresAnual: number;
-    diaPago: number;
-    estado: EstadoPago;
-    fechaPagoReal?: string | null;
-    aplicaEsteMes?: boolean;
-    periodoInicio?: string | null;
-    periodoFin?: string | null;
-    mensajePeriodo?: string | null;
-    monedaOriginal?: string;
-    montoOriginal?: number | null;
-    tipoCambio?: number;
-    orden?: number | null;
-  }>;
-  totalPrestamos: number;
-  tarjetasCredito: Array<{
-    id: string;
-    nombre: string;
-    banco: string;
-    ultimosCuatro?: string | null;
-    diaCorte: number;
-    diaPago: number;
-    color: string;
-    totalPeriodo: number;
-    totalRegistros?: number;
-    cantidadGastos?: number;
-    cantidadCostosFijos?: number;
-    gastosPeriodo: Array<any>;
-    totalSiguientePeriodo: number;
-    gastosSiguientePeriodo: Array<any>;
-  }>;
-  totalTarjetas: number;
-  gastosDirectos: Array<{
-    id: string;
-    concepto: string;
-    monto: number;
-    monedaOriginal: string;
-    montoOriginal?: number | null;
-    tipoCambio: number;
-    fechaGasto: string;
-    periodoPago: string;
-    metodoPago: MetodoPago;
-    categoria: string;
-    estado: EstadoPago;
-    fechaPagoReal?: string | null;
-    notas?: string | null;
-    orden?: number | null;
-  }>;
-  totalGastosDirectos: number;
-  totalEgresos: number;
-  totalPagado: number;
-  totalAdelantado: number;
-  totalPendiente: number;
-  dineroDisponibleBruto: number;
-  metaAhorro: number;
-  dineroDisponibleNeto: number;
-  proyeccionMultiMes: Array<{
-    periodo: string;
-    ingresos: number;
-    egresos: number;
-    disponible: number;
-    esGrati: boolean;
-    esUtilidad: boolean;
-  }>;
-  egresosConsolidados: Array<EgresoConsolidado>;
-  totalesPorClasificacion: TotalesPorClasificacion;
-  seccionesCompromisos: Array<SeccionCompromiso>;
-  analisisCategorias: AnalisisCategoriasResumen;
-  saludFinanciera: SaludFinancieraKPIs;
-  resumenDivisas: ResumenDivisasEgresos;
-}
-
-  let schemaEnsured = false;
-  export async function autoEnsureSchema(): Promise<void> {
-    if (schemaEnsured) return;
-    try {
-      await prisma.$executeRawUnsafe(`ALTER TABLE "CostoFijo" ADD COLUMN IF NOT EXISTS "tag" TEXT;`);
-      await prisma.$executeRawUnsafe(`ALTER TABLE "Gasto" ADD COLUMN IF NOT EXISTS "tag" TEXT;`);
-      await prisma.$executeRawUnsafe(`ALTER TABLE "Gasto" ADD COLUMN IF NOT EXISTS "ingresoId" TEXT;`);
-      schemaEnsured = true;
-    } catch {
-      schemaEnsured = true;
+    if (n.includes('estilo') || n.includes('vida') || n.includes('deseo') || n.includes('30')) {
+      return { color: '#0d9488', icono: 'Sparkles' };
     }
-  }
+      if (n.includes('ahorro') || n.includes('deuda') || n.includes('invers') || n.includes('20')) {
+        return { color: '#7c3aed', icono: 'PiggyBank' };
+      }
 
-  // Caché en memoria para evitar consultas recurrentes de minPeriodo en PostgreSQL remoto (Neon)
-  const minPeriodoCache = new Map<string, { minPeriodo: string; expiresAt: number }>();
-
-  export function invalidarCacheMinPeriodo(usuarioId?: string) {
-    if (usuarioId) {
-      minPeriodoCache.delete(usuarioId);
-    } else {
-      minPeriodoCache.clear();
-    }
-  }
-
-  export async function getResumenMensual(periodo: string, usuarioOrId?: string | any): Promise<ResumenFinanciero> {
-    await autoEnsureSchema();
-    const [sAnio, sMes] = periodo.split('-').map(Number);
-    const nextDate = new Date(sAnio, sMes, 1);
-    const siguientePeriodo = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
-
-    const periodos12: string[] = [];
-    for (let i = 0; i < 12; i++) {
-      const d = new Date(sAnio, sMes - 1 + i, 1);
-      periodos12.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+      // Fallbacks de compatibilidad
+      if (n.includes('vivienda') || n.includes('alquiler') || n.includes('depa')) {
+        return { color: '#10b981', icono: 'Home' };
+      }
+      if (n.includes('servicio') || n.includes('luz') || n.includes('agua') || n.includes('net') || n.includes('gas')) {
+        return { color: '#3b82f6', icono: 'Zap' };
+      }
+      if (n.includes('alimen') || n.includes('super') || n.includes('mercado') || n.includes('comida')) {
+        return { color: '#f59e0b', icono: 'ShoppingCart' };
+      }
+      if (n.includes('transporte') || n.includes('vehic') || n.includes('auto') || n.includes('gasolina')) {
+        return { color: '#64748b', icono: 'Car' };
+      }
+      if (n.includes('suscrip') || n.includes('stream') || n.includes('netflix') || n.includes('spotify')) {
+        return { color: '#8b5cf6', icono: 'Tv' };
+      }
+      if (n.includes('salud') || n.includes('médic') || n.includes('medic') || n.includes('gym') || n.includes('personal')) {
+        return { color: '#ec4899', icono: 'HeartPulse' };
+      }
+      if (n.includes('préstamo') || n.includes('prestamo') || n.includes('crédito') || n.includes('banco') || n.includes('deuda')) {
+        return { color: '#6366f1', icono: 'Landmark' };
+      }
+      if (n.includes('educa') || n.includes('curso') || n.includes('estudio')) {
+        return { color: '#06b6d4', icono: 'GraduationCap' };
+      }
+      if (n.includes('salida') || n.includes('ocio') || n.includes('restauran') || n.includes('bar')) {
+        return { color: '#f97316', icono: 'Coffee' };
+      }
+      if (n.includes('familiar') || n.includes('compromiso') || n.includes('regalo')) {
+        return { color: '#f43f5e', icono: 'HeartPulse' };
+      }
+      return { color: '#64748b', icono: 'Tag' };
     }
 
-  // Resolver usuario activo para la instancia financiera (usar objeto directo si ya fue validado en la sesión)
-  let usuario: any = null;
-  if (usuarioOrId && typeof usuarioOrId === 'object' && usuarioOrId.id) {
-    usuario = usuarioOrId;
-  } else if (typeof usuarioOrId === 'string') {
-    usuario = await prisma.usuario.findUnique({ where: { id: usuarioOrId } });
-  }
-  if (!usuario) {
-    usuario = await prisma.usuario.findFirst({ where: { activo: true }, orderBy: { createdAt: 'asc' } });
-  }
-  if (!usuario) {
-    throw new Error('Usuario no encontrado para generar el resumen financiero');
-  }
-  const uId = usuario.id;
+    export function clasificarItemBackend(item: {
+      tipo: 'FIJO' | 'PRESTAMO' | 'TARJETA' | 'DIRECTO';
+      concepto?: string;
+      categoria?: string;
+      totalCuotas?: number;
+      /** Clasificación persistida en BD — tiene prioridad sobre el cálculo en runtime */
+      clasificacionBD?: ClasificacionEgreso | null;
+    }): {
+      clasificacion: 'FIJO' | 'PRESTAMO' | 'CUOTA' | 'VARIABLE';
+      badgeLabel: string;
+      tipoLabel: string;
+      colorHex: string;
+      colorKey: 'sky' | 'purple' | 'indigo' | 'teal';
+      icono: string;
+    } {
+      // Los préstamos siempre son PRESTAMO (provienen de su propio modelo, no de Gasto)
+      if (item.tipo === 'PRESTAMO') {
+        return {
+          clasificacion: 'PRESTAMO',
+          badgeLabel: 'Préstamo',
+          tipoLabel: 'Préstamo Bancario',
+          colorHex: '#7c3aed',
+          colorKey: 'purple',
+          icono: 'Landmark',
+        };
+      }
+
+      // Los CostoFijo siempre son FIJO (provienen de su propio modelo, no de Gasto)
+      if (item.tipo === 'FIJO') {
+        return {
+          clasificacion: 'FIJO',
+          badgeLabel: 'Fijo',
+          tipoLabel: 'Costo Fijo',
+          colorHex: '#0284c7',
+          colorKey: 'sky',
+          icono: 'Home',
+        };
+      }
+
+      // Si tiene cuotas (> 1) o está marcado como CUOTA, siempre es COMPRA A CUOTAS
+      if ((item.totalCuotas && item.totalCuotas > 1) || item.clasificacionBD === 'CUOTA') {
+        return {
+          clasificacion: 'CUOTA',
+          badgeLabel: 'Cuota',
+          tipoLabel: 'Compra en Cuotas',
+          colorHex: '#4f46e5',
+          colorKey: 'indigo',
+          icono: 'Layers',
+        };
+      }
+
+      // Para gastos de 1 cuota (TARJETA o DIRECTO): usar la clasificación persistida en BD como fuente de verdad
+      const clasificacion: 'FIJO' | 'PRESTAMO' | 'VARIABLE' =
+        (item.clasificacionBD === 'FIJO' || item.clasificacionBD === 'PRESTAMO' || item.clasificacionBD === 'VARIABLE')
+          ? item.clasificacionBD
+          : (esItemRecurrente(item.concepto || '', item.categoria || '') ? 'FIJO' : 'VARIABLE');
+
+      if (clasificacion === 'FIJO') {
+        return {
+          clasificacion: 'FIJO',
+          badgeLabel: 'Fijo',
+          tipoLabel: 'Costo Fijo',
+          colorHex: '#0284c7',
+          colorKey: 'sky',
+          icono: 'Home',
+        };
+      }
+
+      return {
+        clasificacion: 'VARIABLE',
+        badgeLabel: 'Variable',
+        tipoLabel: 'Compra / Variable',
+        colorHex: '#0d9488',
+        colorKey: 'teal',
+        icono: 'Banknote',
+      };
+    }
+
+    export interface ResumenFinanciero {
+      periodo: string;
+      minPeriodo?: string;
+      config: {
+        id: string;
+        nombre: string;
+        slug?: string;
+        color?: string;
+        avatar?: string | null;
+        monedaSimbolo: string;
+        sueldoBaseMensual: number;
+        diaPagoSueldo: number;
+        tipoCambioUSD: number;
+        metaAhorroMensual: number;
+      };
+      ingresos: Array<{
+        id: string;
+        periodo: string;
+        tipo: TipoIngreso;
+        concepto: string;
+        monto: number;
+        monedaOriginal: string;
+        montoOriginal?: number | null;
+        tipoCambio: number;
+        fechaEsperada: string;
+        recibido: boolean;
+        totalGastosAsignados?: number;
+        disponible?: number;
+        gastosAsignadosCount?: number;
+      }>;
+      hayMultiplesIngresos?: boolean;
+      totalIngresos: number;
+      costosFijos: Array<{
+        id: string;
+        concepto: string;
+        monto: number;
+        diaVencimiento: number;
+        categoria: string;
+        registroId?: string;
+        estado: EstadoPago;
+        fechaPagoReal?: string | null;
+        mesInicio?: string | null;
+        mesFin?: string | null;
+        notas?: string | null;
+        monedaOriginal?: string;
+        montoOriginal?: number | null;
+        tipoCambio?: number;
+        metodoPago: MetodoPago;
+        tarjetaId?: string | null;
+        tarjetaNombre?: string | null;
+        tarjetaBanco?: string | null;
+        tarjetaColor?: string | null;
+        tarjetaUltimosCuatro?: string | null;
+        orden?: number | null;
+      }>;
+      totalCostosFijos: number;
+      prestamos: Array<{
+        id: string;
+        cuotaId: string;
+        banco: string;
+        concepto: string;
+        montoTotal: number;
+        montoCuota: number;
+        cuotaActual: number;
+        cuotasTotales: number;
+        tasaInteresAnual: number;
+        diaPago: number;
+        estado: EstadoPago;
+        fechaPagoReal?: string | null;
+        aplicaEsteMes?: boolean;
+        periodoInicio?: string | null;
+        periodoFin?: string | null;
+        mensajePeriodo?: string | null;
+        monedaOriginal?: string;
+        montoOriginal?: number | null;
+        tipoCambio?: number;
+        orden?: number | null;
+      }>;
+      totalPrestamos: number;
+      tarjetasCredito: Array<{
+        id: string;
+        nombre: string;
+        banco: string;
+        ultimosCuatro?: string | null;
+        diaCorte: number;
+        diaPago: number;
+        color: string;
+        totalPeriodo: number;
+        totalRegistros?: number;
+        cantidadGastos?: number;
+        cantidadCostosFijos?: number;
+        gastosPeriodo: Array<any>;
+        totalSiguientePeriodo: number;
+        gastosSiguientePeriodo: Array<any>;
+      }>;
+      totalTarjetas: number;
+      gastosDirectos: Array<{
+        id: string;
+        concepto: string;
+        monto: number;
+        monedaOriginal: string;
+        montoOriginal?: number | null;
+        tipoCambio: number;
+        fechaGasto: string;
+        periodoPago: string;
+        metodoPago: MetodoPago;
+        categoria: string;
+        estado: EstadoPago;
+        fechaPagoReal?: string | null;
+        notas?: string | null;
+        orden?: number | null;
+      }>;
+      totalGastosDirectos: number;
+      totalEgresos: number;
+      totalPagado: number;
+      totalAdelantado: number;
+      totalPendiente: number;
+      dineroDisponibleBruto: number;
+      metaAhorro: number;
+      dineroDisponibleNeto: number;
+      proyeccionMultiMes: Array<{
+        periodo: string;
+        ingresos: number;
+        egresos: number;
+        disponible: number;
+        esGrati: boolean;
+        esUtilidad: boolean;
+      }>;
+      egresosConsolidados: Array<EgresoConsolidado>;
+      totalesPorClasificacion: TotalesPorClasificacion;
+      seccionesCompromisos: Array<SeccionCompromiso>;
+      analisisCategorias: AnalisisCategoriasResumen;
+      saludFinanciera: SaludFinancieraKPIs;
+      resumenDivisas: ResumenDivisasEgresos;
+    }
+
+    let schemaEnsured = false;
+    export async function autoEnsureSchema(): Promise<void> {
+      if (schemaEnsured) return;
+      try {
+        await prisma.$executeRawUnsafe(`ALTER TABLE "CostoFijo" ADD COLUMN IF NOT EXISTS "tag" TEXT;`);
+        await prisma.$executeRawUnsafe(`ALTER TABLE "Gasto" ADD COLUMN IF NOT EXISTS "tag" TEXT;`);
+        await prisma.$executeRawUnsafe(`ALTER TABLE "Gasto" ADD COLUMN IF NOT EXISTS "ingresoId" TEXT;`);
+        schemaEnsured = true;
+      } catch {
+        schemaEnsured = true;
+      }
+    }
+
+    // Caché en memoria para evitar consultas recurrentes de minPeriodo en PostgreSQL remoto (Neon)
+    const minPeriodoCache = new Map<string, { minPeriodo: string; expiresAt: number }>();
+
+    export function invalidarCacheMinPeriodo(usuarioId?: string) {
+      if (usuarioId) {
+        minPeriodoCache.delete(usuarioId);
+      } else {
+        minPeriodoCache.clear();
+      }
+    }
+
+    export async function getResumenMensual(periodo: string, usuarioOrId?: string | any): Promise<ResumenFinanciero> {
+      await autoEnsureSchema();
+      const [sAnio, sMes] = periodo.split('-').map(Number);
+      const nextDate = new Date(sAnio, sMes, 1);
+      const siguientePeriodo = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
+
+      const periodos12: string[] = [];
+      for (let i = 0; i < 12; i++) {
+        const d = new Date(sAnio, sMes - 1 + i, 1);
+        periodos12.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+      }
+
+      // Resolver usuario activo para la instancia financiera (usar objeto directo si ya fue validado en la sesión)
+      let usuario: any = null;
+      if (usuarioOrId && typeof usuarioOrId === 'object' && usuarioOrId.id) {
+        usuario = usuarioOrId;
+      } else if (typeof usuarioOrId === 'string') {
+        usuario = await prisma.usuario.findUnique({ where: { id: usuarioOrId } });
+      }
+      if (!usuario) {
+        usuario = await prisma.usuario.findFirst({ where: { activo: true }, orderBy: { createdAt: 'asc' } });
+      }
+      if (!usuario) {
+        throw new Error('Usuario no encontrado para generar el resumen financiero');
+      }
+      const uId = usuario.id;
 
       // CONSULTAS ULTRA-OPTIMIZADAS EN PARALELO FILTRADAS POR USUARIO
       const [
@@ -721,45 +721,45 @@ export interface ResumenFinanciero {
         }),
       ]);
 
-  // Obtener el periodo mínimo con registros para el usuario (con caché en memoria para eliminar 4 roundtrips a la BD)
-  let minPeriodo = '2026-10';
-  const cachedMin = minPeriodoCache.get(uId);
-  const now = Date.now();
-  if (cachedMin && cachedMin.expiresAt > now) {
-    minPeriodo = cachedMin.minPeriodo;
-  } else {
-    const [minIngreso, minGasto, minFijo, minCuota] = await Promise.all([
-      prisma.ingresoMes.findFirst({
-        where: { usuarioId: uId },
-        orderBy: { periodo: 'asc' },
-        select: { periodo: true },
-      }),
-      prisma.gasto.findFirst({
-        where: { usuarioId: uId },
-        orderBy: { periodoPago: 'asc' },
-        select: { periodoPago: true },
-      }),
-      prisma.registroCostoFijoMes.findFirst({
-        where: { costoFijo: { usuarioId: uId } },
-        orderBy: { periodo: 'asc' },
-        select: { periodo: true },
-      }),
-      prisma.cuotaPrestamo.findFirst({
-        where: { prestamo: { usuarioId: uId } },
-        orderBy: { periodo: 'asc' },
-        select: { periodo: true },
-      }),
-    ]);
-    const periodosExistentes = [
-      minIngreso?.periodo,
-      minGasto?.periodoPago,
-      minFijo?.periodo,
-      minCuota?.periodo,
-    ].filter(Boolean) as string[];
+      // Obtener el periodo mínimo con registros para el usuario (con caché en memoria para eliminar 4 roundtrips a la BD)
+      let minPeriodo = '2026-10';
+      const cachedMin = minPeriodoCache.get(uId);
+      const now = Date.now();
+      if (cachedMin && cachedMin.expiresAt > now) {
+        minPeriodo = cachedMin.minPeriodo;
+      } else {
+        const [minIngreso, minGasto, minFijo, minCuota] = await Promise.all([
+          prisma.ingresoMes.findFirst({
+            where: { usuarioId: uId },
+            orderBy: { periodo: 'asc' },
+            select: { periodo: true },
+          }),
+          prisma.gasto.findFirst({
+            where: { usuarioId: uId },
+            orderBy: { periodoPago: 'asc' },
+            select: { periodoPago: true },
+          }),
+          prisma.registroCostoFijoMes.findFirst({
+            where: { costoFijo: { usuarioId: uId } },
+            orderBy: { periodo: 'asc' },
+            select: { periodo: true },
+          }),
+          prisma.cuotaPrestamo.findFirst({
+            where: { prestamo: { usuarioId: uId } },
+            orderBy: { periodo: 'asc' },
+            select: { periodo: true },
+          }),
+        ]);
+        const periodosExistentes = [
+          minIngreso?.periodo,
+          minGasto?.periodoPago,
+          minFijo?.periodo,
+          minCuota?.periodo,
+        ].filter(Boolean) as string[];
 
-    minPeriodo = periodosExistentes.length > 0 ? periodosExistentes.sort()[0] : '2026-10';
-    minPeriodoCache.set(uId, { minPeriodo, expiresAt: now + 30 * 60 * 1000 });
-  }
+        minPeriodo = periodosExistentes.length > 0 ? periodosExistentes.sort()[0] : '2026-10';
+        minPeriodoCache.set(uId, { minPeriodo, expiresAt: now + 30 * 60 * 1000 });
+      }
 
       const config = {
         id: usuario.id,
@@ -944,7 +944,7 @@ export interface ResumenFinanciero {
           pTipoCambio = pTcConfig;
         }
 
-        const pCatNombre = 'Préstamos & Créditos';
+        const pCatNombre = '20% Ahorro & Deuda';
         const pCatMeta = obtenerColorCategoriaBackend(pCatNombre);
         const pClasif = clasificarItemBackend({
           tipo: 'PRESTAMO',

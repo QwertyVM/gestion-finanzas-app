@@ -5,7 +5,7 @@ import React from 'react';
 export function InstructivoEjemplosCategorias() {
   const categorias = [
     {
-      titulo: 'Necesidades (50%)',
+      titulo: '50% Necesidades',
       meta: 'Meta máx. 50%',
       colorBadge: 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border-sky-300 dark:border-sky-800',
       bordeCard: 'border-sky-200 dark:border-sky-900/60 bg-sky-50/30 dark:bg-sky-950/10',
@@ -21,7 +21,7 @@ export function InstructivoEjemplosCategorias() {
       ],
     },
     {
-      titulo: 'Deseos (30%)',
+      titulo: '30% Estilo de Vida',
       meta: 'Meta máx. 30%',
       colorBadge: 'bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300 border-teal-300 dark:border-teal-800',
       bordeCard: 'border-teal-200 dark:border-teal-900/60 bg-teal-50/30 dark:bg-teal-950/10',
@@ -37,7 +37,7 @@ export function InstructivoEjemplosCategorias() {
       ],
     },
     {
-      titulo: 'Ahorro / Inversión (20%)',
+      titulo: '20% Ahorro & Deuda',
       meta: 'Meta mín. 20%',
       colorBadge: 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300 dark:border-purple-800',
       bordeCard: 'border-purple-200 dark:border-purple-900/60 bg-purple-50/30 dark:bg-purple-950/10',
