@@ -10,6 +10,7 @@ import { IngresosMesTabla } from './IngresosMesTabla';
 import { DashboardEgresosSection } from './DashboardEgresosSection';
 import { DashboardModals } from './DashboardModals';
 import { InstructivoGuia503020 } from './instructivo/InstructivoGuia503020';
+import { DashboardStateFallbacks } from './DashboardStateFallbacks';
 import { useDashboardEgresos } from './hooks/useDashboardEgresos';
 
 export function DashboardClient() {
@@ -20,6 +21,9 @@ export function DashboardClient() {
     puedeIrMesAnterior,
     resumen,
     loading,
+    fetchError,
+    refresh,
+    usuarioActual,
     openRecordModal,
     selectedGastoIds,
     toggleSelectGasto,
@@ -67,12 +71,22 @@ export function DashboardClient() {
     return <TableSkeleton rows={8} />;
   }
 
-  if (!resumen) {
+  if (!usuarioActual) {
+    return <DashboardStateFallbacks tipo="NO_AUTH" />;
+  }
+
+  if (fetchError && !resumen) {
     return (
-      <div className="p-8 text-center bg-card border border-border rounded-xl">
-        <p className="text-muted-foreground text-sm">No se encontraron datos para este mes.</p>
-      </div>
+      <DashboardStateFallbacks
+        tipo="ERROR"
+        mensajeError={fetchError}
+        onReintentar={refresh}
+      />
     );
+  }
+
+  if (!resumen) {
+    return <DashboardStateFallbacks tipo="VACIO" />;
   }
 
   const conteoEgresosFiltrados = egresosFiltrados.length;

@@ -8,7 +8,7 @@ export async function GET(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) {
       return NextResponse.json(
-        { error: 'No autorizado. Debes iniciar sesión con tu PIN.' },
+        { error: 'No autorizado. Debes iniciar sesión con tu cuenta.' },
         { status: 401 }
       );
     }

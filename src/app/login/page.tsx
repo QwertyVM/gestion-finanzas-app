@@ -7,7 +7,7 @@ import { Wallet, ShieldCheck, Sparkles, Lock, AlertCircle, Loader2 } from 'lucid
 
 const ERROR_MESSAGES: Record<string, string> = {
   google_config_missing:
-    'Google OAuth aún no está configurado. Agrega GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en las variables de entorno.',
+  'Google OAuth aún no está configurado. Agrega GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET en el archivo .env.',
   google_cancelled: 'Inicio de sesión con Google cancelado.',
   google_no_code: 'No se recibió el código de autorización de Google.',
   google_token_exchange_failed: 'Error al verificar credenciales con Google.',
@@ -24,30 +24,30 @@ function LoginContent() {
 
   return (
     <div className="min-h-[85vh] flex items-center justify-center p-4">
-      <div className="w-full max-w-sm bg-card border border-border/80 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
-        {/* Brand & Título */}
-        <div className="text-center space-y-2">
-          <div className="inline-flex p-3 rounded-2xl bg-foreground text-background shadow-md mb-1">
-            <Wallet className="w-7 h-7" />
-          </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-            Finanzas Personales
-          </h1>
-          <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mx-auto">
-            Control de gastos, proyección de ahorros y gestión inteligente de tus finanzas.
-          </p>
-        </div>
-
-        {/* Alerta de error si ocurrió alguno */}
-        {oauthError && (
-          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs flex items-start gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-            <div className="flex-1">
-              <span className="font-semibold block mb-0.5">Aviso de Acceso</span>
-              <span>{oauthError}</span>
+        <div className="w-full max-w-sm bg-card border border-border/80 rounded-3xl p-6 sm:p-8 shadow-xl space-y-6">
+          {/* Brand & Título */}
+          <div className="text-center space-y-2">
+            <div className="inline-flex p-3 rounded-2xl bg-foreground text-background shadow-md mb-1">
+              <Wallet className="w-7 h-7" />
             </div>
+            <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
+              Finanzas Personales
+            </h1>
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-xs mx-auto">
+              Control de gastos, proyección de ahorros y gestión inteligente de tus finanzas.
+            </p>
           </div>
-        )}
+
+          {/* Alerta de error si ocurrió alguno */}
+          {oauthError && (
+            <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400 text-xs flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <span className="font-semibold block mb-0.5">Aviso de Acceso</span>
+                <span>{oauthError}</span>
+              </div>
+            </div>
+          )}
 
         {/* Botón Principal de Google */}
         <div className="space-y-3 pt-1">
@@ -79,20 +79,20 @@ function LoginContent() {
           </span>
         </div>
       </div>
-    </div>
-  );
+      </div>
+      );
 }
 
-export default function LoginPage() {
+      export default function LoginPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-[85vh] flex items-center justify-center">
-          <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
-        </div>
-      }
-    >
-      <LoginContent />
-    </Suspense>
-  );
+      <Suspense
+        fallback={
+          <div className="min-h-[85vh] flex items-center justify-center">
+            <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+          </div>
+        }
+      >
+        <LoginContent />
+      </Suspense>
+      );
 }

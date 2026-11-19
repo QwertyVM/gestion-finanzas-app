@@ -25,6 +25,7 @@ export interface FinanzasContextType {
   minPeriodo: string;
   resumen: ResumenFinanciero | null;
   loading: boolean;
+  fetchError: string | null;
   refresh: () => Promise<void>;
   prefetchPeriodo: (p: string) => Promise<void>;
   prefetchMesAnterior: () => void;

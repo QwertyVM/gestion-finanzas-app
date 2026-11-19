@@ -23,6 +23,7 @@ export function useFinanzasPeriodo({
   const [periodo, setPeriodoState] = useState<string>(getCurrentPeriodo());
   const [resumen, setResumen] = useState<ResumenFinanciero | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
 
   // Caché en memoria para transiciones instantáneas (0ms) entre periodos
   const cacheRef = useRef<Map<string, CacheEntry>>(new Map());
@@ -68,6 +69,7 @@ export function useFinanzasPeriodo({
 
       if (!silent) {
         setLoading(true);
+        setFetchError(null);
       }
 
       try {
@@ -106,6 +108,7 @@ export function useFinanzasPeriodo({
         if (!silent) {
           console.error('Error al cargar resumen financiero:', err);
           toast.error('No se pudo cargar la información del periodo');
+          setFetchError(err?.message || 'Error de conexión al cargar datos');
           setLoading(false);
         }
       }
@@ -260,6 +263,7 @@ export function useFinanzasPeriodo({
     minPeriodo,
     resumen,
     loading: loading || authLoading,
+    fetchError,
     refresh,
     prefetchPeriodo,
     prefetchMesAnterior,

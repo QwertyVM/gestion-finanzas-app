@@ -17,17 +17,16 @@ export async function middleware(request: NextRequest) {
   // 2. Cookie criptográfica de sesión firmada
   const sessionToken = request.cookies.get(SESSION_COOKIE_NAME)?.value;
   const verified = await verifySessionToken(sessionToken);
-  const isExplicitlyLoggedOut = request.cookies.get('finanzapp_logged_out')?.value === 'true';
 
   // 3. Rutas de autenticación pública (login y APIs de usuarios/auth)
   const isLoginPage = pathname === '/login';
   const isAuthApi = pathname.startsWith('/api/usuarios') || pathname.startsWith('/api/auth');
 
-  // Si el usuario cerró sesión explícitamente y trata de acceder sin autenticarse
-  if (isExplicitlyLoggedOut && !verified && !isLoginPage && !isAuthApi) {
+  // Si el usuario no tiene sesión activa y trata de acceder a rutas protegidas
+  if (!verified && !isLoginPage && !isAuthApi) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json(
-        { error: 'Sesión finalizada. Inicia sesión con tu PIN.' },
+        { error: 'No autorizado. Debes iniciar sesión con tu cuenta.' },
         { status: 401 }
       );
     }
