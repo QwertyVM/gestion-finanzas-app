@@ -558,6 +558,19 @@ export interface ResumenFinanciero {
   resumenDivisas: ResumenDivisasEgresos;
 }
 
+  let schemaEnsured = false;
+  export async function autoEnsureSchema(): Promise<void> {
+    if (schemaEnsured) return;
+    try {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "CostoFijo" ADD COLUMN IF NOT EXISTS "tag" TEXT;`);
+      await prisma.$executeRawUnsafe(`ALTER TABLE "Gasto" ADD COLUMN IF NOT EXISTS "tag" TEXT;`);
+      await prisma.$executeRawUnsafe(`ALTER TABLE "Gasto" ADD COLUMN IF NOT EXISTS "ingresoId" TEXT;`);
+      schemaEnsured = true;
+    } catch {
+      schemaEnsured = true;
+    }
+  }
+
   // Caché en memoria para evitar consultas recurrentes de minPeriodo en PostgreSQL remoto (Neon)
   const minPeriodoCache = new Map<string, { minPeriodo: string; expiresAt: number }>();
 
@@ -570,6 +583,7 @@ export interface ResumenFinanciero {
   }
 
   export async function getResumenMensual(periodo: string, usuarioOrId?: string | any): Promise<ResumenFinanciero> {
+    await autoEnsureSchema();
     const [sAnio, sMes] = periodo.split('-').map(Number);
     const nextDate = new Date(sAnio, sMes, 1);
     const siguientePeriodo = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
