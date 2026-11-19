@@ -10,6 +10,7 @@ export interface DetalleItemData {
   categoriaId?: string | null;
   categoriaColor?: string;
   categoriaIcono?: string;
+  tag?: string | null;
   monto: number;
   monedaOriginal?: string;
   montoOriginal?: number | null;
@@ -22,6 +23,9 @@ export interface DetalleItemData {
   subtexto?: string;
   notas?: string | null;
   metodoPago?: string;
+  ingresoId?: string | null;
+  ingresoConcepto?: string | null;
+  ingresoTipo?: string | null;
 
   // Cuotas
   cuotaActual?: number;
@@ -84,6 +88,8 @@ export interface ModalDetalleGastoProps {
     nuevoPeriodo: string,
     aplicarSerie?: boolean
   ) => Promise<void>;
+  onCambiarIngresoAsignado?: (item: DetalleItemData, ingresoId: string | null) => Promise<void>;
+  ingresosMes?: Array<{ id: string; concepto: string; tipo: string; monto: number; totalGastosAsignados?: number; disponible?: number }>;
   monedaSimbolo?: string;
   tarjetas?: Array<{
     id: string;

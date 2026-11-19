@@ -5,6 +5,7 @@ import { CreditCard, Landmark, Banknote, Pencil } from 'lucide-react';
 import { formatPeriodoLabel } from '@/lib/utils';
 import { DetalleMetodoPagoEditor } from './DetalleMetodoPagoEditor';
 import { DetalleCategoriaSelector } from './DetalleCategoriaSelector';
+import { DetalleTagSelector } from './DetalleTagSelector';
 import { VariableNotasBox } from './VariableNotasBox';
 
 interface DetallePropiedadesFijoProps {
@@ -15,12 +16,14 @@ interface DetallePropiedadesFijoProps {
   categoria?: string;
   categoriaId?: string | null;
   categoriaColor?: string;
+  tag?: string | null;
   mesInicio?: string | null;
   mesFin?: string | null;
   notas?: string | null;
   tarjetas?: Array<{ id: string; nombre: string; banco: string }>;
   onCambiarMetodoPago?: (nuevoMetodo: string, tarjetaId?: string | null, aplicarFuturos?: boolean) => Promise<void>;
   onCambiarCategoria?: (categoriaId: string) => Promise<void>;
+  onCambiarTag?: (nuevoTag: string) => Promise<void>;
   onGuardarNotas?: (nuevasNotas: string) => Promise<void>;
 }
 
@@ -32,12 +35,14 @@ export function DetallePropiedadesFijo({
   categoria,
   categoriaId,
   categoriaColor,
+  tag,
   mesInicio,
   mesFin,
   notas,
   tarjetas = [],
   onCambiarMetodoPago,
   onCambiarCategoria,
+  onCambiarTag,
   onGuardarNotas,
 }: DetallePropiedadesFijoProps) {
   const [editandoMetodo, setEditandoMetodo] = useState(false);
@@ -140,6 +145,14 @@ export function DetallePropiedadesFijo({
         categoriaColor={categoriaColor}
         tieneCuotas={false}
         onCambiarCategoria={onCambiarCategoria || (async () => {})}
+      />
+
+      {/* 3.1 MINITAG ESPECÍFICO */}
+      <DetalleTagSelector
+        tag={tag}
+        categoriaNombre={categoria}
+        tieneCuotas={false}
+        onCambiarTag={onCambiarTag || (async () => {})}
       />
 
       {/* 4. NOTAS */}

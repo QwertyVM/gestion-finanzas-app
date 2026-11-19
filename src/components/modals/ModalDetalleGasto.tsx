@@ -10,6 +10,7 @@ import { DetalleClasificacionSelector } from './detalle/DetalleClasificacionSele
 import { DetallePropiedadesSeccion } from './detalle/DetallePropiedadesSeccion';
 import { DetalleCuotasProgress } from './detalle/DetalleCuotasProgress';
 import { DetallePropiedadesPrestamo } from './detalle/DetallePropiedadesPrestamo';
+import { DetalleIngresoAsignadoBox } from './detalle/DetalleIngresoAsignadoBox';
 import { DetalleFooterAcciones } from './detalle/DetalleFooterAcciones';
 
 export type { DetalleItemData, ModalDetalleGastoProps, MonedaDetalleInfo };
@@ -26,6 +27,8 @@ export function ModalDetalleGasto({
   onGuardarConcepto,
   onGuardarNotas,
   onGuardarFechaPeriodo,
+  onCambiarIngresoAsignado,
+  ingresosMes = [],
   monedaSimbolo = 'S/',
   tarjetas = [],
 }: ModalDetalleGastoProps) {
@@ -130,7 +133,18 @@ export function ModalDetalleGasto({
             categoriaColor={d.categoriaColorLocal}
             categoriaId={d.categoriaIdLocal}
             onCambiarCategoria={d.handleCambiarCategoria}
+            tagLocal={d.tagLocal}
+            onCambiarTag={d.handleCambiarTag}
           />
+
+          {(item.tipo === 'TARJETA' || item.tipo === 'DIRECTO') && (
+            <DetalleIngresoAsignadoBox
+              item={item}
+              ingresosMes={ingresosMes}
+              onCambiarIngresoAsignado={onCambiarIngresoAsignado}
+              monedaSimbolo={monedaSimbolo}
+            />
+          )}
 
           {tieneCuotas && (
             <DetalleCuotasProgress

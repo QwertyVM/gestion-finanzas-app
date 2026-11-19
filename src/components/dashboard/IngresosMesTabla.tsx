@@ -36,6 +36,11 @@ export function IngresosMesTabla({
             <span className="text-[11px] font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-md">
               {ingresos.length} {ingresos.length === 1 ? 'fuente' : 'fuentes'}
             </span>
+            {ingresos.length > 1 && (
+              <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-md border border-amber-500/20">
+                Múltiples ingresos: Asignación activa
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             Sueldo, gratificaciones y entradas adicionales programadas.

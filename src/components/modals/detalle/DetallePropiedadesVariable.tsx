@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { VariableFormaPagoBox } from './VariableFormaPagoBox';
 import { VariableNotasBox } from './VariableNotasBox';
 import { DetalleCategoriaSelector } from './DetalleCategoriaSelector';
+import { DetalleTagSelector } from './DetalleTagSelector';
 import { DetalleFechaPeriodoBox } from './DetalleFechaPeriodoBox';
 
 interface DetallePropiedadesVariableProps {
@@ -17,6 +18,7 @@ interface DetallePropiedadesVariableProps {
   categoria?: string;
   categoriaId?: string | null;
   categoriaColor?: string;
+  tag?: string | null;
   tieneCuotas?: boolean;
   notas?: string | null;
   tarjetas?: Array<{
@@ -29,6 +31,7 @@ interface DetallePropiedadesVariableProps {
   }>;
   onCambiarMetodoPago?: (nuevoMetodo: string, tarjetaId?: string | null) => Promise<void>;
   onCambiarCategoria?: (categoriaId: string, aplicarSerie?: boolean) => Promise<void>;
+  onCambiarTag?: (nuevoTag: string, aplicarSerie?: boolean) => Promise<void>;
   onGuardarNotas?: (nuevasNotas: string) => Promise<void>;
   onGuardarFechaPeriodo?: (nuevaFecha: string, nuevoPeriodo: string, aplicarSerie?: boolean) => Promise<void>;
 }
@@ -44,11 +47,13 @@ export function DetallePropiedadesVariable({
   categoria,
   categoriaId,
   categoriaColor,
+  tag,
   tieneCuotas = false,
   notas,
   tarjetas = [],
   onCambiarMetodoPago,
   onCambiarCategoria,
+  onCambiarTag,
   onGuardarNotas,
   onGuardarFechaPeriodo,
 }: DetallePropiedadesVariableProps) {
@@ -138,6 +143,14 @@ export function DetallePropiedadesVariable({
         categoriaColor={categoriaColor}
         tieneCuotas={tieneCuotas}
         onCambiarCategoria={onCambiarCategoria || (async () => {})}
+      />
+
+      {/* 3.1 MINITAG ESPECÍFICO */}
+      <DetalleTagSelector
+        tag={tag}
+        categoriaNombre={categoria}
+        tieneCuotas={tieneCuotas}
+        onCambiarTag={onCambiarTag || (async () => {})}
       />
 
       {/* 4. NOTAS */}

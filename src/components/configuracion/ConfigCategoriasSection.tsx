@@ -44,10 +44,10 @@ export function ConfigCategoriasSection({
     <div className="space-y-3">
       <div>
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Catálogo de Categorías / Tags
+          Categorías Canónicas · Modelo 50/30/20
         </h2>
         <p className="text-[11px] text-muted-foreground mt-0.5">
-          Etiquetas generales para clasificar y organizar costos fijos, préstamos y compras.
+          El sistema trabaja sobre 3 grandes categorías: <strong>Necesidades (50%)</strong>, <strong>Deseos (30%)</strong> y <strong>Ahorro / Inversión (20%)</strong>. Usa <strong>minitags</strong> para definir cada gasto de forma específica sin fragmentar la estructura macro.
         </p>
       </div>
 
@@ -59,18 +59,20 @@ export function ConfigCategoriasSection({
         onEliminarCategoria={onEliminarCategoria}
       />
 
-      <ConfigCategoriasForm
-        editandoCat={editandoCat}
-        nombreCat={nombreCat}
-        setNombreCat={setNombreCat}
-        colorCat={colorCat}
-        setColorCat={setColorCat}
-        esFijoCat={esFijoCat}
-        setEsFijoCat={setEsFijoCat}
-        savingCat={savingCat}
-        onCancelarEdicionCat={onCancelarEdicionCat}
-        onGuardarCategoria={onGuardarCategoria}
-      />
+      {editandoCat && (
+        <ConfigCategoriasForm
+          editandoCat={editandoCat}
+          nombreCat={nombreCat}
+          setNombreCat={setNombreCat}
+          colorCat={colorCat}
+          setColorCat={setColorCat}
+          esFijoCat={esFijoCat}
+          setEsFijoCat={setEsFijoCat}
+          savingCat={savingCat}
+          onCancelarEdicionCat={onCancelarEdicionCat}
+          onGuardarCategoria={onGuardarCategoria}
+        />
+      )}
     </div>
   );
 }

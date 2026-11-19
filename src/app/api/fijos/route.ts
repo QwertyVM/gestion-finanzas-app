@@ -74,7 +74,7 @@ export async function PUT(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const { id, concepto, monto, mesDesde, mesFin, activo, metodoPago, tarjetaId, categoriaId } = await request.json();
+    const { id, concepto, monto, mesDesde, mesFin, activo, metodoPago, tarjetaId, categoriaId, tag } = await request.json();
 
     const costoFijo = await prisma.costoFijo.findUnique({ where: { id } });
     if (!costoFijo || costoFijo.usuarioId !== user.id) {
@@ -93,6 +93,7 @@ export async function PUT(request: NextRequest) {
         ...(mesFin !== undefined && { mesFin }),
         ...(activo !== undefined && { activo }),
         ...(categoriaId !== undefined && { categoriaId: categoriaId || null }),
+        ...(tag !== undefined && { tag: tag ? tag.trim() : null }),
         ...(metodoPago !== undefined && {
           metodoPago: metodoPago as MetodoPago,
           tarjetaId: metodoPago === MetodoPago.TARJETA_CREDITO ? (tarjetaId || null) : null,

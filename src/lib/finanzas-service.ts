@@ -18,6 +18,8 @@ export interface EgresoConsolidado {
   categoria: string;
   categoriaColor: string;
   categoriaIcono: string;
+  categoriaId?: string | null;
+  tag?: string | null;
   monto: number;
   monedaOriginal: string;
   montoOriginal: number | null;
@@ -46,6 +48,9 @@ export interface EgresoConsolidado {
   mesFin?: string | null;
   prestamoId?: string | null;
   orden?: number | null;
+  ingresoId?: string | null;
+  ingresoConcepto?: string | null;
+  ingresoTipo?: TipoIngreso | string | null;
 }
 
 export interface SeccionCompromiso {
@@ -123,6 +128,7 @@ export interface CategoriaAnalisisItem {
   totalMonto: number;
   porcentaje: number;
   conteoItems: number;
+  minitags?: Array<{ tag: string; totalMonto: number; conteo: number }>;
   desgloseClasificacion: {
     fijo: number;
     prestamos: number;
@@ -292,6 +298,19 @@ export interface SaludFinancieraKPIs {
 export function obtenerColorCategoriaBackend(nombre?: string | null): { color: string; icono: string } {
   if (!nombre) return { color: '#64748b', icono: 'Tag' };
   const n = nombre.toLowerCase();
+
+  // 1. Modelo 50/30/20 canónico
+  if (n.includes('necesidad') || n.includes('50')) {
+    return { color: '#10b981', icono: 'ShieldCheck' };
+  }
+  if (n.includes('deseo') || n.includes('30')) {
+    return { color: '#f59e0b', icono: 'Sparkles' };
+  }
+  if (n.includes('ahorro') || n.includes('invers') || n.includes('20')) {
+    return { color: '#3b82f6', icono: 'PiggyBank' };
+  }
+
+  // Fallbacks de compatibilidad
   if (n.includes('vivienda') || n.includes('alquiler') || n.includes('depa')) {
     return { color: '#10b981', icono: 'Home' };
   }
@@ -429,7 +448,11 @@ export interface ResumenFinanciero {
     tipoCambio: number;
     fechaEsperada: string;
     recibido: boolean;
+    totalGastosAsignados?: number;
+    disponible?: number;
+    gastosAsignadosCount?: number;
   }>;
+  hayMultiplesIngresos?: boolean;
   totalIngresos: number;
   costosFijos: Array<{
     id: string;
@@ -617,7 +640,12 @@ export interface ResumenFinanciero {
           include: {
             gastos: {
               where: { periodoPago: periodo, usuarioId: uId },
-              include: { categoria: true },
+              include: {
+                categoria: true,
+                ingreso: {
+                  select: { id: true, concepto: true, tipo: true },
+                },
+              },
               orderBy: [{ orden: 'asc' }, { fechaGasto: 'desc' }],
             },
             _count: {
@@ -635,7 +663,12 @@ export interface ResumenFinanciero {
             metodoPago: { not: MetodoPago.TARJETA_CREDITO },
             usuarioId: uId,
           },
-          include: { categoria: true },
+          include: {
+            categoria: true,
+            ingreso: {
+              select: { id: true, concepto: true, tipo: true },
+            },
+          },
           orderBy: [{ orden: 'asc' }, { fechaGasto: 'desc' }],
         }),
         prisma.gasto.findMany({
@@ -840,6 +873,7 @@ export interface ResumenFinanciero {
           diaVencimiento: cf.diaVencimiento,
           categoria: catNombre,
           categoriaId: cf.categoriaId || null,
+          tag: cf.tag || null,
           categoriaColor: catColor,
           categoriaIcono: catIcono,
           clasificacion: clasif.clasificacion,
@@ -1013,6 +1047,7 @@ export interface ResumenFinanciero {
             periodoPago: g.periodoPago,
             categoria: gCatNombre,
             categoriaId: g.categoriaId || null,
+            tag: g.tag || null,
             categoriaColor: gCatColor,
             categoriaIcono: gCatIcono,
             clasificacion: gClasif.clasificacion,
@@ -1026,6 +1061,9 @@ export interface ResumenFinanciero {
             fechaPagoReal: g.fechaPagoReal ? g.fechaPagoReal.toISOString() : null,
             notas: g.notas || null,
             orden: g.orden ?? 0,
+            ingresoId: g.ingresoId || null,
+            ingresoConcepto: g.ingreso?.concepto || null,
+            ingresoTipo: g.ingreso?.tipo || null,
           };
         });
 
@@ -1066,6 +1104,7 @@ export interface ResumenFinanciero {
             periodoPago: g.periodoPago,
             categoria: gCatNombre,
             categoriaId: g.categoriaId || null,
+            tag: g.tag || null,
             categoriaColor: gCatColor,
             categoriaIcono: gCatIcono,
             clasificacion: gClasif.clasificacion,
@@ -1132,6 +1171,7 @@ export interface ResumenFinanciero {
           metodoPago: g.metodoPago,
           categoria: gdCatNombre,
           categoriaId: g.categoriaId || null,
+          tag: g.tag || null,
           categoriaColor: gdCatColor,
           categoriaIcono: gdCatIcono,
           clasificacion: gdClasif.clasificacion,
@@ -1143,6 +1183,9 @@ export interface ResumenFinanciero {
           fechaPagoReal: g.fechaPagoReal ? g.fechaPagoReal.toISOString() : null,
           notas: g.notas || null,
           orden: g.orden ?? 0,
+          ingresoId: g.ingresoId || null,
+          ingresoConcepto: g.ingreso?.concepto || null,
+          ingresoTipo: g.ingreso?.tipo || null,
         };
       });
       const totalGastosDirectos = gastosDirectos.reduce((acc, g) => acc + g.monto, 0);
@@ -1271,6 +1314,8 @@ export interface ResumenFinanciero {
                 ? `Suscripción · Fin de mes`
                 : `Efectivo / Débito · Fin de mes`,
           categoria: cf.categoria,
+          categoriaId: cf.categoriaId || null,
+          tag: cf.tag || null,
           categoriaColor: cf.categoriaColor,
           categoriaIcono: cf.categoriaIcono,
           monto: cf.monto,
@@ -1311,6 +1356,8 @@ export interface ResumenFinanciero {
           concepto: `${p.banco} - ${p.concepto}`,
           subtexto: `Cuota ${p.cuotaActual}/${p.cuotasTotales} · Fin de mes`,
           categoria: p.categoria,
+          categoriaId: null,
+          tag: p.concepto || 'Préstamos & Créditos',
           categoriaColor: p.categoriaColor,
           categoriaIcono: p.categoriaIcono,
           monto: p.montoCuota,
@@ -1350,6 +1397,8 @@ export interface ResumenFinanciero {
               ? `${t.nombre} · Cuota ${g.cuotaActual}/${g.totalCuotas}`
               : `${t.nombre} · Fin de mes`,
             categoria: g.categoria,
+            categoriaId: g.categoriaId || null,
+            tag: g.tag || null,
             categoriaColor: g.categoriaColor,
             categoriaIcono: g.categoriaIcono,
             monto: g.monto,
@@ -1373,6 +1422,9 @@ export interface ResumenFinanciero {
             totalCuotas: g.totalCuotas,
             notas: g.notas,
             orden: g.orden ?? 0,
+            ingresoId: g.ingresoId || null,
+            ingresoConcepto: g.ingresoConcepto || null,
+            ingresoTipo: g.ingresoTipo || null,
           });
         }
       }
@@ -1393,6 +1445,8 @@ export interface ResumenFinanciero {
           concepto: g.concepto,
           subtexto: g.metodoPago === MetodoPago.TRANSFERENCIA ? 'Transferencia directa' : 'Efectivo / Débito',
           categoria: g.categoria,
+          categoriaId: g.categoriaId || null,
+          tag: g.tag || null,
           categoriaColor: g.categoriaColor,
           categoriaIcono: g.categoriaIcono,
           monto: g.monto,
@@ -1407,6 +1461,9 @@ export interface ResumenFinanciero {
           metodoPago: g.metodoPago,
           notas: g.notas,
           orden: g.orden ?? 0,
+          ingresoId: g.ingresoId || null,
+          ingresoConcepto: g.ingresoConcepto || null,
+          ingresoTipo: g.ingresoTipo || null,
         });
       }
 
@@ -1552,6 +1609,24 @@ export interface ResumenFinanciero {
         Number(config.tipoCambioUSD || 4.00)
       );
 
+      const todosLosGastosMes = [
+        ...tarjetasCredito.flatMap((t) => t.gastosPeriodo),
+        ...gastosDirectos,
+      ];
+
+      const ingresosEnriquecidos = ingresos.map((ing) => {
+        const asignados = todosLosGastosMes.filter((g) => g.ingresoId === ing.id);
+        const totalGastosAsignados = Number(
+          asignados.reduce((sum, g) => sum + g.monto, 0).toFixed(2)
+        );
+        return {
+          ...ing,
+          totalGastosAsignados,
+          disponible: Number((ing.monto - totalGastosAsignados).toFixed(2)),
+          gastosAsignadosCount: asignados.length,
+        };
+      });
+
       return {
         periodo,
         minPeriodo,
@@ -1567,7 +1642,8 @@ export interface ResumenFinanciero {
           tipoCambioUSD: Number(config.tipoCambioUSD || 4.00),
           metaAhorroMensual: metaAhorro,
         },
-        ingresos,
+        ingresos: ingresosEnriquecidos,
+        hayMultiplesIngresos: ingresos.length > 1,
         totalIngresos,
         costosFijos,
         totalCostosFijos,
@@ -1773,6 +1849,20 @@ export interface ResumenFinanciero {
         .map((c) => {
           const totalM = Number(c.totalMonto.toFixed(2));
           const pagadoTot = c.desgloseEstado.pagado + c.desgloseEstado.adelantado;
+
+          // Minitags agrupados
+          const mapMinitags = new Map<string, { tag: string; totalMonto: number; conteo: number }>();
+          for (const it of c.items) {
+            const tagName = it.tag || 'Sin minitag';
+            const tagEntry = mapMinitags.get(tagName) || { tag: tagName, totalMonto: 0, conteo: 0 };
+            tagEntry.totalMonto += it.monto;
+            tagEntry.conteo++;
+            mapMinitags.set(tagName, tagEntry);
+          }
+          const minitags = Array.from(mapMinitags.values())
+            .map((t) => ({ ...t, totalMonto: Number(t.totalMonto.toFixed(2)) }))
+            .sort((a, b) => b.totalMonto - a.totalMonto);
+
           return {
             id: c.id,
             nombre: c.nombre,
@@ -1781,6 +1871,7 @@ export interface ResumenFinanciero {
             totalMonto: totalM,
             porcentaje: totalEgresos > 0 ? Number(((totalM / totalEgresos) * 100).toFixed(1)) : 0,
             conteoItems: c.conteoItems,
+            minitags,
             desgloseClasificacion: {
               fijo: Number(c.desgloseClasificacion.fijo.toFixed(2)),
               prestamos: Number(c.desgloseClasificacion.prestamos.toFixed(2)),
@@ -2051,45 +2142,51 @@ export interface ResumenFinanciero {
       }
 
       // 5. Regla 50 / 30 / 20
-      // Necesidades (50%): Vivienda, Servicios, Supermercado/Alimentación, Salud, Educación
-      // Deseos (30%): Ocio, Streaming, Compras Varias, Variables discrecionales
-      // Ahorro y Deuda (20%): Amortización capital (Préstamos + Cuotas) + Disponible Neto
+      // Basado en las 3 grandes categorías canónicas:
+      // - Necesidades (50%): gastos esenciales imprescindibles
+      // - Deseos (30%): estilo de vida, compras, salidas, ocio
+      // - Ahorro / Inversión (20%): amortización deuda/préstamos + disponible neto + aportes de ahorro
       let montoNecesidades = 0;
       let montoDeseos = 0;
-      const montoAhorroDeuda = totalDeudas + Math.max(0, dineroDisponibleNeto);
+      let montoAhorroDirecto = 0;
 
       for (const item of egresosConsolidados) {
-        if (item.clasificacion === 'PRESTAMO' || item.clasificacion === 'CUOTA') {
+        if (item.clasificacion === 'PRESTAMO') {
+          // Los préstamos bancarios se acumulan en totalDeudas
           continue;
         }
         const cat = (item.categoria || '').toLowerCase();
-        const conc = (item.concepto || '').toLowerCase();
-        const esNecesidad =
-          cat.includes('vivienda') ||
-          cat.includes('alquiler') ||
-          cat.includes('depa') ||
-          cat.includes('servicio') ||
-          cat.includes('luz') ||
-          cat.includes('agua') ||
-          cat.includes('net') ||
-          cat.includes('gas') ||
-          cat.includes('alimen') ||
-          cat.includes('super') ||
-          cat.includes('mercado') ||
-          cat.includes('salud') ||
-          cat.includes('medic') ||
-          cat.includes('educa') ||
-          conc.includes('alquiler') ||
-          conc.includes('luz') ||
-          conc.includes('agua') ||
-          conc.includes('mantenimiento');
-
-        if (esNecesidad) {
+        if (cat.includes('necesidad') || cat.includes('50')) {
           montoNecesidades += item.monto;
-        } else {
+        } else if (cat.includes('ahorro') || cat.includes('invers') || cat.includes('20')) {
+          montoAhorroDirecto += item.monto;
+        } else if (cat.includes('deseo') || cat.includes('30')) {
           montoDeseos += item.monto;
+        } else {
+          const conc = (item.concepto || '').toLowerCase();
+          const esNecesidad =
+            cat.includes('vivienda') ||
+            cat.includes('alquiler') ||
+            cat.includes('servicio') ||
+            cat.includes('luz') ||
+            cat.includes('agua') ||
+            cat.includes('net') ||
+            cat.includes('gas') ||
+            cat.includes('alimen') ||
+            cat.includes('super') ||
+            cat.includes('mercado') ||
+            cat.includes('salud') ||
+            conc.includes('alquiler') ||
+            conc.includes('luz');
+          if (esNecesidad) {
+            montoNecesidades += item.monto;
+          } else {
+            montoDeseos += item.monto;
+          }
         }
       }
+
+      const montoAhorroDeuda = totalDeudas + montoAhorroDirecto + Math.max(0, dineroDisponibleNeto);
 
       const base503020 = totalIngresos > 0 ? totalIngresos : Math.max(1, totalEgresos);
       const pctNec = Number(((montoNecesidades / base503020) * 100).toFixed(1));
@@ -2117,12 +2214,17 @@ export interface ResumenFinanciero {
         diagnostico503020 = 'Excelente disciplina: destinas al menos el 20% de tu flujo a amortizar deuda y consolidar ahorro.';
       }
 
-      // 6. Alertas de Categorías (Vivienda, Alimentación, Concentración Pareto, Fugas)
+      // 6. Alertas de Categorías y Minitags (Vivienda, Alimentación, Concentración Pareto, Fugas)
       const cats = analisisCategorias.categorias;
-      const catViv = cats.find(
-        (c) => c.nombre.toLowerCase().includes('vivienda') || c.nombre.toLowerCase().includes('alquiler')
-      );
-      const montoViv = catViv?.totalMonto || 0;
+
+      const montoViv = egresosConsolidados
+        .filter((e) => {
+          const t = (e.tag || '').toLowerCase();
+          const c = (e.concepto || '').toLowerCase();
+          return t.includes('vivienda') || t.includes('alquiler') || c.includes('alquiler');
+        })
+        .reduce((sum, e) => sum + e.monto, 0);
+
       const pctViv = totalIngresos > 0 ? Number(((montoViv / totalIngresos) * 100).toFixed(1)) : 0;
       const ratioVivienda = {
         porcentaje: pctViv,
@@ -2134,13 +2236,14 @@ export interface ResumenFinanciero {
             : 'Costo habitacional saludable dentro del límite del 30%.',
       };
 
-      const catAlim = cats.find(
-        (c) =>
-          c.nombre.toLowerCase().includes('alimen') ||
-          c.nombre.toLowerCase().includes('super') ||
-          c.nombre.toLowerCase().includes('mercado')
-      );
-      const montoAlim = catAlim?.totalMonto || 0;
+      const montoAlim = egresosConsolidados
+        .filter((e) => {
+          const t = (e.tag || '').toLowerCase();
+          const c = (e.concepto || '').toLowerCase();
+          return t.includes('alimen') || t.includes('super') || t.includes('mercado') || c.includes('comida') || c.includes('super');
+        })
+        .reduce((sum, e) => sum + e.monto, 0);
+
       const pctAlim = totalIngresos > 0 ? Number(((montoAlim / totalIngresos) * 100).toFixed(1)) : 0;
       const ratioAlimentacion = {
         porcentaje: pctAlim,
@@ -2169,22 +2272,18 @@ export interface ResumenFinanciero {
         aviso: string;
       }> = [];
 
-      for (const c of cats) {
-        const n = c.nombre.toLowerCase();
-        const esDiscrecional =
-          n.includes('ocio') ||
-          n.includes('salida') ||
-          n.includes('compra') ||
-          n.includes('imprevisto') ||
-          n.includes('otros');
-        if (esDiscrecional && c.conteoItems >= 3) {
-          fugasHormiga.push({
-            categoria: c.nombre,
-            total: c.totalMonto,
-            conteo: c.conteoItems,
-            ticketPromedio: Number((c.totalMonto / c.conteoItems).toFixed(2)),
-            aviso: `${c.conteoItems} microtransacciones sumaron S/ ${(c.totalMonto).toFixed(2)}.`,
-          });
+      const catDeseosObj = cats.find((c) => c.nombre.toLowerCase().includes('deseo'));
+      if (catDeseosObj && catDeseosObj.minitags) {
+        for (const m of catDeseosObj.minitags) {
+          if (m.conteo >= 3) {
+            fugasHormiga.push({
+              categoria: m.tag,
+              total: m.totalMonto,
+              conteo: m.conteo,
+              ticketPromedio: Number((m.totalMonto / m.conteo).toFixed(2)),
+              aviso: `${m.conteo} transacciones de #${m.tag} sumaron S/ ${m.totalMonto.toFixed(2)}.`,
+            });
+          }
         }
       }
 
@@ -2265,6 +2364,8 @@ export interface ResumenFinanciero {
       tarjetaId?: string;
       totalCuotas?: number;
       categoriaId?: string;
+      tag?: string;
+      ingresoId?: string;
       estado?: EstadoPago;
       notas?: string;
     }) {
@@ -2280,6 +2381,8 @@ export interface ResumenFinanciero {
         tarjetaId,
         totalCuotas = 1,
         categoriaId,
+        tag,
+        ingresoId,
         estado = EstadoPago.PENDIENTE,
         notas,
       } = params;
@@ -2343,6 +2446,8 @@ export interface ResumenFinanciero {
               totalCuotas,
               clasificacion,  // ← persistido en BD
               categoriaId,
+              tag: tag ? tag.trim() : null,
+              ingresoId: i === 0 ? (ingresoId || null) : null,
               estado: i === 0 ? estado : EstadoPago.PENDIENTE,
               gastoPadreId: i === 0 ? null : padreId,
               notas,
@@ -2368,6 +2473,8 @@ export interface ResumenFinanciero {
             totalCuotas: 1,
             clasificacion,  // ← persistido en BD
             categoriaId,
+            tag: tag ? tag.trim() : null,
+            ingresoId: ingresoId || null,
             estado,
             fechaPagoReal: estado === EstadoPago.PAGADO || estado === EstadoPago.ADELANTADO ? new Date() : null,
             notas,

@@ -42,8 +42,9 @@ export function useDynamicRecordModal() {
   const [tarjetaId, setTarjetaId] = useState('');
   const [totalCuotas, setTotalCuotas] = useState('1');
 
-  // Categoría
+  // Categoría y Minitag
   const [categoriaId, setCategoriaId] = useState<string>('');
+  const [tag, setTag] = useState<string>('');
   const [categorias, setCategorias] = useState<CategoriaItem[]>([]);
 
   // Préstamo específico
@@ -56,6 +57,7 @@ export function useDynamicRecordModal() {
 
   // Estado y subclasificaciones
   const [estadoGasto, setEstadoGasto] = useState<'PENDIENTE' | 'ADELANTADO' | 'PAGADO'>('PENDIENTE');
+  const [ingresoId, setIngresoId] = useState<string>('');
   const [tipoIngreso, setTipoIngreso] = useState<'SUELDO' | 'GRATIFICACION' | 'UTILIDADES' | 'EXTRA'>('EXTRA');
   const [ingresoRecibido, setIngresoRecibido] = useState<boolean>(true);
   const [diaVencimientoFijo, setDiaVencimientoFijo] = useState<string>('30');
@@ -212,6 +214,8 @@ export function useDynamicRecordModal() {
             tarjetaId: metodoPago === 'TARJETA_CREDITO' ? tarjetaId : undefined,
             totalCuotas: parseInt(totalCuotas, 10),
             categoriaId: categoriaId || undefined,
+            tag: tag.trim() || undefined,
+            ingresoId: ingresoId ? ingresoId : undefined,
             estado: estadoGasto,
             notas: notas.trim() || undefined,
             usuarioId: usuarioActual?.id,
@@ -249,6 +253,7 @@ export function useDynamicRecordModal() {
             periodo,
             mesInicio: periodo,
             categoriaId: categoriaId || undefined,
+            tag: tag.trim() || undefined,
             metodoPago,
             tarjetaId: metodoPago === 'TARJETA_CREDITO' ? tarjetaId : undefined,
             notas: notas.trim() || undefined,
@@ -289,6 +294,8 @@ export function useDynamicRecordModal() {
         setMontoInput('');
         setMontoTotalPrestamoInput('');
         setNotas('');
+        setIngresoId('');
+        setTag('');
         amountInputRef.current?.focus();
       } else {
         closeRecordModal();
@@ -296,6 +303,8 @@ export function useDynamicRecordModal() {
         setMontoInput('');
         setMontoTotalPrestamoInput('');
         setNotas('');
+        setIngresoId('');
+        setTag('');
       }
     } catch (err: any) {
       toast.error(err.message || 'Error al guardar registro');
@@ -340,6 +349,9 @@ export function useDynamicRecordModal() {
     setMontoTotalPrestamoInput,
     estadoGasto,
     setEstadoGasto,
+    ingresoId,
+    setIngresoId,
+    ingresos: resumen?.ingresos || [],
     tipoIngreso,
     setTipoIngreso,
     ingresoRecibido,
@@ -362,6 +374,8 @@ export function useDynamicRecordModal() {
     handleClearAmount,
     setQuickDate,
     handleSelectCategoria,
+    tag,
+    setTag,
     handleSubmit,
     closeRecordModal,
   };

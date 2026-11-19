@@ -23,6 +23,7 @@ interface DetallePropiedadesSeccionProps {
   categoriaNombre?: string;
   categoriaColor?: string;
   categoriaId?: string | null;
+  tagLocal?: string | null;
   fechaGastoLocal?: string;
   periodoPagoLocal?: string;
   onCambiarMetodoPago?: (
@@ -32,6 +33,7 @@ interface DetallePropiedadesSeccionProps {
     aplicarFuturos?: boolean
   ) => Promise<void>;
   onCambiarCategoria?: (categoriaId: string, aplicarSerie?: boolean) => Promise<void>;
+  onCambiarTag?: (nuevoTag: string, aplicarSerie?: boolean) => Promise<void>;
   onGuardarNotas: (nuevasNotas: string) => Promise<void>;
   onGuardarFechaPeriodo?: (nuevaFecha: string, nuevoPeriodo: string, aplicarSerie?: boolean) => Promise<void>;
 }
@@ -44,10 +46,12 @@ export function DetallePropiedadesSeccion({
   categoriaNombre,
   categoriaColor,
   categoriaId,
+  tagLocal,
   fechaGastoLocal,
   periodoPagoLocal,
   onCambiarMetodoPago,
   onCambiarCategoria,
+  onCambiarTag,
   onGuardarNotas,
   onGuardarFechaPeriodo,
 }: DetallePropiedadesSeccionProps) {
@@ -55,6 +59,7 @@ export function DetallePropiedadesSeccion({
   const catNombreFinal = categoriaNombre || item.categoria;
   const catColorFinal = categoriaColor || item.categoriaColor;
   const catIdFinal = categoriaId !== undefined ? categoriaId : item.categoriaId;
+  const tagFinal = tagLocal !== undefined ? tagLocal : item.tag;
 
   if (clasificacionLocal === 'FIJO') {
     return (
@@ -66,6 +71,7 @@ export function DetallePropiedadesSeccion({
         categoria={catNombreFinal}
         categoriaId={catIdFinal}
         categoriaColor={catColorFinal}
+        tag={tagFinal}
         mesInicio={item.mesInicio}
         mesFin={item.mesFin}
         notas={notasLocal}
@@ -74,6 +80,7 @@ export function DetallePropiedadesSeccion({
           onCambiarMetodoPago ? (m, t, f) => onCambiarMetodoPago(item, m, t, f) : undefined
         }
         onCambiarCategoria={onCambiarCategoria ? (cId) => onCambiarCategoria(cId, false) : undefined}
+        onCambiarTag={onCambiarTag ? (t) => onCambiarTag(t, false) : undefined}
         onGuardarNotas={onGuardarNotas}
       />
     );
@@ -92,6 +99,7 @@ export function DetallePropiedadesSeccion({
         categoria={catNombreFinal}
         categoriaId={catIdFinal}
         categoriaColor={catColorFinal}
+        tag={tagFinal}
         tieneCuotas={tieneCuotas}
         notas={notasLocal}
         tarjetas={tarjetas}
@@ -99,6 +107,7 @@ export function DetallePropiedadesSeccion({
           onCambiarMetodoPago ? (m, t) => onCambiarMetodoPago(item, m, t, false) : undefined
         }
         onCambiarCategoria={onCambiarCategoria}
+        onCambiarTag={onCambiarTag}
         onGuardarNotas={onGuardarNotas}
         onGuardarFechaPeriodo={onGuardarFechaPeriodo}
       />
@@ -116,8 +125,10 @@ export function DetallePropiedadesSeccion({
         categoria={catNombreFinal}
         categoriaId={catIdFinal}
         categoriaColor={catColorFinal}
+        tag={tagFinal}
         tieneCuotas={tieneCuotas}
         onCambiarCategoria={onCambiarCategoria}
+        onCambiarTag={onCambiarTag}
         onGuardarFechaPeriodo={onGuardarFechaPeriodo}
       />
     );

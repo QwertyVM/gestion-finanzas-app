@@ -17,6 +17,7 @@ export async function POST(request: NextRequest) {
       mesInicio,
       mesFin,
       categoriaId,
+      tag,
       notas,
       metodoPago,
       tarjetaId,
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
         mesInicio: startPeriodo,
         mesFin: mesFin || null,
         categoriaId: categoriaId || null,
+        tag: tag ? tag.trim() : null,
         metodoPago: finalMetodoPago,
         tarjetaId: finalTarjetaId,
         registrosMes: {

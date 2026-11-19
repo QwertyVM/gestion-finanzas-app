@@ -9,6 +9,7 @@ import { ResumenDivisasCard } from './ResumenDivisasCard';
 import { IngresosMesTabla } from './IngresosMesTabla';
 import { DashboardEgresosSection } from './DashboardEgresosSection';
 import { DashboardModals } from './DashboardModals';
+import { InstructivoGuia503020 } from './instructivo/InstructivoGuia503020';
 import { useDashboardEgresos } from './hooks/useDashboardEgresos';
 
 export function DashboardClient() {
@@ -58,6 +59,7 @@ export function DashboardClient() {
     handleGuardarConceptoModal,
     handleGuardarNotasModal,
     handleCambiarEstadoModal,
+    handleCambiarIngresoAsignadoModal,
     handleAbrirRegistroSeccion,
   } = useDashboardEgresos();
 
@@ -103,6 +105,9 @@ export function DashboardClient() {
       {resumen.resumenDivisas?.tieneMultiplesMonedas && (
         <ResumenDivisasCard divisas={resumen.resumenDivisas} moneda={moneda} />
       )}
+
+      {/* GUIA PRÁCTICA & MODELO 50/30/20 */}
+      <InstructivoGuia503020 onOpenRecordModal={openRecordModal} />
 
       <IngresosMesTabla
         ingresos={resumen.ingresos}
@@ -157,6 +162,8 @@ export function DashboardClient() {
         onCambiarCategoria={handleCambiarCategoriaModal}
         onGuardarConcepto={handleGuardarConceptoModal}
         onGuardarNotas={handleGuardarNotasModal}
+        onCambiarIngresoAsignado={handleCambiarIngresoAsignadoModal}
+        ingresosMes={resumen.ingresos}
         tarjetas={resumen.tarjetasCredito}
         moneda={moneda}
         modalSueldoOpen={modalSueldoOpen}

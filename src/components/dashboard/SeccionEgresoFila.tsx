@@ -91,10 +91,23 @@ export function SeccionEgresoFila({
             style={{ backgroundColor: item.categoriaColor || '#64748b' }}
           />
           <span className="text-foreground/80 font-medium">{item.categoria}</span>
+          {item.tag && (
+            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium bg-muted/70 text-muted-foreground border border-border/40 shrink-0">
+              #{item.tag}
+            </span>
+          )}
           {subtextoLimpio && (
             <>
               <span className="opacity-40">·</span>
               <span className="truncate">{subtextoLimpio}</span>
+            </>
+          )}
+          {item.ingresoConcepto && (
+            <>
+              <span className="opacity-40">·</span>
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shrink-0">
+                💰 {item.ingresoConcepto}
+              </span>
             </>
           )}
         </div>

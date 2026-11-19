@@ -66,6 +66,11 @@ export function SeccionEgresoCardMobile({
                 style={{ backgroundColor: item.categoriaColor || '#64748b' }}
               />
               <span className="text-foreground/80 font-medium truncate">{item.categoria}</span>
+              {item.tag && (
+                <span className="text-[10px] px-1 py-0.2 rounded bg-muted/70 text-muted-foreground border border-border/40 shrink-0 font-medium">
+                  #{item.tag}
+                </span>
+              )}
               {item.cuotaActual ? (
                 <span
                   className={`text-[10px] font-semibold font-mono px-1.5 py-0.5 rounded border shrink-0 ${
@@ -81,6 +86,14 @@ export function SeccionEgresoCardMobile({
                 <>
                   <span className="opacity-40">·</span>
                   <span className="truncate">{subtextoMobile}</span>
+                </>
+              )}
+              {item.ingresoConcepto && (
+                <>
+                  <span className="opacity-40">·</span>
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shrink-0">
+                    💰 {item.ingresoConcepto}
+                  </span>
                 </>
               )}
             </div>

@@ -3,6 +3,7 @@
 import React from 'react';
 import { CreditCard, Sparkles } from 'lucide-react';
 import { DetalleCategoriaSelector } from './DetalleCategoriaSelector';
+import { DetalleTagSelector } from './DetalleTagSelector';
 import { DetalleFechaPeriodoBox } from './DetalleFechaPeriodoBox';
 
 interface DetallePropiedadesTarjetaProps {
@@ -14,8 +15,10 @@ interface DetallePropiedadesTarjetaProps {
   categoria?: string;
   categoriaId?: string | null;
   categoriaColor?: string;
+  tag?: string | null;
   tieneCuotas?: boolean;
   onCambiarCategoria?: (categoriaId: string, aplicarSerie?: boolean) => Promise<void>;
+  onCambiarTag?: (tag: string, aplicarSerie?: boolean) => Promise<void>;
   onGuardarFechaPeriodo?: (nuevaFecha: string, nuevoPeriodo: string, aplicarSerie?: boolean) => Promise<void>;
 }
 
@@ -28,8 +31,10 @@ export function DetallePropiedadesTarjeta({
   categoria,
   categoriaId,
   categoriaColor,
+  tag,
   tieneCuotas = false,
   onCambiarCategoria,
+  onCambiarTag,
   onGuardarFechaPeriodo,
 }: DetallePropiedadesTarjetaProps) {
   const diaConsumo = fechaGasto ? new Date(fechaGasto).getUTCDate() : null;
@@ -85,6 +90,14 @@ export function DetallePropiedadesTarjeta({
         categoriaColor={categoriaColor}
         tieneCuotas={tieneCuotas}
         onCambiarCategoria={onCambiarCategoria || (async () => {})}
+      />
+
+      {/* MINITAG ESPECÍFICO */}
+      <DetalleTagSelector
+        tag={tag}
+        categoriaNombre={categoria}
+        tieneCuotas={tieneCuotas}
+        onCambiarTag={onCambiarTag || (async () => {})}
       />
     </div>
   );

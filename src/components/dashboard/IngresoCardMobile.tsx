@@ -14,6 +14,9 @@ export interface IngresoItem {
   monedaOriginal?: string | null;
   montoOriginal?: number | null;
   tipoCambio?: number | null;
+  totalGastosAsignados?: number;
+  disponible?: number;
+  gastosAsignadosCount?: number;
 }
 
 interface IngresoCardMobileProps {
@@ -84,6 +87,11 @@ export function IngresoCardMobile({
           <span className="font-mono font-bold text-xs text-foreground tabular-nums block">
             {formatMoney(ingreso.monto, moneda)}
           </span>
+          {Boolean(ingreso.totalGastosAsignados && ingreso.totalGastosAsignados > 0) && (
+            <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium font-mono mt-0.5">
+              Gastos: {formatMoney(ingreso.totalGastosAsignados!, moneda)}
+            </div>
+          )}
         </div>
       </div>
 

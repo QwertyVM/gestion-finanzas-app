@@ -51,6 +51,7 @@ export function GastosClient() {
     handleCambiarCategoria,
     handleGuardarNotas,
     handleCambiarMetodoPago,
+    handleCambiarIngresoAsignado,
   } = useGastosManager();
 
   if (loading && !resumen) {
@@ -175,6 +176,8 @@ export function GastosClient() {
         onCambiarCategoria={handleCambiarCategoria}
         onGuardarNotas={handleGuardarNotas}
         onCambiarMetodoPago={handleCambiarMetodoPago}
+        onCambiarIngresoAsignado={handleCambiarIngresoAsignado}
+        ingresosMes={resumen?.ingresos || []}
         tarjetas={tarjetas}
         monedaSimbolo={moneda}
       />

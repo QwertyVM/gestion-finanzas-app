@@ -63,6 +63,11 @@ export function FijoCardMobile({
               style={{ backgroundColor: cf.categoriaColor || '#64748b' }}
             />
             <span className="truncate">{cf.categoria || 'Sin categoría'}</span>
+            {cf.tag && (
+              <span className="text-[10px] px-1 py-0.2 rounded bg-muted/70 text-muted-foreground border border-border/40 shrink-0 font-medium">
+                #{cf.tag}
+              </span>
+            )}
             <span className="text-[10px] opacity-40">·</span>
             <span className="text-[10px] text-muted-foreground">
               {cf.mesFin ? `Hasta ${formatPeriodoLabel(cf.mesFin)}` : 'Indefinido'}

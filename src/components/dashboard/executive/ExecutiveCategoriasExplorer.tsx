@@ -47,7 +47,7 @@ export function ExecutiveCategoriasExplorer({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {categorias.map((c) => {
           const esSeleccionada = c.id === selectedCategoriaId;
           return (
@@ -99,6 +99,24 @@ export function ExecutiveCategoriasExplorer({
                     />
                   </div>
                 </div>
+
+                {c.minitags && c.minitags.length > 0 && (
+                  <div className="flex items-center gap-1 flex-wrap pt-2">
+                    {c.minitags.slice(0, 3).map((m) => (
+                      <span
+                        key={m.tag}
+                        className="text-[10px] px-1.5 py-0.2 rounded bg-muted/60 text-muted-foreground border border-border/40 font-medium"
+                      >
+                        #{m.tag}
+                      </span>
+                    ))}
+                    {c.minitags.length > 3 && (
+                      <span className="text-[10px] text-muted-foreground/60">
+                        +{c.minitags.length - 3}
+                      </span>
+                    )}
+                  </div>
+                )}
               </div>
 
               <div className="pt-2 border-t border-border/40 flex flex-wrap items-center gap-1.5 text-[10px]">

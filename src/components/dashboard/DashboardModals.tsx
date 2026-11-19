@@ -17,6 +17,8 @@ interface DashboardModalsProps {
   onCambiarCategoria: (item: DetalleItemData, nuevaCategoriaId: string, aplicarSerie?: boolean) => Promise<void>;
   onGuardarConcepto: (item: DetalleItemData, nuevoConcepto: string) => Promise<void>;
   onGuardarNotas: (item: DetalleItemData, nuevasNotas: string) => Promise<void>;
+  onCambiarIngresoAsignado?: (item: DetalleItemData, ingresoId: string | null) => Promise<void>;
+  ingresosMes?: any[];
   tarjetas?: any[];
   moneda: string;
   modalSueldoOpen: boolean;
@@ -39,6 +41,8 @@ export function DashboardModals({
   onCambiarCategoria,
   onGuardarConcepto,
   onGuardarNotas,
+  onCambiarIngresoAsignado,
+  ingresosMes,
   tarjetas,
   moneda,
   modalSueldoOpen,
@@ -62,6 +66,8 @@ export function DashboardModals({
         onCambiarCategoria={onCambiarCategoria}
         onGuardarConcepto={onGuardarConcepto}
         onGuardarNotas={onGuardarNotas}
+        onCambiarIngresoAsignado={onCambiarIngresoAsignado}
+        ingresosMes={ingresosMes}
         tarjetas={tarjetas}
         monedaSimbolo={moneda}
       />

@@ -81,6 +81,11 @@ export function FijoFila({
             style={{ backgroundColor: cf.categoriaColor || '#64748b' }}
           />
           <span className="truncate">{cf.categoria || 'General'}</span>
+          {cf.tag && (
+            <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[10px] font-medium bg-muted/70 text-muted-foreground border border-border/40 shrink-0">
+              #{cf.tag}
+            </span>
+          )}
         </div>
       </td>
 

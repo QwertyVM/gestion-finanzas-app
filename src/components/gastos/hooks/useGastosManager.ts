@@ -82,6 +82,9 @@ export function useGastosManager() {
     tarjetaDiaPago: 30,
     notas: g.notas,
     fechaPagoReal: g.fechaPagoReal,
+    ingresoId: g.ingresoId || null,
+    ingresoConcepto: g.ingresoConcepto || null,
+    ingresoTipo: g.ingresoTipo || null,
   });
 
   const listaGastos = useMemo(() => {
@@ -354,6 +357,22 @@ export function useGastosManager() {
     }
   };
 
+  const handleCambiarIngresoAsignado = async (item: DetalleItemData, nuevoIngresoId: string | null) => {
+    try {
+      const res = await fetch('/api/gastos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.dbId || item.id, ingresoId: nuevoIngresoId || null }),
+      });
+      if (!res.ok) throw new Error('Error al asignar ingreso');
+      setDetalleGasto((prev) => (prev ? { ...prev, ingresoId: nuevoIngresoId || null } : null));
+      toast.success(nuevoIngresoId ? 'Gasto asignado al ingreso' : 'Gasto desvinculado del ingreso');
+      await refresh();
+    } catch {
+      toast.error('Error al actualizar ingreso asignado');
+    }
+  };
+
   const todosSeleccionados = listaGastos.length > 0 && listaGastos.every((item) => selectedGastoIds.includes(item.id));
 
   return {
@@ -396,5 +415,6 @@ export function useGastosManager() {
     handleCambiarCategoria,
     handleGuardarNotas,
     handleCambiarMetodoPago,
+    handleCambiarIngresoAsignado,
   };
 }

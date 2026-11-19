@@ -130,6 +130,7 @@ model CostoFijo {
   diaVencimiento Int                   @default(30) // Día del mes
   categoriaId    String?
   categoria      Categoria?            @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  tag            String?               // Minitag para desglose específico (ej: Vivienda, Supermercado, Streaming)
   metodoPago     MetodoPago            @default(EFECTIVO_DEBITO)
   tarjetaId      String?
   tarjeta        TarjetaCredito?       @relation(fields: [tarjetaId], references: [id], onDelete: SetNull)
@@ -213,6 +214,9 @@ model Gasto {
   clasificacion   ClasificacionEgreso  @default(VARIABLE) // Persiste la clasificación al momento del registro
   categoriaId     String?
   categoria       Categoria?           @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  tag             String?              // Minitag para desglose específico (ej: Supermercado, Restaurantes, Ocio)
+  ingresoId       String?
+  ingreso         IngresoMes?          @relation(fields: [ingresoId], references: [id], onDelete: SetNull)
   estado          EstadoPago           @default(PENDIENTE)
   fechaPagoReal   DateTime?
   gastoPadreId    String?              // Para agrupar compras en cuotas
@@ -239,6 +243,8 @@ model IngresoMes {
   notas          String?
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
+
+  gastos         Gasto[]
 
   @@unique([usuarioId, periodo, tipo, concepto])
 }

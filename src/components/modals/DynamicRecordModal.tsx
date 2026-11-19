@@ -5,6 +5,7 @@ import { useDynamicRecordModal } from './hooks/useDynamicRecordModal';
 import { RecordTypeSelector } from './record/RecordTypeSelector';
 import { RecordAmountSection } from './record/RecordAmountSection';
 import { RecordPaymentDetails } from './record/RecordPaymentDetails';
+import { RecordIngresoAsignadoSelector } from './record/RecordIngresoAsignadoSelector';
 import { RecordCategoryChips } from './record/RecordCategoryChips';
 import { RecordDateAndStatus } from './record/RecordDateAndStatus';
 import { RecordNotesAndFooter } from './record/RecordNotesAndFooter';
@@ -33,6 +34,8 @@ export function DynamicRecordModal() {
     setTotalCuotas,
     categoriaId,
     categorias,
+    tag,
+    setTag,
     bancoPrestamo,
     setBancoPrestamo,
     cuotasTotalesPrestamo,
@@ -43,6 +46,9 @@ export function DynamicRecordModal() {
     setTeaPrestamo,
     estadoGasto,
     setEstadoGasto,
+    ingresoId,
+    setIngresoId,
+    ingresos,
     tipoIngreso,
     setTipoIngreso,
     ingresoRecibido,
@@ -145,10 +151,21 @@ export function DynamicRecordModal() {
             previewTarjeta={previewTarjeta}
           />
 
+          {tipoActivo === 'GASTO' && (
+            <RecordIngresoAsignadoSelector
+              ingresos={ingresos}
+              ingresoId={ingresoId}
+              onSelectIngreso={setIngresoId}
+              moneda={moneda === 'PEN' ? 'S/' : '$'}
+            />
+          )}
+
           <RecordCategoryChips
             categorias={categorias}
             categoriaId={categoriaId}
             onSelectCategoria={handleSelectCategoria}
+            tag={tag}
+            onSelectTag={setTag}
           />
 
           <RecordDateAndStatus

@@ -24,6 +24,9 @@ export async function GET(request: NextRequest) {
       include: {
         categoria: true,
         tarjeta: true,
+        ingreso: {
+          select: { id: true, concepto: true, tipo: true },
+        },
       },
       orderBy: { fechaGasto: 'desc' },
     });
@@ -55,6 +58,8 @@ export async function POST(request: NextRequest) {
       tarjetaId: body.tarjetaId,
       totalCuotas: body.totalCuotas ? parseInt(body.totalCuotas, 10) : 1,
       categoriaId: body.categoriaId || undefined,
+      tag: body.tag || undefined,
+      ingresoId: body.ingresoId || undefined,
       estado: body.estado,
       notas: body.notas,
     });
@@ -87,6 +92,8 @@ export async function PATCH(request: NextRequest) {
       tarjetaId,
       periodoPago,
       categoriaId,
+      tag,
+      ingresoId,
       actualizarSerie,
       fechaGasto,
     } = await request.json();
@@ -148,6 +155,24 @@ export async function PATCH(request: NextRequest) {
           data: { categoriaId: categoriaId || null },
         });
       }
+    }
+
+    if (tag !== undefined) {
+      updateData.tag = tag ? tag.trim() : null;
+      if (actualizarSerie) {
+        const pId = gastoActual.gastoPadreId || gastoActual.id;
+        await prisma.gasto.updateMany({
+          where: {
+            usuarioId: user.id,
+            OR: [{ id: pId }, { gastoPadreId: pId }],
+          },
+          data: { tag: tag ? tag.trim() : null },
+        });
+      }
+    }
+
+    if (ingresoId !== undefined) {
+      updateData.ingresoId = ingresoId || null;
     }
 
     if (metodoPago !== undefined) {

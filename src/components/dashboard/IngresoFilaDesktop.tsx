@@ -76,17 +76,15 @@ export function IngresoFilaDesktop({
         <button
           type="button"
           onClick={() => onToggleRecibido(ing)}
-          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium transition cursor-pointer hover:opacity-85 border ${
-            ing.recibido
+          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium transition cursor-pointer hover:opacity-85 border ${ing.recibido
               ? 'bg-emerald-50/80 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300'
               : 'bg-amber-50/80 text-amber-700 border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300'
-          }`}
+            }`}
           title="Click para alternar estado"
         >
           <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              ing.recibido ? 'bg-emerald-500' : 'bg-amber-500'
-            }`}
+            className={`w-1.5 h-1.5 rounded-full ${ing.recibido ? 'bg-emerald-500' : 'bg-amber-500'
+              }`}
           />
           <span>{ing.recibido ? 'Recibido' : 'Por recibir'}</span>
         </button>
@@ -97,7 +95,12 @@ export function IngresoFilaDesktop({
         className={`py-2.5 px-3 text-right font-mono font-semibold text-foreground whitespace-nowrap text-xs sm:text-sm tabular-nums ${onEditarIngreso ? 'cursor-pointer hover:text-indigo-600 transition' : ''}`}
         title="Click para editar monto"
       >
-        {formatMoney(ing.monto, moneda)}
+        <div>{formatMoney(ing.monto, moneda)}</div>
+        {Boolean(ing.totalGastosAsignados && ing.totalGastosAsignados > 0) && (
+          <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium font-mono mt-0.5" title="Monto de gastos asignados a este ingreso">
+            Gastos: {formatMoney(ing.totalGastosAsignados!, moneda)}
+          </div>
+        )}
       </td>
 
       <td className="py-2.5 px-3 text-right whitespace-nowrap">
@@ -109,9 +112,8 @@ export function IngresoFilaDesktop({
             title={ing.recibido ? 'Marcar como por recibir' : 'Marcar como recibido'}
           >
             <CheckCircle2
-              className={`w-3.5 h-3.5 ${
-                ing.recibido ? 'text-emerald-500' : 'text-muted-foreground'
-              }`}
+              className={`w-3.5 h-3.5 ${ing.recibido ? 'text-emerald-500' : 'text-muted-foreground'
+                }`}
             />
           </button>
 

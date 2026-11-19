@@ -50,16 +50,18 @@ export function useDetalleGasto(
   );
   const [updatingClasificacion, setUpdatingClasificacion] = useState(false);
 
-  // Categoría
+  // Categoría y Minitag
   const [categoriaNombreLocal, setCategoriaNombreLocal] = useState(item?.categoria || '');
   const [categoriaColorLocal, setCategoriaColorLocal] = useState(item?.categoriaColor || '');
   const [categoriaIdLocal, setCategoriaIdLocal] = useState<string | null>(item?.categoriaId || null);
+  const [tagLocal, setTagLocal] = useState<string>(item?.tag || '');
 
   useEffect(() => {
     if (item) {
       setCategoriaNombreLocal(item.categoria || '');
       setCategoriaColorLocal(item.categoriaColor || '');
       setCategoriaIdLocal(item.categoriaId || null);
+      setTagLocal(item.tag || '');
       setClasificacionLocal(item.clasificacion || obtenerClasificacionEgreso(item));
       setMontoEditInput(item.monto.toString());
       setEditandoMonto(false);
@@ -163,6 +165,35 @@ export function useDetalleGasto(
       }
     } catch (err: any) {
       toast.error(err.message || 'Error al actualizar categoría');
+      throw err;
+    }
+  };
+
+  const handleCambiarTag = async (nuevoTag: string, aplicarSerie?: boolean) => {
+    if (!item) return;
+    try {
+      const id = item.dbId || item.id.replace('fijo-', '');
+      if (item.tipo === 'FIJO') {
+        const res = await fetch('/api/fijos', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, tag: nuevoTag.trim() }),
+        });
+        if (!res.ok) throw new Error('Error al actualizar minitag');
+      } else {
+        const res = await fetch('/api/gastos', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id, tag: nuevoTag.trim(), actualizarSerie: aplicarSerie }),
+        });
+        if (!res.ok) throw new Error('Error al actualizar minitag');
+      }
+      setTagLocal(nuevoTag.trim());
+      item.tag = nuevoTag.trim();
+      toast.success('Minitag actualizado');
+      await refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Error al actualizar minitag');
       throw err;
     }
   };
@@ -461,6 +492,8 @@ export function useDetalleGasto(
     categoriaColorLocal,
     categoriaIdLocal,
     handleCambiarCategoria,
+    tagLocal,
+    handleCambiarTag,
     conceptoLocal,
     editandoConcepto,
     setEditandoConcepto,

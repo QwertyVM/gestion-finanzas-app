@@ -516,6 +516,22 @@ export function useDashboardEgresos() {
     setDetalleItem((prev) => (prev ? { ...prev, estado: nuevoEstado as any } : null));
   };
 
+  const handleCambiarIngresoAsignadoModal = async (item: DetalleItemData, nuevoIngresoId: string | null) => {
+    try {
+      const res = await fetch('/api/gastos', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: item.dbId || item.id, ingresoId: nuevoIngresoId || null }),
+      });
+      if (!res.ok) throw new Error('Error al actualizar ingreso asignado');
+      setDetalleItem((prev) => (prev ? { ...prev, ingresoId: nuevoIngresoId || null } : null));
+      toast.success(nuevoIngresoId ? 'Gasto asignado al ingreso correctamente' : 'Gasto desvinculado del ingreso');
+      await refresh();
+    } catch {
+      toast.error('Error al actualizar ingreso asignado');
+    }
+  };
+
   const handleAbrirRegistroSeccion = (seccionId: string) => {
     if (seccionId === 'FIJOS') {
       toast.info('Para registrar un costo fijo ve a "Fijos y Préstamos"');
@@ -578,6 +594,7 @@ export function useDashboardEgresos() {
     handleGuardarConceptoModal,
     handleGuardarNotasModal,
     handleCambiarEstadoModal,
+    handleCambiarIngresoAsignadoModal,
     handleAbrirRegistroSeccion,
   };
 }

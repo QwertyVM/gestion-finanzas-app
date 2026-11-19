@@ -63,6 +63,24 @@ export function ExecutiveCategoriaDetail({
         </button>
       </div>
 
+      {/* Resumen de Minitags */}
+      {categoria.minitags && categoria.minitags.length > 0 && (
+        <div className="flex items-center gap-1.5 flex-wrap p-2.5 rounded-lg bg-muted/40 border border-border/50 text-xs">
+          <span className="text-[11px] font-semibold text-muted-foreground mr-1">Minitags:</span>
+          {categoria.minitags.map((m) => (
+            <span
+              key={m.tag}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium bg-background border border-border/60 text-foreground"
+            >
+              <span>#{m.tag}</span>
+              <span className="text-[10px] font-mono text-muted-foreground">
+                ({formatMoney(m.totalMonto, moneda)})
+              </span>
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Móvil: Tarjetas táctiles */}
       <div className="md:hidden divide-y divide-border/40">
         {categoria.items.map((item) => (
@@ -125,7 +143,14 @@ export function ExecutiveCategoriaDetail({
                   </span>
                 </td>
                 <td className="py-2.5 px-3">
-                  <div className="font-semibold text-foreground text-xs">{item.concepto}</div>
+                  <div className="font-semibold text-foreground text-xs flex items-center gap-1.5">
+                    <span>{item.concepto}</span>
+                    {item.tag && (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-muted/60 text-muted-foreground border border-border/40 font-medium">
+                        #{item.tag}
+                      </span>
+                    )}
+                  </div>
                   {item.subtexto && (
                     <div className="text-[11px] text-muted-foreground">{item.subtexto}</div>
                   )}

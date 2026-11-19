@@ -102,23 +102,14 @@ async function main() {
 
   console.log('✔ Tarjetas de Víctor creadas.');
 
-  // 3. Categorías de Víctor
-  const categoriasVictor = [
-    { nombre: 'Vivienda / Alquiler', icono: 'Home', color: '#10b981', esFijo: true },
-    { nombre: 'Servicios Básicos (Luz/Agua/Net)', icono: 'Zap', color: '#3b82f6', esFijo: true },
-    { nombre: 'Alimentación / Supermercado', icono: 'ShoppingCart', color: '#f59e0b', esFijo: true },
-    { nombre: 'Transporte & Vehicular', icono: 'Car', color: '#64748b', esFijo: false },
-    { nombre: 'Suscripciones / Streaming', icono: 'Tv', color: '#8b5cf6', esFijo: true },
-    { nombre: 'Salud & Cuidado Personal', icono: 'HeartPulse', color: '#ec4899', esFijo: false },
-    { nombre: 'Préstamos & Créditos', icono: 'Landmark', color: '#6366f1', esFijo: true },
-    { nombre: 'Compras Varias', icono: 'ShoppingCart', color: '#64748b', esFijo: false },
-    { nombre: 'Educación / Cursos', icono: 'GraduationCap', color: '#06b6d4', esFijo: false },
-    { nombre: 'Salidas & Ocio', icono: 'Coffee', color: '#f97316', esFijo: false },
-    { nombre: 'Familiar & Compromisos', icono: 'HeartPulse', color: '#f43f5e', esFijo: false },
-    { nombre: 'Otros / Imprevistos', icono: 'HelpCircle', color: '#6b7280', esFijo: false },
+  // 3. Categorías canónicas 50/30/20 de Víctor y Jamile
+  const categoriasCanonicas = [
+    { nombre: 'Necesidades (50%)', icono: 'ShieldCheck', color: '#10b981', esFijo: true },
+    { nombre: 'Deseos (30%)', icono: 'Sparkles', color: '#f59e0b', esFijo: false },
+    { nombre: 'Ahorro / Inversión (20%)', icono: 'PiggyBank', color: '#3b82f6', esFijo: true },
   ];
 
-  for (const cat of categoriasVictor) {
+  for (const cat of categoriasCanonicas) {
     await prisma.categoria.create({
       data: {
         ...cat,
@@ -128,7 +119,7 @@ async function main() {
   }
 
   // Categorías base para Jamile
-  for (const cat of categoriasVictor) {
+  for (const cat of categoriasCanonicas) {
     await prisma.categoria.create({
       data: {
         ...cat,
@@ -136,16 +127,20 @@ async function main() {
       },
     });
   }
-  console.log('✔ Categorías creadas para Víctor y Jamile.');
+  console.log('✔ Categorías 50/30/20 creadas para Víctor y Jamile.');
 
-  const catVivienda = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Vivienda / Alquiler' } });
-  const catServicios = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Servicios Básicos (Luz/Agua/Net)' } });
-  const catAlimentacion = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Alimentación / Supermercado' } });
-  const catTransporte = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Transporte & Vehicular' } });
-  const catSuscripciones = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Suscripciones / Streaming' } });
-  const catSalud = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Salud & Cuidado Personal' } });
-  const catCompras = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Compras Varias' } });
-  const catSalidas = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Salidas & Ocio' } });
+  const catNecesidades = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Necesidades (50%)' } });
+  const catDeseos = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Deseos (30%)' } });
+  const catAhorro = await prisma.categoria.findFirst({ where: { usuarioId: usuarioVictor.id, nombre: 'Ahorro / Inversión (20%)' } });
+
+  const catVivienda = catNecesidades;
+  const catServicios = catNecesidades;
+  const catAlimentacion = catNecesidades;
+  const catTransporte = catNecesidades;
+  const catSalud = catNecesidades;
+  const catSuscripciones = catDeseos;
+  const catCompras = catDeseos;
+  const catSalidas = catDeseos;
 
   // 4. Ingresos de Víctor
   const meses = ['2026-10', '2026-11', '2026-12', '2027-01', '2027-02', '2027-03'];
@@ -194,16 +189,16 @@ async function main() {
 
   // 5. Costos fijos de Víctor (alineados al Sheet)
   const costosFijosDef = [
-    { concepto: 'Alquiler (Casa la Molina)', monto: 1100.00, categoriaId: catVivienda?.id, dia: 30, activoEn2027: true, monto2027: 1100.00, metodo: MetodoPago.EFECTIVO_DEBITO, tarjetaId: null },
-    { concepto: 'Luz y servicios (Casa la Molina)', monto: 75.00, categoriaId: catServicios?.id, dia: 20, activoEn2027: true, monto2027: 75.00, metodo: MetodoPago.EFECTIVO_DEBITO, tarjetaId: null },
-    { concepto: 'Servicios (Casa SJM)', monto: 210.00, categoriaId: catServicios?.id, dia: 15, activoEn2027: true, monto2027: 244.00, metodo: MetodoPago.EFECTIVO_DEBITO, tarjetaId: null },
-    { concepto: 'Teléfono (Casa SJM)', monto: 39.90, categoriaId: catServicios?.id, dia: 18, activoEn2027: false, monto2027: 0, metodo: MetodoPago.EFECTIVO_DEBITO, tarjetaId: null },
-    { concepto: 'Seguro vehicular', monto: 217.41, categoriaId: catTransporte?.id, dia: 22, activoEn2027: false, monto2027: 0, metodo: MetodoPago.EFECTIVO_DEBITO, tarjetaId: null },
-    { concepto: 'Natación', monto: 320.00, categoriaId: catSalud?.id, dia: 5, activoEn2027: false, monto2027: 0, metodo: MetodoPago.EFECTIVO_DEBITO, tarjetaId: null },
-    { concepto: 'Netflix (BCP)', monto: 70.70, montoOctubre: 80.70, categoriaId: catSuscripciones?.id, dia: 15, activoEn2027: false, monto2027: 0, metodo: MetodoPago.TARJETA_CREDITO, tarjetaId: tarjetaBcp.id },
-    { concepto: 'Comida mensual (BCP)', monto: 180.00, categoriaId: catAlimentacion?.id, dia: 30, activoEn2027: false, monto2027: 0, metodo: MetodoPago.TARJETA_CREDITO, tarjetaId: tarjetaBcp.id },
-    { concepto: 'iCloud (BCP $3.96)', monto: 13.46, categoriaId: catSuscripciones?.id, dia: 10, activoEn2027: false, monto2027: 0, metodo: MetodoPago.TARJETA_CREDITO, tarjetaId: tarjetaBcp.id, notas: 'USD: $3.96 TC: S/ 3.40' },
-    { concepto: 'YouTube Premium (BCP $6.60)', monto: 22.44, categoriaId: catSuscripciones?.id, dia: 12, activoEn2027: false, monto2027: 0, metodo: MetodoPago.TARJETA_CREDITO, tarjetaId: tarjetaBcp.id, notas: 'USD: $6.60 TC: S/ 3.40' },
+    { concepto: 'Alquiler (Casa la Molina)', monto: 1100.00, categoriaId: catVivienda?.id, tag: 'Vivienda', dia: 30, activoEn2027: true, monto2027: 1100.00, metodo: MetodoPago.EFECTIVO_DEBITO, tarjetaId: null },
+    { concepto: 'Luz y servicios (Casa la Molina)', monto: 75.00, categoriaId: catServicios?.id, tag: 'Servicios Básicos', dia: 20, activoEn2027: true, monto2027: 75.00, metodo: MetodoPago.EFECTIVO_DEBITO, tarjetaId: null },
+    { concepto: 'Servicios (Casa SJM)', monto: 210.00, categoriaId: catServicios?.id, tag: 'Servicios Básicos', dia: 15, activoEn2027: true, monto2027: 244.00, metodo: MetodoPago.EFECTIVO_DEBITO, tarjetaId: null },
+    { concepto: 'Teléfono (Casa SJM)', monto: 39.90, categoriaId: catServicios?.id, tag: 'Servicios Básicos', dia: 18, activoEn2027: false, monto2027: 0, metodo: MetodoPago.EFECTIVO_DEBITO, tarjetaId: null },
+    { concepto: 'Seguro vehicular', monto: 217.41, categoriaId: catTransporte?.id, tag: 'Transporte', dia: 22, activoEn2027: false, monto2027: 0, metodo: MetodoPago.EFECTIVO_DEBITO, tarjetaId: null },
+    { concepto: 'Natación', monto: 320.00, categoriaId: catSalud?.id, tag: 'Salud & Farmacia', dia: 5, activoEn2027: false, monto2027: 0, metodo: MetodoPago.EFECTIVO_DEBITO, tarjetaId: null },
+    { concepto: 'Netflix (BCP)', monto: 70.70, montoOctubre: 80.70, categoriaId: catSuscripciones?.id, tag: 'Streaming & Apps', dia: 15, activoEn2027: false, monto2027: 0, metodo: MetodoPago.TARJETA_CREDITO, tarjetaId: tarjetaBcp.id },
+    { concepto: 'Comida mensual (BCP)', monto: 180.00, categoriaId: catAlimentacion?.id, tag: 'Supermercado', dia: 30, activoEn2027: false, monto2027: 0, metodo: MetodoPago.TARJETA_CREDITO, tarjetaId: tarjetaBcp.id },
+    { concepto: 'iCloud (BCP $3.96)', monto: 13.46, categoriaId: catSuscripciones?.id, tag: 'Streaming & Apps', dia: 10, activoEn2027: false, monto2027: 0, metodo: MetodoPago.TARJETA_CREDITO, tarjetaId: tarjetaBcp.id, notas: 'USD: $3.96 TC: S/ 3.40' },
+    { concepto: 'YouTube Premium (BCP $6.60)', monto: 22.44, categoriaId: catSuscripciones?.id, tag: 'Streaming & Apps', dia: 12, activoEn2027: false, monto2027: 0, metodo: MetodoPago.TARJETA_CREDITO, tarjetaId: tarjetaBcp.id, notas: 'USD: $6.60 TC: S/ 3.40' },
   ];
 
   for (const cfd of costosFijosDef) {
@@ -214,6 +209,7 @@ async function main() {
         monto: cfd.monto,
         diaVencimiento: cfd.dia,
         categoriaId: cfd.categoriaId,
+        tag: cfd.tag,
         metodoPago: cfd.metodo,
         tarjetaId: cfd.tarjetaId,
         mesFin: cfd.activoEn2027 ? null : '2026-12',
