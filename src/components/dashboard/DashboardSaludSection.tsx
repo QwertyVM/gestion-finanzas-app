@@ -41,9 +41,8 @@ export function DashboardSaludSection({
             Diagnóstico &amp; Salud Financiera
           </span>
           <ChevronDown
-            className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 ${
-              colapsado ? '-rotate-90' : ''
-            }`}
+            className={`w-3.5 h-3.5 text-muted-foreground transition-transform duration-200 ${colapsado ? '-rotate-90' : ''
+              }`}
           />
         </div>
 
@@ -52,11 +51,10 @@ export function DashboardSaludSection({
             <button
               type="button"
               onClick={() => setTabActiva('503020')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] transition cursor-pointer whitespace-nowrap ${
-                tabActiva === '503020'
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] transition cursor-pointer whitespace-nowrap ${tabActiva === '503020'
                   ? 'bg-background text-foreground shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <PieChart className="w-3 h-3" />
               <span>Regla 50/30/20</span>
@@ -65,11 +63,10 @@ export function DashboardSaludSection({
             <button
               type="button"
               onClick={() => setTabActiva('RATIOS')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] transition cursor-pointer whitespace-nowrap ${
-                tabActiva === 'RATIOS'
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] transition cursor-pointer whitespace-nowrap ${tabActiva === 'RATIOS'
                   ? 'bg-background text-foreground shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <Activity className="w-3 h-3" />
               <span>Ratios &amp; DTI</span>
@@ -78,11 +75,10 @@ export function DashboardSaludSection({
             <button
               type="button"
               onClick={() => setTabActiva('ALERTAS')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] transition cursor-pointer whitespace-nowrap ${
-                tabActiva === 'ALERTAS'
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] transition cursor-pointer whitespace-nowrap ${tabActiva === 'ALERTAS'
                   ? 'bg-background text-foreground shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <AlertCircle className="w-3 h-3" />
               <span>Alertas &amp; Fugas</span>
@@ -91,11 +87,10 @@ export function DashboardSaludSection({
             <button
               type="button"
               onClick={() => setTabActiva('GUIA')}
-              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] transition cursor-pointer whitespace-nowrap ${
-                tabActiva === 'GUIA'
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] transition cursor-pointer whitespace-nowrap ${tabActiva === 'GUIA'
                   ? 'bg-background text-foreground shadow-2xs'
                   : 'text-muted-foreground hover:text-foreground'
-              }`}
+                }`}
             >
               <BookOpen className="w-3 h-3" />
               <span>Guía &amp; Registro</span>

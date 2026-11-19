@@ -78,9 +78,8 @@ export function Regla503020Card({ regla, moneda, onAsignarMeta }: Regla503020Car
           {ahorroYDeuda.porcentaje > 0 && (
             <div
               style={{ width: `${Math.min(100, Math.max(4, ahorroYDeuda.porcentaje))}%` }}
-              className={`h-full bg-purple-500 transition-all duration-500 cursor-pointer ${
-                capitalLibre?.porcentaje <= 0 ? 'rounded-r-full' : ''
-              }`}
+              className={`h-full bg-purple-500 transition-all duration-500 cursor-pointer ${capitalLibre?.porcentaje <= 0 ? 'rounded-r-full' : ''
+                }`}
               onClick={() => setCubetaSeleccionada(cubetaSeleccionada === 'ahorroYDeuda' ? null : 'ahorroYDeuda')}
               title={`Deuda & Ahorro Real: ${ahorroYDeuda.porcentaje}%`}
             />
@@ -143,8 +142,8 @@ export function Regla503020Card({ regla, moneda, onAsignarMeta }: Regla503020Car
             cubetaSeleccionada === 'necesidades'
               ? `Subcategorías en Necesidades (${necesidades.objetivo}%)`
               : cubetaSeleccionada === 'deseos'
-              ? `Subcategorías en Estilo de Vida (${deseos.objetivo}%)`
-              : `Subcategorías en Deuda & Ahorro Real (${ahorroYDeuda.objetivo}%)`
+                ? `Subcategorías en Estilo de Vida (${deseos.objetivo}%)`
+                : `Subcategorías en Deuda & Ahorro Real (${ahorroYDeuda.objetivo}%)`
           }
           subcategorias={regla[cubetaSeleccionada].subcategorias}
           montoTotal={regla[cubetaSeleccionada].monto}
