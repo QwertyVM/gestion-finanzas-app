@@ -4,6 +4,7 @@ import React from 'react';
 import { Plus } from 'lucide-react';
 import { IngresoCardMobile, type IngresoItem } from './IngresoCardMobile';
 import { IngresoFilaDesktop } from './IngresoFilaDesktop';
+import { IngresosFuentesCards } from './IngresosFuentesCards';
 
 interface IngresosMesTablaProps {
   ingresos: IngresoItem[];
@@ -18,6 +19,7 @@ interface IngresosMesTablaProps {
 
 export function IngresosMesTabla({
   ingresos,
+  totalIngresos,
   moneda,
   openRecordModal,
   onToggleRecibido,
@@ -55,6 +57,15 @@ export function IngresosMesTabla({
           <span>Registrar Ingreso</span>
         </button>
       </div>
+
+      {/* Cards de Remanente / Resto disponible por fuente */}
+      {ingresos.length > 0 && (
+        <IngresosFuentesCards
+          ingresos={ingresos}
+          totalIngresos={totalIngresos}
+          moneda={moneda}
+        />
+      )}
 
       <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-2xs">
         {ingresos.length === 0 ? (

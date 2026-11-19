@@ -88,55 +88,64 @@ export function IngresoCardMobile({
             {formatMoney(ingreso.monto, moneda)}
           </span>
           {Boolean(ingreso.totalGastosAsignados && ingreso.totalGastosAsignados > 0) && (
-            <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium font-mono mt-0.5">
-              Gastos: {formatMoney(ingreso.totalGastosAsignados!, moneda)}
+              <div className="flex flex-col items-end gap-0.5 mt-0.5 font-mono text-[10px]">
+                <span className="text-amber-600 dark:text-amber-400 font-medium">
+                  Gastos: {formatMoney(ingreso.totalGastosAsignados!, moneda)}
+                </span>
+                <span
+                  className={`font-bold ${(ingreso.disponible ?? (ingreso.monto - ingreso.totalGastosAsignados!)) >= 0
+                      ? 'text-emerald-600 dark:text-emerald-400'
+                      : 'text-rose-600 dark:text-rose-400'
+                    }`}
+                >
+                  Resto: {formatMoney(ingreso.disponible ?? (ingreso.monto - ingreso.totalGastosAsignados!), moneda)}
+                </span>
+              </div>
+          )}
             </div>
-          )}
-        </div>
       </div>
 
-      <div className="flex items-center justify-between pt-1 border-t border-border/30">
-        <button
-          type="button"
-          onClick={() => onToggleRecibido(ingreso)}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer border ${
-            ingreso.recibido
-              ? 'bg-emerald-50/80 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300'
-              : 'bg-amber-50/80 text-amber-700 border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300'
-          }`}
-        >
-          <CheckCircle2
-            className={`w-3.5 h-3.5 ${ingreso.recibido ? 'text-emerald-500' : 'text-amber-500'}`}
-          />
-          <span>{ingreso.recibido ? 'Recibido' : 'Por recibir'}</span>
-        </button>
+        <div className="flex items-center justify-between pt-1 border-t border-border/30">
+          <button
+            type="button"
+            onClick={() => onToggleRecibido(ingreso)}
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium transition cursor-pointer border ${ingreso.recibido
+                ? 'bg-emerald-50/80 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300'
+                : 'bg-amber-50/80 text-amber-700 border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300'
+              }`}
+          >
+            <CheckCircle2
+              className={`w-3.5 h-3.5 ${ingreso.recibido ? 'text-emerald-500' : 'text-amber-500'}`}
+            />
+            <span>{ingreso.recibido ? 'Recibido' : 'Por recibir'}</span>
+          </button>
 
-        <div className="flex items-center gap-1">
-          {(onEditarIngreso || (ingreso.tipo === 'SUELDO' && onEditarSueldo)) && (
-            <button
-              type="button"
-              onClick={() => onEditarIngreso ? onEditarIngreso(ingreso) : onEditarSueldo?.(ingreso.monto)}
-              className="p-1 rounded-md text-muted-foreground hover:text-indigo-500 transition"
-              title="Modificar ingreso"
-              aria-label="Modificar ingreso"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-            </button>
-          )}
+          <div className="flex items-center gap-1">
+            {(onEditarIngreso || (ingreso.tipo === 'SUELDO' && onEditarSueldo)) && (
+              <button
+                type="button"
+                onClick={() => onEditarIngreso ? onEditarIngreso(ingreso) : onEditarSueldo?.(ingreso.monto)}
+                className="p-1 rounded-md text-muted-foreground hover:text-indigo-500 transition"
+                title="Modificar ingreso"
+                aria-label="Modificar ingreso"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
+            )}
 
-          {ingreso.tipo !== 'SUELDO' && (
-            <button
-              type="button"
-              onClick={() => onEliminarIngreso(ingreso.id)}
-              className="p-1 rounded-md text-muted-foreground hover:text-rose-500 transition"
-              title="Eliminar ingreso"
-              aria-label="Eliminar ingreso"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
+            {ingreso.tipo !== 'SUELDO' && (
+              <button
+                type="button"
+                onClick={() => onEliminarIngreso(ingreso.id)}
+                className="p-1 rounded-md text-muted-foreground hover:text-rose-500 transition"
+                title="Eliminar ingreso"
+                aria-label="Eliminar ingreso"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
-  );
+      );
 }

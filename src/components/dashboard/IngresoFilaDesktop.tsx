@@ -77,8 +77,8 @@ export function IngresoFilaDesktop({
           type="button"
           onClick={() => onToggleRecibido(ing)}
           className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium transition cursor-pointer hover:opacity-85 border ${ing.recibido
-              ? 'bg-emerald-50/80 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300'
-              : 'bg-amber-50/80 text-amber-700 border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300'
+            ? 'bg-emerald-50/80 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300'
+            : 'bg-amber-50/80 text-amber-700 border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300'
             }`}
           title="Click para alternar estado"
         >
@@ -97,8 +97,20 @@ export function IngresoFilaDesktop({
       >
         <div>{formatMoney(ing.monto, moneda)}</div>
         {Boolean(ing.totalGastosAsignados && ing.totalGastosAsignados > 0) && (
-          <div className="text-[10px] text-amber-600 dark:text-amber-400 font-medium font-mono mt-0.5" title="Monto de gastos asignados a este ingreso">
-            Gastos: {formatMoney(ing.totalGastosAsignados!, moneda)}
+          <div className="flex flex-col items-end gap-0.5 mt-0.5 font-mono text-[10px]">
+            <span className="text-amber-600 dark:text-amber-400 font-medium" title="Monto de gastos asignados a este ingreso">
+              Gastos: {formatMoney(ing.totalGastosAsignados!, moneda)}
+            </span>
+            <span
+              className={`font-bold ${
+                (ing.disponible ?? (ing.monto - ing.totalGastosAsignados!)) >= 0
+                  ? 'text-emerald-600 dark:text-emerald-400'
+                  : 'text-rose-600 dark:text-rose-400'
+              }`}
+              title="Resto libre disponible que te queda"
+            >
+              Resto: {formatMoney(ing.disponible ?? (ing.monto - ing.totalGastosAsignados!), moneda)}
+            </span>
           </div>
         )}
       </td>
