@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const { costoFijoId, periodo, estado, monto, notas, metodoPago, tarjetaId } = await request.json();
+    const { costoFijoId, periodo, estado, monto, notas, metodoPago, tarjetaId, ingresoId } = await request.json();
 
     const costoFijo = await prisma.costoFijo.findUnique({ where: { id: costoFijoId } });
     if (!costoFijo || costoFijo.usuarioId !== user.id) {
@@ -34,6 +34,9 @@ export async function POST(request: NextRequest) {
       updateData.metodoPago = metodoPago as MetodoPago;
       updateData.tarjetaId = metodoPago === MetodoPago.TARJETA_CREDITO ? (tarjetaId || null) : null;
     }
+    if (ingresoId !== undefined) {
+      updateData.ingresoId = ingresoId || null;
+    }
 
     const createMetodoPago = (metodoPago as MetodoPago) || costoFijo.metodoPago || MetodoPago.EFECTIVO_DEBITO;
     const createTarjetaId = createMetodoPago === MetodoPago.TARJETA_CREDITO
@@ -55,6 +58,7 @@ export async function POST(request: NextRequest) {
         estado: (estado as EstadoPago) || EstadoPago.PENDIENTE,
         metodoPago: createMetodoPago,
         tarjetaId: createTarjetaId,
+        ingresoId: ingresoId || null,
         fechaPagoReal,
         notas,
       },

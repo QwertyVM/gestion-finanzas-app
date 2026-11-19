@@ -645,6 +645,9 @@ export function obtenerColorCategoriaBackend(nombre?: string | null): { color: s
               where: { periodo },
               include: {
                 tarjeta: true,
+                ingreso: {
+                  select: { id: true, concepto: true, tipo: true },
+                },
               },
             },
           },
@@ -654,6 +657,11 @@ export function obtenerColorCategoriaBackend(nombre?: string | null): { color: s
           where: { activo: true, usuarioId: uId },
           include: {
             cuotas: {
+              include: {
+                ingreso: {
+                  select: { id: true, concepto: true, tipo: true },
+                },
+              },
               orderBy: { numeroCuota: 'asc' },
             },
           },
@@ -921,6 +929,9 @@ export function obtenerColorCategoriaBackend(nombre?: string | null): { color: s
           tarjetaColor: tarjetaObj?.color || null,
           tarjetaUltimosCuatro: tarjetaObj?.ultimosCuatro || null,
           orden: cf.orden ?? 0,
+          ingresoId: reg?.ingresoId || null,
+          ingresoConcepto: reg?.ingreso?.concepto || null,
+          ingresoTipo: reg?.ingreso?.tipo || null,
         });
       }
 
@@ -986,6 +997,9 @@ export function obtenerColorCategoriaBackend(nombre?: string | null): { color: s
             badgeLabel: pClasif.badgeLabel,
             tipoLabel: pClasif.tipoLabel,
             orden: p.orden ?? 0,
+            ingresoId: cuotaMes.ingresoId || null,
+            ingresoConcepto: cuotaMes.ingreso?.concepto || null,
+            ingresoTipo: cuotaMes.ingreso?.tipo || null,
           });
         } else {
           const proximaCuota = p.cuotas.find((c) => c.periodo > periodo) || ultimaCuota;
@@ -1028,6 +1042,9 @@ export function obtenerColorCategoriaBackend(nombre?: string | null): { color: s
             badgeLabel: pClasif.badgeLabel,
             tipoLabel: pClasif.tipoLabel,
             orden: p.orden ?? 0,
+            ingresoId: null,
+            ingresoConcepto: null,
+            ingresoTipo: null,
           });
         }
       }
@@ -1360,6 +1377,9 @@ export function obtenerColorCategoriaBackend(nombre?: string | null): { color: s
           mesInicio: cf.mesInicio,
           mesFin: cf.mesFin,
           orden: cf.orden ?? 0,
+          ingresoId: cf.ingresoId || null,
+          ingresoConcepto: cf.ingresoConcepto || null,
+          ingresoTipo: cf.ingresoTipo || null,
         });
       }
 
@@ -1399,6 +1419,9 @@ export function obtenerColorCategoriaBackend(nombre?: string | null): { color: s
           montoTotal: p.montoTotal,
           tasaInteresAnual: p.tasaInteresAnual,
           orden: p.orden ?? 0,
+          ingresoId: p.ingresoId || null,
+          ingresoConcepto: p.ingresoConcepto || null,
+          ingresoTipo: p.ingresoTipo || null,
         });
       }
 
@@ -1633,15 +1656,18 @@ export function obtenerColorCategoriaBackend(nombre?: string | null): { color: s
         Number(config.tipoCambioUSD || 4.00)
       );
 
-      const todosLosGastosMes = [
-        ...tarjetasCredito.flatMap((t) => t.gastosPeriodo),
-        ...gastosDirectos,
-      ];
+      // Identificar el Sueldo principal del mes
+      const sueldoPrincipal = ingresos.find((i) => i.tipo === 'SUELDO') || ingresos[0];
 
       const ingresosEnriquecidos = ingresos.map((ing) => {
-        const asignados = todosLosGastosMes.filter((g) => g.ingresoId === ing.id);
+        const esSueldoBase = ing.id === sueldoPrincipal?.id;
+        const asignados = egresosConsolidados.filter((item) => {
+          if (item.ingresoId === ing.id) return true;
+          if (esSueldoBase && !item.ingresoId) return true;
+          return false;
+        });
         const totalGastosAsignados = Number(
-          asignados.reduce((sum, g) => sum + g.monto, 0).toFixed(2)
+          asignados.reduce((sum, g) => sum + (g.monto || 0), 0).toFixed(2)
         );
         return {
           ...ing,

@@ -3,11 +3,14 @@
 import React from 'react';
 import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
 import { CheckSquare, Square, Check } from 'lucide-react';
+import { SelectorIngresoPill } from './SelectorIngresoPill';
 
 interface SeccionEgresoCardMobileProps {
   item: any;
   isSelected: boolean;
   moneda: string;
+  ingresosMes?: any[];
+  onAsignarIngreso?: (item: any, ingresoId: string | null) => Promise<void> | void;
   onSelectItem: (item: any) => void;
   onToggleSelectGasto: (id: string, monto: number) => void;
   onToggleEstadoItem: (item: any, nuevoEstado: string) => void;
@@ -17,6 +20,8 @@ export function SeccionEgresoCardMobile({
   item,
   isSelected,
   moneda,
+  ingresosMes,
+  onAsignarIngreso,
   onSelectItem,
   onToggleSelectGasto,
   onToggleEstadoItem,
@@ -88,14 +93,23 @@ export function SeccionEgresoCardMobile({
                   <span className="truncate">{subtextoMobile}</span>
                 </>
               )}
-              {item.ingresoConcepto && (
+              {ingresosMes && ingresosMes.length > 1 ? (
+                <>
+                  <span className="opacity-40">·</span>
+                  <SelectorIngresoPill
+                    ingresoId={item.ingresoId}
+                    ingresos={ingresosMes}
+                    onAsignar={(nuevoId) => onAsignarIngreso?.(item, nuevoId)}
+                  />
+                </>
+              ) : item.ingresoConcepto ? (
                 <>
                   <span className="opacity-40">·</span>
                   <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shrink-0">
                     💰 {item.ingresoConcepto}
                   </span>
                 </>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

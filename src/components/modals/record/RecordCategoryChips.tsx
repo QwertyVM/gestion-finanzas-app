@@ -59,19 +59,21 @@ export function RecordCategoryChips({
                 key={cat.id}
                 type="button"
                 onClick={() => onSelectCategoria(cat)}
-                      ? 'bg-foreground text-background border-foreground font-semibold shadow-xs'
-                      : 'bg-background text-foreground/80 border-border hover:border-foreground/40 hover:bg-muted/30'
-                    }`}
+                className={`p-2 rounded-xl text-xs font-medium border transition cursor-pointer ${
+                  isSelected
+                    ? 'bg-foreground text-background border-foreground font-semibold shadow-xs'
+                    : 'bg-background text-foreground/80 border-border hover:border-foreground/40 hover:bg-muted/30'
+                }`}
               >
                 <div className="flex items-center gap-1.5 font-semibold text-xs">
                   {renderIcon(cat.nombre)}
                   <span className="truncate">{cat.nombre}</span>
                 </div>
-      </button>
-      );
+              </button>
+            );
           })}
-    </div>
-      </div >
+        </div>
+      </div>
 
     {/* 2. Minitag específico */ }
   {

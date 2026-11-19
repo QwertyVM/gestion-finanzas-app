@@ -28,6 +28,8 @@ interface SeccionEgresosTablaProps {
   onToggleSelectGasto: (id: string, monto: number) => void;
   onSelectItem: (item: any) => void;
   onToggleEstadoItem: (item: any, nuevoEstado: string) => void;
+  ingresosMes?: any[];
+  onAsignarIngreso?: (item: any, ingresoId: string | null) => Promise<void> | void;
   moneda: string;
   draggedId: string | null;
   dragOverId: string | null;
@@ -47,6 +49,8 @@ export function SeccionEgresosTabla({
   onToggleSelectGasto,
   onSelectItem,
   onToggleEstadoItem,
+  ingresosMes,
+  onAsignarIngreso,
   moneda,
   draggedId,
   dragOverId,
@@ -155,6 +159,8 @@ export function SeccionEgresosTabla({
                   item={item}
                   isSelected={selectedGastoIds.includes(item.id)}
                   moneda={moneda}
+                  ingresosMes={ingresosMes}
+                  onAsignarIngreso={onAsignarIngreso}
                   onSelectItem={onSelectItem}
                   onToggleSelectGasto={onToggleSelectGasto}
                   onToggleEstadoItem={onToggleEstadoItem}
@@ -168,6 +174,8 @@ export function SeccionEgresosTabla({
               seccionId={seccion.id}
               selectedGastoIds={selectedGastoIds}
               moneda={moneda}
+              ingresosMes={ingresosMes}
+              onAsignarIngreso={onAsignarIngreso}
               draggedId={draggedId}
               dragOverId={dragOverId}
               onSelectItem={onSelectItem}

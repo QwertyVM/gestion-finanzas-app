@@ -3,6 +3,7 @@
 import React from 'react';
 import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
 import { GripVertical, CheckSquare, Square, Check } from 'lucide-react';
+import { SelectorIngresoPill } from './SelectorIngresoPill';
 
 interface SeccionEgresoFilaProps {
   item: any;
@@ -14,6 +15,8 @@ interface SeccionEgresoFilaProps {
   onSelectItem: (item: any) => void;
   onToggleSelectGasto: (id: string, monto: number) => void;
   onToggleEstadoItem: (item: any, nuevoEstado: string) => void;
+  ingresosMes?: any[];
+  onAsignarIngreso?: (item: any, ingresoId: string | null) => Promise<void> | void;
   onDragStart: (id: string, e: React.DragEvent) => void;
   onDragOver: (id: string, e: React.DragEvent) => void;
   onDragLeave: (id: string) => void;
@@ -31,6 +34,8 @@ export function SeccionEgresoFila({
   onSelectItem,
   onToggleSelectGasto,
   onToggleEstadoItem,
+  ingresosMes,
+  onAsignarIngreso,
   onDragStart,
   onDragOver,
   onDragLeave,
@@ -102,14 +107,23 @@ export function SeccionEgresoFila({
               <span className="truncate">{subtextoLimpio}</span>
             </>
           )}
-          {item.ingresoConcepto && (
+          {ingresosMes && ingresosMes.length > 1 ? (
+            <>
+              <span className="opacity-40">·</span>
+              <SelectorIngresoPill
+                ingresoId={item.ingresoId}
+                ingresos={ingresosMes}
+                onAsignar={(nuevoId) => onAsignarIngreso?.(item, nuevoId)}
+              />
+            </>
+          ) : item.ingresoConcepto ? (
             <>
               <span className="opacity-40">·</span>
               <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shrink-0">
                 💰 {item.ingresoConcepto}
               </span>
             </>
-          )}
+          ) : null}
         </div>
       </td>
 
@@ -143,11 +157,7 @@ export function SeccionEgresoFila({
                 : 'bg-amber-50/80 text-amber-700 border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40'
           }`}
         >
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              isAdelantado ? 'bg-indigo-500' : isPagado ? 'bg-emerald-500' : 'bg-amber-500'
-            }`}
-          />
+          <span className={`w-1.5 h-1.5 rounded-full ${isAdelantado ? 'bg-indigo-500' : isPagado ? 'bg-emerald-500' : 'bg-amber-500'}`} />
           {isAdelantado ? 'Adelantado' : isPagado ? 'Pagado' : 'Pendiente'}
         </span>
       </td>
@@ -156,9 +166,7 @@ export function SeccionEgresoFila({
       <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono font-semibold text-foreground text-xs sm:text-sm tabular-nums">
         <div>{formatMoney(item.monto, moneda)}</div>
         {item.monedaOriginal === 'USD' && item.montoOriginal && (
-          <div className="text-[10px] text-muted-foreground font-mono font-normal mt-0.5">
-            ${item.montoOriginal.toFixed(2)} USD
-          </div>
+          <div className="text-[10px] text-muted-foreground font-mono font-normal mt-0.5">${item.montoOriginal.toFixed(2)} USD</div>
         )}
       </td>
 

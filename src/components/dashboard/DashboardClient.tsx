@@ -36,6 +36,9 @@ export function DashboardClient() {
     setFiltroEstado,
     filtroEgreso,
     setFiltroEgreso,
+    filtroFuenteIngreso,
+    setFiltroFuenteIngreso,
+    handleAsignarIngresoItem,
     draggedId,
     setDraggedId,
     dragOverId,
@@ -150,6 +153,10 @@ export function DashboardClient() {
         onSelectFiltroEgreso={setFiltroEgreso}
         filtroEstado={filtroEstado}
         onSelectFiltroEstado={setFiltroEstado}
+        filtroFuenteIngreso={filtroFuenteIngreso}
+        onSelectFiltroFuenteIngreso={setFiltroFuenteIngreso}
+        ingresosMes={resumen.ingresos}
+        onAsignarIngresoItem={handleAsignarIngresoItem}
         isAllSelected={isAllSelected}
         onToggleSelectAll={handleSelectAll}
         conteoEgresosFiltrados={conteoEgresosFiltrados}

@@ -31,6 +31,7 @@ export function useDashboardEgresos() {
   const [detalleItem, setDetalleItem] = useState<DetalleItemData | null>(null);
   const [filtroEstado, setFiltroEstado] = useState<'PENDIENTE' | 'ADELANTADO' | 'PAGADO' | 'TODOS'>('PENDIENTE');
   const [filtroEgreso, setFiltroEgreso] = useState<'TODOS' | 'FIJOS' | 'PRESTAMOS' | 'CUOTAS' | 'VARIABLES'>('TODOS');
+  const [filtroFuenteIngreso, setFiltroFuenteIngreso] = useState<string>('TODOS');
 
   const [itemsOrdenados, setItemsOrdenados] = useState<Array<any>>([]);
   const [draggedId, setDraggedId] = useState<string | null>(null);
@@ -128,13 +129,28 @@ export function useDashboardEgresos() {
     });
   }, [listaActivaEgresos, filtroEgreso]);
 
-  // Filtrado reactivo por Estado
+  // Identificar el Sueldo principal para atribución por defecto
+  const sueldoPrincipal = useMemo(() => {
+    return resumen?.ingresos?.find((i: any) => i.tipo === 'SUELDO') || resumen?.ingresos?.[0];
+  }, [resumen]);
+
+  // Filtrado reactivo por Estado y Fuente de Ingreso
   const egresosFiltrados = useMemo(() => {
     return egresosPorClasificacion.filter((item) => {
       if (filtroEstado !== 'TODOS' && item.estado !== filtroEstado) return false;
+
+      if (filtroFuenteIngreso !== 'TODOS') {
+        const esFiltroSueldo = filtroFuenteIngreso === sueldoPrincipal?.id || filtroFuenteIngreso === 'SUELDO';
+        if (esFiltroSueldo) {
+          return item.ingresoId === sueldoPrincipal?.id || !item.ingresoId;
+        } else {
+          return item.ingresoId === filtroFuenteIngreso;
+        }
+      }
+
       return true;
     });
-  }, [egresosPorClasificacion, filtroEstado]);
+  }, [egresosPorClasificacion, filtroEstado, filtroFuenteIngreso, sueldoPrincipal]);
 
   const toggleColapsarSeccion = (seccionId: string) => {
     setSeccionesColapsadas((prev) => ({
@@ -517,20 +533,58 @@ export function useDashboardEgresos() {
     setDetalleItem((prev) => (prev ? { ...prev, estado: nuevoEstado as any } : null));
   };
 
-  const handleCambiarIngresoAsignadoModal = async (item: DetalleItemData, nuevoIngresoId: string | null) => {
+  const handleAsignarIngresoItem = async (item: DetalleItemData, nuevoIngresoId: string | null) => {
     try {
-      const res = await fetch('/api/gastos', {
-        method: 'PATCH',
+      const res = await fetch('/api/finanzas/asignar-ingreso', {
+        method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: item.dbId || item.id, ingresoId: nuevoIngresoId || null }),
+        body: JSON.stringify({
+          items: [{ id: item.dbId || item.id, tipo: item.tipo }],
+          ingresoId: nuevoIngresoId || null,
+          periodo,
+        }),
       });
       if (!res.ok) throw new Error('Error al actualizar ingreso asignado');
       setDetalleItem((prev) => (prev ? { ...prev, ingresoId: nuevoIngresoId || null } : null));
-      toast.success(nuevoIngresoId ? 'Gasto asignado al ingreso correctamente' : 'Gasto desvinculado del ingreso');
+      toast.success(nuevoIngresoId ? 'Asignado a fuente de ingreso' : 'Asignado a Sueldo / General');
       await refresh();
     } catch {
       toast.error('Error al actualizar ingreso asignado');
     }
+  };
+
+  const handleAsignarIngresoMasivo = async (nuevoIngresoId: string | null) => {
+    if (selectedGastoIds.length === 0) return;
+    try {
+      const itemsPayload = selectedGastoIds.map((id) => {
+        const itemObj = listaActivaEgresos.find((e) => e.id === id);
+        return {
+          id: itemObj?.dbId || id,
+          tipo: itemObj?.tipo || 'DIRECTO',
+        };
+      });
+
+      const res = await fetch('/api/finanzas/asignar-ingreso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: itemsPayload,
+          ingresoId: nuevoIngresoId || null,
+          periodo,
+        }),
+      });
+
+      if (!res.ok) throw new Error('Error en asignación masiva');
+      toast.success(`Se asignaron ${itemsPayload.length} gastos correctamente`);
+      clearSelection();
+      await refresh();
+    } catch {
+      toast.error('Error al asignar gastos en lote');
+    }
+  };
+
+  const handleCambiarIngresoAsignadoModal = async (item: DetalleItemData, nuevoIngresoId: string | null) => {
+    await handleAsignarIngresoItem(item, nuevoIngresoId);
   };
 
   const handleAbrirRegistroSeccion = (seccionId: string) => {
@@ -568,6 +622,10 @@ export function useDashboardEgresos() {
     setFiltroEstado,
     filtroEgreso,
     setFiltroEgreso,
+    filtroFuenteIngreso,
+    setFiltroFuenteIngreso,
+    handleAsignarIngresoItem,
+    handleAsignarIngresoMasivo,
     draggedId,
     setDraggedId,
     dragOverId,

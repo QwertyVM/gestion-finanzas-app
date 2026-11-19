@@ -21,6 +21,7 @@ export async function POST(request: NextRequest) {
       notas,
       metodoPago,
       tarjetaId,
+      ingresoId,
     } = body;
     const usuarioId = user.id;
 
@@ -48,6 +49,7 @@ export async function POST(request: NextRequest) {
             estado: EstadoPago.PENDIENTE,
             metodoPago: finalMetodoPago,
             tarjetaId: finalTarjetaId,
+            ingresoId: ingresoId || null,
             notas: notas || null,
           },
         },

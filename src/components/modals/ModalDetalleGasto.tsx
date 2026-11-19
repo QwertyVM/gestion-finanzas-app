@@ -137,7 +137,7 @@ export function ModalDetalleGasto({
             onCambiarTag={d.handleCambiarTag}
           />
 
-          {(item.tipo === 'TARJETA' || item.tipo === 'DIRECTO') && (
+          {ingresosMes && ingresosMes.length > 0 && (
             <DetalleIngresoAsignadoBox
               item={item}
               ingresosMes={ingresosMes}

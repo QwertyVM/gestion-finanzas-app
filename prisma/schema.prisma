@@ -153,6 +153,8 @@ model RegistroCostoFijoMes {
   metodoPago    MetodoPago?
   tarjetaId     String?
   tarjeta       TarjetaCredito? @relation(fields: [tarjetaId], references: [id], onDelete: SetNull)
+  ingresoId     String?
+  ingreso       IngresoMes?     @relation(fields: [ingresoId], references: [id], onDelete: SetNull)
   fechaPagoReal DateTime?
   notas         String?
   createdAt     DateTime        @default(now())
@@ -188,6 +190,8 @@ model CuotaPrestamo {
   periodo       String     // YYYY-MM
   monto         Decimal    @db.Decimal(12, 2)
   estado        EstadoPago @default(PENDIENTE)
+  ingresoId     String?
+  ingreso       IngresoMes? @relation(fields: [ingresoId], references: [id], onDelete: SetNull)
   fechaPagoReal DateTime?
   createdAt     DateTime   @default(now())
   updatedAt     DateTime   @updatedAt
@@ -244,7 +248,9 @@ model IngresoMes {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
 
-  gastos         Gasto[]
+  gastos                 Gasto[]
+  registrosCostoFijoMes  RegistroCostoFijoMes[]
+  cuotasPrestamo         CuotaPrestamo[]
 
   @@unique([usuarioId, periodo, tipo, concepto])
 }

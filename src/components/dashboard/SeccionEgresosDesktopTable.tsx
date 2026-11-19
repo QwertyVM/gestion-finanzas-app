@@ -10,6 +10,8 @@ interface SeccionEgresosDesktopTableProps {
   seccionId?: string;
   draggedId: string | null;
   dragOverId: string | null;
+  ingresosMes?: any[];
+  onAsignarIngreso?: (item: any, ingresoId: string | null) => Promise<void> | void;
   onSelectItem: (item: any) => void;
   onToggleSelectGasto: (id: string, monto: number) => void;
   onToggleEstadoItem: (item: any, nuevoEstado: string) => void;
@@ -27,6 +29,8 @@ export function SeccionEgresosDesktopTable({
   seccionId,
   draggedId,
   dragOverId,
+  ingresosMes,
+  onAsignarIngreso,
   onSelectItem,
   onToggleSelectGasto,
   onToggleEstadoItem,
@@ -85,6 +89,8 @@ export function SeccionEgresosDesktopTable({
               dragOverId={dragOverId}
               draggedId={draggedId}
               moneda={moneda}
+              ingresosMes={ingresosMes}
+              onAsignarIngreso={onAsignarIngreso}
               onSelectItem={onSelectItem}
               onToggleSelectGasto={onToggleSelectGasto}
               onToggleEstadoItem={onToggleEstadoItem}

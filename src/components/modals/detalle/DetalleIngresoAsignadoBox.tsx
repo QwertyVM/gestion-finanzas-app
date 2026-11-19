@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Wallet, Pencil, Check, X } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
 import type { DetalleItemData } from './types';
@@ -27,6 +27,10 @@ export function DetalleIngresoAsignadoBox({
   const [editando, setEditando] = useState(false);
   const [saving, setSaving] = useState(false);
   const [selectedId, setSelectedId] = useState<string>(item.ingresoId || '');
+
+  useEffect(() => {
+    setSelectedId(item.ingresoId || '');
+  }, [item.ingresoId]);
 
   // Si no hay ingresos en el mes
   if (!ingresosMes || ingresosMes.length === 0) {

@@ -151,7 +151,7 @@ export function DynamicRecordModal() {
             previewTarjeta={previewTarjeta}
           />
 
-          {tipoActivo === 'GASTO' && (
+          {tipoActivo !== 'INGRESO' && (
             <RecordIngresoAsignadoSelector
               ingresos={ingresos}
               ingresoId={ingresoId}

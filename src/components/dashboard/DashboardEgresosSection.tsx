@@ -5,6 +5,7 @@ import { Plus, CheckCircle2 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
 import { DiferenciacionEgresosBar } from './DiferenciacionEgresosBar';
 import { FiltrosEstadoBar } from './FiltrosEstadoBar';
+import { FiltroFuenteIngresoBar } from './FiltroFuenteIngresoBar';
 import { SeccionEgresosTabla } from './SeccionEgresosTabla';
 import type { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 
@@ -17,6 +18,10 @@ interface DashboardEgresosSectionProps {
   onSelectFiltroEgreso: (f: 'TODOS' | 'FIJOS' | 'PRESTAMOS' | 'CUOTAS' | 'VARIABLES') => void;
   filtroEstado: 'PENDIENTE' | 'ADELANTADO' | 'PAGADO' | 'TODOS';
   onSelectFiltroEstado: (f: 'PENDIENTE' | 'ADELANTADO' | 'PAGADO' | 'TODOS') => void;
+  filtroFuenteIngreso?: string;
+  onSelectFiltroFuenteIngreso?: (f: string) => void;
+  ingresosMes?: any[];
+  onAsignarIngresoItem?: (item: any, ingresoId: string | null) => Promise<void> | void;
   isAllSelected: boolean;
   onToggleSelectAll: () => void;
   conteoEgresosFiltrados: number;
@@ -45,6 +50,10 @@ export function DashboardEgresosSection({
   onSelectFiltroEgreso,
   filtroEstado,
   onSelectFiltroEstado,
+  filtroFuenteIngreso = 'TODOS',
+  onSelectFiltroFuenteIngreso,
+  ingresosMes = [],
+  onAsignarIngresoItem,
   isAllSelected,
   onToggleSelectAll,
   conteoEgresosFiltrados,
@@ -96,6 +105,17 @@ export function DashboardEgresosSection({
         moneda={moneda}
       />
 
+      {ingresosMes && ingresosMes.length > 1 && onSelectFiltroFuenteIngreso && (
+        <FiltroFuenteIngresoBar
+          ingresos={ingresosMes}
+          filtroFuenteIngreso={filtroFuenteIngreso}
+          onSelectFiltroFuente={onSelectFiltroFuenteIngreso}
+          moneda={moneda}
+          totalCompromisos={todosEgresos.length}
+          totalMontoEgresos={totalEgresos}
+        />
+      )}
+
       <FiltrosEstadoBar
         filtroEstado={filtroEstado}
         onSelectEstado={onSelectFiltroEstado}
@@ -130,6 +150,8 @@ export function DashboardEgresosSection({
               onToggleSelectGasto={toggleSelectGasto}
               onSelectItem={onSelectItem}
               onToggleEstadoItem={onToggleEstadoItem}
+              ingresosMes={ingresosMes}
+              onAsignarIngreso={onAsignarIngresoItem}
               moneda={moneda}
               draggedId={draggedId}
               dragOverId={dragOverId}

@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const { cuotaId, estado, monto } = await request.json();
+    const { cuotaId, estado, monto, ingresoId } = await request.json();
 
     const cuota = await prisma.cuotaPrestamo.findUnique({
       where: { id: cuotaId },
@@ -29,6 +29,9 @@ export async function POST(request: NextRequest) {
     }
     if (monto !== undefined && monto !== null && monto !== '') {
       updateData.monto = parseFloat(monto);
+    }
+    if (ingresoId !== undefined) {
+      updateData.ingresoId = ingresoId || null;
     }
 
     const updated = await prisma.cuotaPrestamo.update({

@@ -18,6 +18,7 @@ export async function POST(request: NextRequest) {
       cuotaInicial = 1,
       tasaInteresAnual = 14.50,
       periodoInicio = '2026-11',
+      ingresoId,
     } = body;
 
     const totalCuotasNum = parseInt(cuotasTotales, 10);
@@ -59,6 +60,7 @@ export async function POST(request: NextRequest) {
           numeroCuota,
           periodo: periodoCuota,
           monto: montoCuotaFloat,
+          ingresoId: i === 0 && ingresoId ? ingresoId : null,
           estado: EstadoPago.PENDIENTE,
         },
       });

@@ -3,13 +3,16 @@
 import React, { useState } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
 import { formatMoney } from '@/lib/utils';
-import { CheckCircle2, FastForward, Clock, Trash2, X, Tag } from 'lucide-react';
+import { CheckCircle2, FastForward, Clock, Trash2, X } from 'lucide-react';
 import { toast } from 'sonner';
+import { FloatingCategoryMenu } from './FloatingCategoryMenu';
+import { FloatingIncomeMenu } from './FloatingIncomeMenu';
 
 export function FloatingSumBar() {
   const { selectedGastoIds, sumaSeleccionada, clearSelection, refresh, resumen } = useFinanzas();
   const [loading, setLoading] = useState(false);
   const [menuCatOpen, setMenuCatOpen] = useState(false);
+  const [menuIngresoOpen, setMenuIngresoOpen] = useState(false);
   const [categorias, setCategorias] = useState<Array<{ id: string; nombre: string }>>([]);
 
   if (selectedGastoIds.length === 0) return null;
@@ -51,21 +54,37 @@ export function FloatingSumBar() {
     }
   };
 
-  const handleAsignarCategoriaMasiva = (categoriaId: string) =>
-    executeMasivoAction(
-      { action: 'cambiar_categoria', categoriaId },
-      `Categoría aplicada a ${selectedGastoIds.length} ítem(s)`
-    );
+  const handleAsignarIngresoMasivo = async (ingresoId: string | null) => {
+    try {
+      setLoading(true);
+      const itemsPayload = selectedGastoIds.map((id) => {
+        const itemObj = (resumen?.egresosConsolidados as any[])?.find((e) => e.id === id);
+        return {
+          id: itemObj?.dbId || id,
+          tipo: itemObj?.tipo || 'DIRECTO',
+        };
+      });
 
-  const handleCambiarEstado = (estado: string) =>
-    executeMasivoAction(
-      { action: 'cambiar_estado', estado },
-      `${selectedGastoIds.length} marcados como ${estado.toLowerCase()}`
-    );
+      const res = await fetch('/api/finanzas/asignar-ingreso', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: itemsPayload,
+          ingresoId: ingresoId || null,
+          periodo: resumen?.periodo,
+        }),
+      });
 
-  const handleEliminar = async () => {
-    if (!confirm(`¿Eliminar los ${selectedGastoIds.length} gastos seleccionados?`)) return;
-    executeMasivoAction({ action: 'eliminar' }, `${selectedGastoIds.length} gastos eliminados`);
+      if (!res.ok) throw new Error('Error al asignar ingreso');
+      toast.success(ingresoId ? 'Gastos asignados a la fuente' : 'Gastos asignados a Sueldo');
+      setMenuIngresoOpen(false);
+      clearSelection();
+      await refresh();
+    } catch (err: any) {
+      toast.error(err.message || 'Error en la operación');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -85,7 +104,7 @@ export function FloatingSumBar() {
       {/* Botones de Acción */}
       <div className="flex items-center gap-1 sm:gap-1.5 whitespace-nowrap overflow-x-auto no-scrollbar">
         <button
-          onClick={() => handleCambiarEstado('PAGADO')}
+          onClick={() => executeMasivoAction({ action: 'cambiar_estado', estado: 'PAGADO' }, `${selectedGastoIds.length} marcados como pagado`)}
           disabled={loading}
           className="px-2 sm:px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-[11px] sm:text-xs font-medium flex items-center gap-1 sm:gap-1.5 transition disabled:opacity-50"
           title="Marcar como pagado"
@@ -95,7 +114,7 @@ export function FloatingSumBar() {
         </button>
 
         <button
-          onClick={() => handleCambiarEstado('ADELANTADO')}
+          onClick={() => executeMasivoAction({ action: 'cambiar_estado', estado: 'ADELANTADO' }, `${selectedGastoIds.length} marcados como adelantado`)}
           disabled={loading}
           className="px-2 sm:px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-[11px] sm:text-xs font-medium flex items-center gap-1 sm:gap-1.5 transition disabled:opacity-50"
           title="Marcar como adelantado"
@@ -105,7 +124,7 @@ export function FloatingSumBar() {
         </button>
 
         <button
-          onClick={() => handleCambiarEstado('PENDIENTE')}
+          onClick={() => executeMasivoAction({ action: 'cambiar_estado', estado: 'PENDIENTE' }, `${selectedGastoIds.length} marcados como pendiente`)}
           disabled={loading}
           className="px-2 sm:px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-[11px] sm:text-xs font-medium flex items-center gap-1 sm:gap-1.5 transition disabled:opacity-50"
           title="Marcar como pendiente"
@@ -115,38 +134,29 @@ export function FloatingSumBar() {
         </button>
 
         {/* Categoría Masiva */}
-        <div className="relative">
-          <button
-            onClick={handleOpenCategorias}
-            disabled={loading}
-            className="px-2 sm:px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 rounded-lg text-[11px] sm:text-xs font-medium flex items-center gap-1 sm:gap-1.5 transition disabled:opacity-50 cursor-pointer"
-            title="Asignar categoría en masa"
-          >
-            <Tag className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-            <span className="hidden min-[480px]:inline">Categoría</span>
-          </button>
+        <FloatingCategoryMenu
+          categorias={categorias}
+          open={menuCatOpen}
+          loading={loading}
+          onToggleOpen={handleOpenCategorias}
+          onSelectCategory={(catId) => executeMasivoAction({ action: 'cambiar_categoria', categoriaId: catId }, `Categoría aplicada a ${selectedGastoIds.length} ítem(s)`)}
+        />
 
-          {menuCatOpen && (
-            <div className="absolute bottom-full mb-2 left-0 sm:left-auto sm:right-0 bg-zinc-900 border border-zinc-700 shadow-xl rounded-xl p-1.5 min-w-[200px] z-50 text-xs space-y-1 animate-in fade-in zoom-in-95">
-              <span className="text-[10px] uppercase font-semibold text-zinc-400 px-2 py-0.5 block">
-                Asignar Categoría:
-              </span>
-              {categorias.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => handleAsignarCategoriaMasiva(cat.id)}
-                  className="w-full text-left px-2.5 py-1.5 rounded-lg hover:bg-zinc-800 text-zinc-200 font-medium text-[11px] transition flex items-center gap-2 cursor-pointer"
-                >
-                  <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
-                  <span className="truncate">{cat.nombre}</span>
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Fuente de Pago Masiva */}
+        <FloatingIncomeMenu
+          ingresos={resumen?.ingresos || []}
+          open={menuIngresoOpen}
+          loading={loading}
+          onToggleOpen={() => setMenuIngresoOpen((prev) => !prev)}
+          onSelectIncome={handleAsignarIngresoMasivo}
+        />
 
         <button
-          onClick={handleEliminar}
+          onClick={() => {
+            if (confirm(`¿Eliminar los ${selectedGastoIds.length} gastos seleccionados?`)) {
+              executeMasivoAction({ action: 'eliminar' }, `${selectedGastoIds.length} gastos eliminados`);
+            }
+          }}
           disabled={loading}
           className="p-1 sm:p-1.5 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 rounded-lg text-xs transition disabled:opacity-50"
           title="Eliminar seleccionados"

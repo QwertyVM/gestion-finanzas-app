@@ -253,6 +253,7 @@ export function useDynamicRecordModal() {
             tag: tag.trim() || undefined,
             metodoPago,
             tarjetaId: metodoPago === 'TARJETA_CREDITO' ? tarjetaId : undefined,
+            ingresoId: ingresoId || undefined,
             notas: notas.trim() || undefined,
             usuarioId: usuarioActual?.id,
           }),
@@ -278,6 +279,7 @@ export function useDynamicRecordModal() {
             diaPago: 30,
             tasaInteresAnual: parseFloat(teaPrestamo) || 14.50,
             periodoInicio: periodo,
+            ingresoId: ingresoId || undefined,
           }),
         });
         if (!res.ok) throw new Error('Error al registrar préstamo');
