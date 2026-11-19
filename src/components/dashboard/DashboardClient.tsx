@@ -9,6 +9,7 @@ import { ResumenDivisasCard } from './ResumenDivisasCard';
 import { IngresosMesTabla } from './IngresosMesTabla';
 import { DashboardEgresosSection } from './DashboardEgresosSection';
 import { DashboardModals } from './DashboardModals';
+import { DashboardSaludSection } from './DashboardSaludSection';
 import { InstructivoGuia503020 } from './instructivo/InstructivoGuia503020';
 import { DashboardStateFallbacks } from './DashboardStateFallbacks';
 import { useDashboardEgresos } from './hooks/useDashboardEgresos';
@@ -119,6 +120,9 @@ export function DashboardClient() {
       {resumen.resumenDivisas?.tieneMultiplesMonedas && (
         <ResumenDivisasCard divisas={resumen.resumenDivisas} moneda={moneda} />
       )}
+
+      {/* CARD DE SALUD FINANCIERA DEL MES (50/30/20, RATIOS DTI Y ALERTAS) */}
+      <DashboardSaludSection salud={resumen.saludFinanciera} moneda={moneda} />
 
       {/* GUIA PRÁCTICA & MODELO 50/30/20 */}
       <InstructivoGuia503020 onOpenRecordModal={openRecordModal} />
