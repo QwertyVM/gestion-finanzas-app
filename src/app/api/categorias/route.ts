@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getAuthenticatedUser } from '@/lib/auth';
+import { migrarACategorias503020 } from '@/lib/categoria-service';
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,7 +10,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    const categorias = await prisma.categoria.findMany({
+    let categorias = await prisma.categoria.findMany({
       where: {
         OR: [{ usuarioId: user.id }, { usuarioId: null }],
       },
@@ -23,6 +24,29 @@ export async function GET(request: NextRequest) {
       },
       orderBy: { nombre: 'asc' },
     });
+
+    const tieneCategoriasAntiguas = categorias.some(
+      (c) => !['50% Necesidades', '30% Estilo de Vida', '20% Ahorro & Deuda'].includes(c.nombre)
+    );
+
+    if (tieneCategoriasAntiguas || categorias.length === 0) {
+      await migrarACategorias503020(user.id);
+      categorias = await prisma.categoria.findMany({
+        where: {
+          OR: [{ usuarioId: user.id }, { usuarioId: null }],
+        },
+        include: {
+          _count: {
+            select: {
+              gastos: true,
+              costosFijos: true,
+            },
+          },
+        },
+        orderBy: { nombre: 'asc' },
+      });
+    }
+
     return NextResponse.json(categorias);
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

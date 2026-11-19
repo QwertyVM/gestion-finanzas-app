@@ -1,15 +1,5 @@
 import prisma from './prisma';
-
-const CATEGORIAS_DEFAULT = [
-  { nombre: 'Alimentación / Supermercado', color: '#f59e0b', esFijo: true },
-  { nombre: 'Servicios Básicos (Luz/Agua/Net)', color: '#3b82f6', esFijo: true },
-  { nombre: 'Salud & Cuidado Personal', color: '#ec4899', esFijo: true },
-  { nombre: 'Suscripciones / Streaming', color: '#8b5cf6', esFijo: true },
-  { nombre: 'Transporte & Vehicular', color: '#64748b', esFijo: false },
-  { nombre: 'Restaurantes & Salidas', color: '#f97316', esFijo: false },
-  { nombre: 'Compras Varias', color: '#10b981', esFijo: false },
-  { nombre: 'Educación & Cursos', color: '#06b6d4', esFijo: false },
-];
+import { CATEGORIAS_50_30_20 } from './categoria-service';
 
 /**
  * Crea una nueva instancia de usuario con categorías y configuración inicial totalmente aislada.
@@ -50,13 +40,14 @@ export async function provisionNewUserInstance({
     },
   });
 
-  // 2. Crear categorías iniciales exclusivas para este usuario
-  for (const cat of CATEGORIAS_DEFAULT) {
+  // 2. Crear las 3 categorías canónicas 50/30/20 exclusivas para este usuario
+  for (const cat of CATEGORIAS_50_30_20) {
     await prisma.categoria.create({
       data: {
         nombre: cat.nombre,
         color: cat.color,
         esFijo: cat.esFijo,
+        icono: cat.icono,
         usuarioId: usuario.id,
       },
     });
