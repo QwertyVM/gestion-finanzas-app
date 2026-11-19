@@ -10,194 +10,145 @@ import { IngresosMesTabla } from './IngresosMesTabla';
 import { DashboardEgresosSection } from './DashboardEgresosSection';
 import { DashboardModals } from './DashboardModals';
 import { DashboardSaludSection } from './DashboardSaludSection';
-import { InstructivoGuia503020 } from './instructivo/InstructivoGuia503020';
 import { DashboardStateFallbacks } from './DashboardStateFallbacks';
 import { useDashboardEgresos } from './hooks/useDashboardEgresos';
 
 export function DashboardClient() {
-  const {
-    periodo,
-    irMesAnterior,
-    irMesSiguiente,
-    puedeIrMesAnterior,
-    resumen,
-    loading,
-    fetchError,
-    refresh,
-    usuarioActual,
-    openRecordModal,
-    selectedGastoIds,
-    toggleSelectGasto,
-    moneda,
-    esMesEspecial,
-    labelEspecial,
-    disponibleNeto,
-    filtroEstado,
-    setFiltroEstado,
-    filtroEgreso,
-    setFiltroEgreso,
-    filtroFuenteIngreso,
-    setFiltroFuenteIngreso,
-    handleAsignarIngresoItem,
-    draggedId,
-    setDraggedId,
-    dragOverId,
-    setDragOverId,
-    handleDrop,
-    egresosFiltrados,
-    seccionesCompromisos,
-    toggleColapsarSeccion,
-    handleSelectAll,
-    detalleItem,
-    setDetalleItem,
-    modalSueldoOpen,
-    setModalSueldoOpen,
-    sueldoParaEditar,
-    setSueldoParaEditar,
-    ingresoParaEditar,
-    setIngresoParaEditar,
-    handleToggleEstadoItem,
-    handleToggleRecibidoIngreso,
-    handleEliminarIngreso,
-    handleGuardarMontoModal,
-    handleEliminarGastoModal,
-    handleCambiarMetodoPagoModal,
-    handleCambiarClasificacionModal,
-    handleCambiarCategoriaModal,
-    handleGuardarConceptoModal,
-    handleGuardarNotasModal,
-    handleCambiarEstadoModal,
-    handleCambiarIngresoAsignadoModal,
-    handleAbrirRegistroSeccion,
-  } = useDashboardEgresos();
+  const d = useDashboardEgresos();
 
-  if (loading && !resumen) {
+  if (d.loading && !d.resumen) {
     return <TableSkeleton rows={8} />;
   }
 
-  if (!usuarioActual) {
+  if (!d.usuarioActual) {
     return <DashboardStateFallbacks tipo="NO_AUTH" />;
   }
 
-  if (fetchError && !resumen) {
+  if (d.fetchError && !d.resumen) {
     return (
       <DashboardStateFallbacks
         tipo="ERROR"
-        mensajeError={fetchError}
-        onReintentar={refresh}
+        mensajeError={d.fetchError}
+        onReintentar={d.refresh}
       />
     );
   }
 
-  if (!resumen) {
+  if (!d.resumen) {
     return <DashboardStateFallbacks tipo="VACIO" />;
   }
 
-  const conteoEgresosFiltrados = egresosFiltrados.length;
-  const totalEgresosFiltrados = egresosFiltrados.reduce((sum, item) => sum + (item.monto || 0), 0);
-  const todosEgresos = resumen.egresosConsolidados || [];
-  const isAllSelected = selectedGastoIds.length === conteoEgresosFiltrados && conteoEgresosFiltrados > 0;
+  const conteoEgresosFiltrados = d.egresosFiltrados.length;
+  const totalEgresosFiltrados = d.egresosFiltrados.reduce((sum, item) => sum + (item.monto || 0), 0);
+  const todosEgresos = d.resumen.egresosConsolidados || [];
+  const isAllSelected = d.selectedGastoIds.length === conteoEgresosFiltrados && conteoEgresosFiltrados > 0;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
       <FloatingSumBar />
 
+      {/* 1. HERO EJECUTIVO DEL MES */}
       <ResumenHeroKpis
-        periodo={periodo}
-        irMesAnterior={irMesAnterior}
-        irMesSiguiente={irMesSiguiente}
-        puedeIrMesAnterior={puedeIrMesAnterior}
-        disponibleNeto={disponibleNeto}
-        totalIngresos={resumen.totalIngresos}
-        totalEgresos={resumen.totalEgresos}
-        totalPendiente={resumen.totalPendiente}
-        totalAdelantado={resumen.totalAdelantado}
-        cantidadIngresos={resumen.ingresos.length}
-        moneda={moneda}
-        esMesEspecial={esMesEspecial}
-        labelEspecial={labelEspecial}
-        salud={resumen.saludFinanciera}
-        openRecordModal={openRecordModal}
+        periodo={d.periodo}
+        irMesAnterior={d.irMesAnterior}
+        irMesSiguiente={d.irMesSiguiente}
+        puedeIrMesAnterior={d.puedeIrMesAnterior}
+        disponibleNeto={d.disponibleNeto}
+        totalIngresos={d.resumen.totalIngresos}
+        totalEgresos={d.resumen.totalEgresos}
+        totalPendiente={d.resumen.totalPendiente}
+        totalAdelantado={d.resumen.totalAdelantado}
+        cantidadIngresos={d.resumen.ingresos.length}
+        moneda={d.moneda}
+        esMesEspecial={d.esMesEspecial}
+        labelEspecial={d.labelEspecial}
+        salud={d.resumen.saludFinanciera}
+        openRecordModal={d.openRecordModal}
       />
 
-      {resumen.resumenDivisas?.tieneMultiplesMonedas && (
-        <ResumenDivisasCard divisas={resumen.resumenDivisas} moneda={moneda} />
+      {/* 2. RESUMEN DE DIVISAS (SI TIENE MÚLTIPLES MONEDAS) */}
+      {d.resumen.resumenDivisas?.tieneMultiplesMonedas && (
+        <ResumenDivisasCard divisas={d.resumen.resumenDivisas} moneda={d.moneda} />
       )}
 
-      {/* CARD DE SALUD FINANCIERA DEL MES (50/30/20, RATIOS DTI Y ALERTAS) */}
-      <DashboardSaludSection salud={resumen.saludFinanciera} moneda={moneda} />
-
-      {/* GUIA PRÁCTICA & MODELO 50/30/20 */}
-      <InstructivoGuia503020 onOpenRecordModal={openRecordModal} />
-
+      {/* 3. INGRESOS DEL MES (FUENTES DE ENTRADA) */}
       <IngresosMesTabla
-        ingresos={resumen.ingresos}
-        totalIngresos={resumen.totalIngresos}
-        moneda={moneda}
-        openRecordModal={openRecordModal}
-        onToggleRecibido={handleToggleRecibidoIngreso}
-        onEliminarIngreso={handleEliminarIngreso}
+        ingresos={d.resumen.ingresos}
+        totalIngresos={d.resumen.totalIngresos}
+        moneda={d.moneda}
+        openRecordModal={d.openRecordModal}
+        onToggleRecibido={d.handleToggleRecibidoIngreso}
+        onEliminarIngreso={d.handleEliminarIngreso}
         onEditarSueldo={(monto) => {
-          setSueldoParaEditar(monto);
-          setModalSueldoOpen(true);
+          d.setSueldoParaEditar(monto);
+          d.setModalSueldoOpen(true);
         }}
-        onEditarIngreso={(ing) => setIngresoParaEditar(ing)}
+        onEditarIngreso={(ing) => d.setIngresoParaEditar(ing)}
       />
 
+      {/* 4. EGRESOS & COMPROMISOS (CENTRO OPERACIONAL CON TOOLBAR UNIFICADA) */}
       <DashboardEgresosSection
         todosEgresos={todosEgresos}
-        totalEgresos={resumen.totalEgresos}
-        moneda={moneda}
-        totalesPorClasificacion={resumen?.totalesPorClasificacion}
-        filtroEgreso={filtroEgreso}
-        onSelectFiltroEgreso={setFiltroEgreso}
-        filtroEstado={filtroEstado}
-        onSelectFiltroEstado={setFiltroEstado}
-        filtroFuenteIngreso={filtroFuenteIngreso}
-        onSelectFiltroFuenteIngreso={setFiltroFuenteIngreso}
-        ingresosMes={resumen.ingresos}
-        onAsignarIngresoItem={handleAsignarIngresoItem}
+        totalEgresos={d.resumen.totalEgresos}
+        moneda={d.moneda}
+        totalesPorClasificacion={d.resumen?.totalesPorClasificacion}
+        filtroEgreso={d.filtroEgreso}
+        onSelectFiltroEgreso={d.setFiltroEgreso}
+        filtroEstado={d.filtroEstado}
+        onSelectFiltroEstado={d.setFiltroEstado}
+        filtroFuenteIngreso={d.filtroFuenteIngreso}
+        onSelectFiltroFuenteIngreso={d.setFiltroFuenteIngreso}
+        ingresosMes={d.resumen.ingresos}
+        onAsignarIngresoItem={d.handleAsignarIngresoItem}
         isAllSelected={isAllSelected}
-        onToggleSelectAll={handleSelectAll}
+        onToggleSelectAll={d.handleSelectAll}
         conteoEgresosFiltrados={conteoEgresosFiltrados}
         totalEgresosFiltrados={totalEgresosFiltrados}
-        seccionesCompromisos={seccionesCompromisos}
-        toggleColapsarSeccion={toggleColapsarSeccion}
-        onAbrirRegistroSeccion={handleAbrirRegistroSeccion}
-        onAbrirModalRegistroGasto={() => openRecordModal('GASTO')}
-        selectedGastoIds={selectedGastoIds}
-        toggleSelectGasto={toggleSelectGasto}
-        onSelectItem={setDetalleItem}
-        onToggleEstadoItem={handleToggleEstadoItem}
-        draggedId={draggedId}
-        dragOverId={dragOverId}
-        setDraggedId={setDraggedId}
-        setDragOverId={setDragOverId}
-        handleDrop={handleDrop}
+        seccionesCompromisos={d.seccionesCompromisos}
+        toggleColapsarSeccion={d.toggleColapsarSeccion}
+        onAbrirRegistroSeccion={d.handleAbrirRegistroSeccion}
+        onAbrirModalRegistroGasto={() => d.openRecordModal('GASTO')}
+        selectedGastoIds={d.selectedGastoIds}
+        toggleSelectGasto={d.toggleSelectGasto}
+        onSelectItem={d.setDetalleItem}
+        onToggleEstadoItem={d.handleToggleEstadoItem}
+        draggedId={d.draggedId}
+        dragOverId={d.dragOverId}
+        setDraggedId={d.setDraggedId}
+        setDragOverId={d.setDragOverId}
+        handleDrop={d.handleDrop}
       />
 
+      {/* 5. DIAGNÓSTICO & SALUD FINANCIERA (50/30/20, RATIOS, ALERTAS Y GUÍA) */}
+      <DashboardSaludSection
+        salud={d.resumen.saludFinanciera}
+        moneda={d.moneda}
+        onOpenRecordModal={d.openRecordModal}
+      />
+
+      {/* 6. MODALES DEL DASHBOARD */}
       <DashboardModals
-        detalleItem={detalleItem}
-        onCloseDetalle={() => setDetalleItem(null)}
-        onCambiarEstado={handleCambiarEstadoModal}
-        onGuardarMonto={handleGuardarMontoModal}
-        onEliminarGasto={handleEliminarGastoModal}
-        onCambiarMetodoPago={handleCambiarMetodoPagoModal}
-        onCambiarClasificacion={handleCambiarClasificacionModal}
-        onCambiarCategoria={handleCambiarCategoriaModal}
-        onGuardarConcepto={handleGuardarConceptoModal}
-        onGuardarNotas={handleGuardarNotasModal}
-        onCambiarIngresoAsignado={handleCambiarIngresoAsignadoModal}
-        ingresosMes={resumen.ingresos}
-        tarjetas={resumen.tarjetasCredito}
-        moneda={moneda}
-        modalSueldoOpen={modalSueldoOpen}
-        onCloseSueldo={() => setModalSueldoOpen(false)}
-        sueldoParaEditar={sueldoParaEditar || resumen.config?.sueldoBaseMensual || 0}
-        periodo={periodo}
-        ingresoParaEditar={ingresoParaEditar}
-        onCloseIngreso={() => setIngresoParaEditar(null)}
-        onEliminarIngreso={handleEliminarIngreso}
+        detalleItem={d.detalleItem}
+        onCloseDetalle={() => d.setDetalleItem(null)}
+        onCambiarEstado={d.handleCambiarEstadoModal}
+        onGuardarMonto={d.handleGuardarMontoModal}
+        onEliminarGasto={d.handleEliminarGastoModal}
+        onCambiarMetodoPago={d.handleCambiarMetodoPagoModal}
+        onCambiarClasificacion={d.handleCambiarClasificacionModal}
+        onCambiarCategoria={d.handleCambiarCategoriaModal}
+        onGuardarConcepto={d.handleGuardarConceptoModal}
+        onGuardarNotas={d.handleGuardarNotasModal}
+        onCambiarIngresoAsignado={d.handleCambiarIngresoAsignadoModal}
+        ingresosMes={d.resumen.ingresos}
+        tarjetas={d.resumen.tarjetasCredito}
+        moneda={d.moneda}
+        modalSueldoOpen={d.modalSueldoOpen}
+        onCloseSueldo={() => d.setModalSueldoOpen(false)}
+        sueldoParaEditar={d.sueldoParaEditar || d.resumen.config?.sueldoBaseMensual || 0}
+        periodo={d.periodo}
+        ingresoParaEditar={d.ingresoParaEditar}
+        onCloseIngreso={() => d.setIngresoParaEditar(null)}
+        onEliminarIngreso={d.handleEliminarIngreso}
       />
     </div>
   );

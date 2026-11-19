@@ -3,9 +3,7 @@
 import React from 'react';
 import { Plus, CheckCircle2 } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
-import { DiferenciacionEgresosBar } from './DiferenciacionEgresosBar';
-import { FiltrosEstadoBar } from './FiltrosEstadoBar';
-import { FiltroFuenteIngresoBar } from './FiltroFuenteIngresoBar';
+import { EgresosUnifiedToolbar } from './EgresosUnifiedToolbar';
 import { SeccionEgresosTabla } from './SeccionEgresosTabla';
 import type { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 
@@ -74,6 +72,7 @@ export function DashboardEgresosSection({
 }: DashboardEgresosSectionProps) {
   return (
     <div className="space-y-4">
+      {/* Encabezado de Egresos */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -98,27 +97,16 @@ export function DashboardEgresosSection({
         </button>
       </div>
 
-      <DiferenciacionEgresosBar
+      {/* Toolbar Unificada de Egresos */}
+      <EgresosUnifiedToolbar
         totales={totalesPorClasificacion}
         filtroEgreso={filtroEgreso}
-        onSelectFiltro={onSelectFiltroEgreso}
-        moneda={moneda}
-      />
-
-      {ingresosMes && ingresosMes.length > 1 && onSelectFiltroFuenteIngreso && (
-        <FiltroFuenteIngresoBar
-          ingresos={ingresosMes}
-          filtroFuenteIngreso={filtroFuenteIngreso}
-          onSelectFiltroFuente={onSelectFiltroFuenteIngreso}
-          moneda={moneda}
-          totalCompromisos={todosEgresos.length}
-          totalMontoEgresos={totalEgresos}
-        />
-      )}
-
-      <FiltrosEstadoBar
+        onSelectFiltroEgreso={onSelectFiltroEgreso}
         filtroEstado={filtroEstado}
-        onSelectEstado={onSelectFiltroEstado}
+        onSelectFiltroEstado={onSelectFiltroEstado}
+        filtroFuenteIngreso={filtroFuenteIngreso}
+        onSelectFiltroFuenteIngreso={onSelectFiltroFuenteIngreso}
+        ingresosMes={ingresosMes}
         conteoPendiente={todosEgresos.filter((g) => g.estado === 'PENDIENTE').length}
         conteoAdelantado={todosEgresos.filter((g) => g.estado === 'ADELANTADO').length}
         conteoPagado={todosEgresos.filter((g) => g.estado === 'PAGADO').length}
@@ -126,8 +114,10 @@ export function DashboardEgresosSection({
         isAllSelected={isAllSelected}
         onToggleSelectAll={onToggleSelectAll}
         hasItems={conteoEgresosFiltrados > 0}
+        moneda={moneda}
       />
 
+      {/* Listado de Tablas por Sección o Empty State */}
       {conteoEgresosFiltrados === 0 ? (
         <div className="bg-card border border-border/80 rounded-xl p-8 text-center space-y-2">
           <CheckCircle2 className="w-8 h-8 text-muted-foreground mx-auto stroke-1" />
@@ -176,6 +166,7 @@ export function DashboardEgresosSection({
             />
           ))}
 
+          {/* Barra de Totales Filtrados */}
           <div className="bg-card border border-border/80 rounded-xl px-4 py-3 flex items-center justify-between text-xs font-medium shadow-xs">
             <div className="text-muted-foreground">
               Total Compromisos Filtrados ({conteoEgresosFiltrados} items en {seccionesCompromisos.length} secciones)
