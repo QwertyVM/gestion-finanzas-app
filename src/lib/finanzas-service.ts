@@ -926,15 +926,12 @@ export async function getResumenMensual(periodo: string, usuarioOrId?: string | 
       tarjetaUltimosCuatro: tarjetaObj?.ultimosCuatro || null,
       orden: cf.orden ?? 0,
       ingresoId: reg?.ingresoId || null,
-      ingresoConcepto: reg?.ingreso?.concepto || null,
-      ingresoTipo: reg?.ingreso?.tipo || null,
       ingresoConcepto: (reg?.ingresoId ? mapIngresosMes.get(reg.ingresoId)?.concepto : null) || (reg as any)?.ingreso?.concepto || null,
       ingresoTipo: (reg?.ingresoId ? mapIngresosMes.get(reg.ingresoId)?.tipo : null) || (reg as any)?.ingreso?.tipo || null,
     });
   }
 
   // 3. Préstamos
-  const mapIngresosMes = new Map(ingresosDbRaw.map((ing) => [ing.id, ing]));
   const prestamos = [];
   let totalPrestamos = 0;
 
