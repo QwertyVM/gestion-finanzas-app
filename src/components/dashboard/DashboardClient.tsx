@@ -124,13 +124,35 @@ export function DashboardClient() {
         salud={d.resumen.saludFinanciera}
         moneda={d.moneda}
         onOpenRecordModal={d.openRecordModal}
-        onAsignarSuperavit={(monto) => {
-          d.openRecordModal('GASTO', {
-            concepto: 'Fondo de Emergencia / Ahorro',
-            monto,
-            tag: 'Fondo de Emergencia',
-            metodoPago: 'TRANSFERENCIA',
-          });
+        onAsignarMeta={(tipo, monto) => {
+          if (tipo === 'DEUDA') {
+            d.openRecordModal('GASTO', {
+              concepto: 'Amortización Extraordinaria / Prepago Deuda',
+              monto,
+              tag: 'Amortización Deuda',
+              metodoPago: 'TRANSFERENCIA',
+            });
+          } else if (tipo === 'EMERGENCIA') {
+            d.openRecordModal('GASTO', {
+              concepto: 'Aporte a Fondo de Emergencia / Ahorro',
+              monto,
+              tag: 'Fondo de Emergencia',
+              metodoPago: 'TRANSFERENCIA',
+            });
+          } else if (tipo === 'ESTILO_VIDA') {
+            d.openRecordModal('GASTO', {
+              concepto: 'Reserva para Estilo de Vida / Contingencias',
+              monto,
+              tag: 'Ocio & Gustos',
+              metodoPago: 'TRANSFERENCIA',
+            });
+          } else {
+            d.openRecordModal('GASTO', {
+              concepto: 'Redistribución de Capital Libre',
+              monto,
+              metodoPago: 'TRANSFERENCIA',
+            });
+          }
         }}
       />
 

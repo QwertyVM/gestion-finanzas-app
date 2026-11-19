@@ -275,9 +275,18 @@ export interface SaludFinancieraKPIs {
       desvio: number;
       estado: 'OPTIMO' | 'EXCEDIDO' | 'DEFICIT';
       subcategorias?: Subcategoria503020Item[];
-      ahorroAsignado?: number;
-      superavitSinAsignar?: number;
     };
+    capitalLibre: {
+      monto: number;
+      porcentaje: number;
+      sugerencia: string;
+      distribucionRecomendada: {
+        deuda: number;
+        ahorroEmergencia: number;
+        estiloVida: number;
+      };
+    };
+    esModeloAdaptativoDeuda?: boolean;
     diagnostico: string;
   };
   alertasCategorias: {
@@ -2269,29 +2278,23 @@ export function calcularSaludFinancieraKPIs(params: {
     }
   }
 
-  if (dineroDisponibleNeto > 0) {
-    registrarSubcat(mapSubcatsAho, 'Superávit / Disponible Neto', dineroDisponibleNeto);
-  }
-
-  const superavitSinAsignar = Math.max(0, dineroDisponibleNeto);
-  const ahorroAsignado = totalDeudas + montoAhorroDirecto;
-  const montoAhorroDeuda = ahorroAsignado + superavitSinAsignar;
+  // Ahorro & Deuda ejecutada real (préstamos + compras en cuotas + ahorro directo registrado)
+  // Desacoplado: YA NO se infla con el superávit/disponible neto
+  const totalCuotasMonto = cuotasDiferidas.reduce((s, c) => s + c.monto, 0);
+  const montoAhorroDeuda = totalDeudas + montoAhorroDirecto + totalCuotasMonto;
+  const montoCapitalLibre = Math.max(0, dineroDisponibleNeto);
 
   const formatearSubcats = (
     map: Map<string, { tag: string; monto: number; conteo: number }>,
     totalBucket: number
   ): Subcategoria503020Item[] => {
     return Array.from(map.values())
-      .map((s) => {
-        const esSuperavit = s.tag.toLowerCase().includes('superávit') || s.tag.toLowerCase().includes('disponible neto');
-        return {
-          tag: s.tag,
-          monto: Number(s.monto.toFixed(2)),
-          porcentaje: totalBucket > 0 ? Number(((s.monto / totalBucket) * 100).toFixed(1)) : 0,
-          conteo: s.conteo,
-          esSuperavit,
-        };
-      })
+      .map((s) => ({
+        tag: s.tag,
+        monto: Number(s.monto.toFixed(2)),
+        porcentaje: totalBucket > 0 ? Number(((s.monto / totalBucket) * 100).toFixed(1)) : 0,
+        conteo: s.conteo,
+      }))
       .sort((a, b) => b.monto - a.monto);
   };
 
@@ -2303,29 +2306,67 @@ export function calcularSaludFinancieraKPIs(params: {
   const pctNec = Number(((montoNecesidades / base503020) * 100).toFixed(1));
   const pctDes = Number(((montoDeseos / base503020) * 100).toFixed(1));
   const pctAho = Number(((montoAhorroDeuda / base503020) * 100).toFixed(1));
+  const pctLibre = Number(((montoCapitalLibre / base503020) * 100).toFixed(1));
+
+  // Modelo Adaptativo según Nivel de Endeudamiento (Debt-Constrained Budgeting)
+  const esModeloAdaptativoDeuda = pctAho > 20 || (totalDeudas > 0 && Number(((totalDeudas / base503020) * 100).toFixed(1)) >= 15);
+  let objetivoNec = 50;
+  let objetivoAho = 20;
+  let objetivoDes = 30;
+
+  if (esModeloAdaptativoDeuda) {
+    objetivoAho = Math.max(20, Math.min(50, Math.ceil(pctAho)));
+    objetivoNec = 50;
+    objetivoDes = Math.max(10, 100 - objetivoAho - objetivoNec);
+  }
 
   let estadoNec: 'OPTIMO' | 'EXCEDIDO' | 'BAJO' = 'OPTIMO';
-  if (pctNec > 55) estadoNec = 'EXCEDIDO';
-  else if (pctNec < 40) estadoNec = 'BAJO';
+  if (pctNec > objetivoNec + 5) estadoNec = 'EXCEDIDO';
+  else if (pctNec < objetivoNec - 10) estadoNec = 'BAJO';
 
   let estadoDes: 'OPTIMO' | 'EXCEDIDO' | 'BAJO' = 'OPTIMO';
-  if (pctDes > 35) estadoDes = 'EXCEDIDO';
-  else if (pctDes < 15) estadoDes = 'BAJO';
+  if (pctDes > objetivoDes + 5) estadoDes = 'EXCEDIDO';
+  else if (pctDes < objetivoDes - 15) estadoDes = 'BAJO';
 
   let estadoAho: 'OPTIMO' | 'EXCEDIDO' | 'DEFICIT' = 'OPTIMO';
   if (pctAho < 15) estadoAho = 'DEFICIT';
-  else if (pctAho >= 20) estadoAho = 'OPTIMO';
+  else if (pctAho >= objetivoAho) estadoAho = 'OPTIMO';
+
+  // Distribución Recomendada del Capital Libre
+  let sugerenciaCapitalLibre = '';
+  let distribucionRecomendada = {
+    deuda: 0,
+    ahorroEmergencia: 0,
+    estiloVida: 0,
+  };
+
+  if (montoCapitalLibre > 0) {
+    if (totalDeudas > 0 || pctAho > 20) {
+      distribucionRecomendada = {
+        deuda: Number((montoCapitalLibre * 0.5).toFixed(2)),
+        ahorroEmergencia: Number((montoCapitalLibre * 0.35).toFixed(2)),
+        estiloVida: Number((montoCapitalLibre * 0.15).toFixed(2)),
+      };
+      sugerenciaCapitalLibre = `Tienes compromisos de deuda activos. Te sugerimos destinar el 50% (S/ ${distribucionRecomendada.deuda.toFixed(2)}) a amortizar capital, 35% (S/ ${distribucionRecomendada.ahorroEmergencia.toFixed(2)}) a Fondo de Emergencia y 15% como margen libre.`;
+    } else {
+      distribucionRecomendada = {
+        deuda: 0,
+        ahorroEmergencia: Number((montoCapitalLibre * 0.7).toFixed(2)),
+        estiloVida: Number((montoCapitalLibre * 0.3).toFixed(2)),
+      };
+      sugerenciaCapitalLibre = `Sin deudas pesadas. Te sugerimos destinar el 70% (S/ ${distribucionRecomendada.ahorroEmergencia.toFixed(2)}) a Fondo de Tranquilidad e Inversiones, y 30% a Estilo de Vida sin culpa.`;
+    }
+  }
 
   let diagnostico503020 = 'Estructura financiera balanceada conforme al estándar consultor 50/30/20.';
-  if (pctNec > 55) {
+  if (esModeloAdaptativoDeuda) {
+    diagnostico503020 = `Modelo adaptado a tu endeudamiento: tus préstamos y cuotas comprometen el ${pctAho}% de tus ingresos. Para proteger tu solvencia, la meta de Estilo de Vida se ajustó al ${objetivoDes}%. Dispones de S/ ${montoCapitalLibre.toFixed(2)} (${pctLibre}%) de Capital Libre por redistribuir.`;
+  } else if (pctNec > 55) {
     diagnostico503020 = 'Tus necesidades básicas sobrepasan el 50% ideal. Conviene revisar costos fijos y servicios.';
   } else if (pctDes > 35) {
     diagnostico503020 = 'El estilo de vida y ocio supera el 30% ideal. Aquí reside tu mayor potencial de ahorro inmediato.';
-  } else if (superavitSinAsignar > 0 && Number(((superavitSinAsignar / base503020) * 100).toFixed(1)) >= 10) {
-    const pctSup = Number(((superavitSinAsignar / base503020) * 100).toFixed(1));
-    diagnostico503020 = `Tienes S/ ${superavitSinAsignar.toFixed(2)} (${pctSup}%) de superávit libre sin asignar. Te sugerimos transferirlo a tu Fondo de Emergencia, Inversiones o Prepagar Deuda para evitar fugas de capital.`;
-  } else if (pctAho >= 20) {
-    diagnostico503020 = 'Excelente disciplina: destinas al menos el 20% de tu flujo a amortizar deuda y consolidar ahorro.';
+  } else if (montoCapitalLibre > 0) {
+    diagnostico503020 = `Cuentas con S/ ${montoCapitalLibre.toFixed(2)} (${pctLibre}%) de Capital Libre disponible. Tú defines estratégicamente a qué cubeta destinarlo.`;
   }
 
   // 6. Alertas de Categorías y Minitags (Vivienda, Alimentación, Concentración Pareto, Fugas)
@@ -2437,29 +2478,34 @@ export function calcularSaludFinancieraKPIs(params: {
       necesidades: {
         monto: Number(montoNecesidades.toFixed(2)),
         porcentaje: pctNec,
-        objetivo: 50,
-        desvio: Number((pctNec - 50).toFixed(1)),
+        objetivo: objetivoNec,
+        desvio: Number((pctNec - objetivoNec).toFixed(1)),
         estado: estadoNec,
         subcategorias: subcategoriasNec,
       },
       deseos: {
         monto: Number(montoDeseos.toFixed(2)),
         porcentaje: pctDes,
-        objetivo: 30,
-        desvio: Number((pctDes - 30).toFixed(1)),
+        objetivo: objetivoDes,
+        desvio: Number((pctDes - objetivoDes).toFixed(1)),
         estado: estadoDes,
         subcategorias: subcategoriasDes,
       },
       ahorroYDeuda: {
         monto: Number(montoAhorroDeuda.toFixed(2)),
         porcentaje: pctAho,
-        objetivo: 20,
-        desvio: Number((pctAho - 20).toFixed(1)),
+        objetivo: objetivoAho,
+        desvio: Number((pctAho - objetivoAho).toFixed(1)),
         estado: estadoAho,
         subcategorias: subcategoriasAho,
-        ahorroAsignado: Number(ahorroAsignado.toFixed(2)),
-        superavitSinAsignar: Number(superavitSinAsignar.toFixed(2)),
       },
+      capitalLibre: {
+        monto: Number(montoCapitalLibre.toFixed(2)),
+        porcentaje: pctLibre,
+        sugerencia: sugerenciaCapitalLibre,
+        distribucionRecomendada,
+      },
+      esModeloAdaptativoDeuda,
       diagnostico: diagnostico503020,
     },
     alertasCategorias: {
