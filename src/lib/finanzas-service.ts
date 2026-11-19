@@ -216,6 +216,7 @@ export interface Subcategoria503020Item {
   monto: number;
   porcentaje: number;
   conteo: number;
+  esSuperavit?: boolean;
 }
 
 export interface SaludFinancieraKPIs {
@@ -274,6 +275,8 @@ export interface SaludFinancieraKPIs {
       desvio: number;
       estado: 'OPTIMO' | 'EXCEDIDO' | 'DEFICIT';
       subcategorias?: Subcategoria503020Item[];
+      ahorroAsignado?: number;
+      superavitSinAsignar?: number;
     };
     diagnostico: string;
   };
@@ -2270,19 +2273,25 @@ export function calcularSaludFinancieraKPIs(params: {
     registrarSubcat(mapSubcatsAho, 'Superávit / Disponible Neto', dineroDisponibleNeto);
   }
 
-  const montoAhorroDeuda = totalDeudas + montoAhorroDirecto + Math.max(0, dineroDisponibleNeto);
+  const superavitSinAsignar = Math.max(0, dineroDisponibleNeto);
+  const ahorroAsignado = totalDeudas + montoAhorroDirecto;
+  const montoAhorroDeuda = ahorroAsignado + superavitSinAsignar;
 
   const formatearSubcats = (
     map: Map<string, { tag: string; monto: number; conteo: number }>,
     totalBucket: number
   ): Subcategoria503020Item[] => {
     return Array.from(map.values())
-      .map((s) => ({
-        tag: s.tag,
-        monto: Number(s.monto.toFixed(2)),
-        porcentaje: totalBucket > 0 ? Number(((s.monto / totalBucket) * 100).toFixed(1)) : 0,
-        conteo: s.conteo,
-      }))
+      .map((s) => {
+        const esSuperavit = s.tag.toLowerCase().includes('superávit') || s.tag.toLowerCase().includes('disponible neto');
+        return {
+          tag: s.tag,
+          monto: Number(s.monto.toFixed(2)),
+          porcentaje: totalBucket > 0 ? Number(((s.monto / totalBucket) * 100).toFixed(1)) : 0,
+          conteo: s.conteo,
+          esSuperavit,
+        };
+      })
       .sort((a, b) => b.monto - a.monto);
   };
 
@@ -2312,6 +2321,9 @@ export function calcularSaludFinancieraKPIs(params: {
     diagnostico503020 = 'Tus necesidades básicas sobrepasan el 50% ideal. Conviene revisar costos fijos y servicios.';
   } else if (pctDes > 35) {
     diagnostico503020 = 'El estilo de vida y ocio supera el 30% ideal. Aquí reside tu mayor potencial de ahorro inmediato.';
+  } else if (superavitSinAsignar > 0 && Number(((superavitSinAsignar / base503020) * 100).toFixed(1)) >= 10) {
+    const pctSup = Number(((superavitSinAsignar / base503020) * 100).toFixed(1));
+    diagnostico503020 = `Tienes S/ ${superavitSinAsignar.toFixed(2)} (${pctSup}%) de superávit libre sin asignar. Te sugerimos transferirlo a tu Fondo de Emergencia, Inversiones o Prepagar Deuda para evitar fugas de capital.`;
   } else if (pctAho >= 20) {
     diagnostico503020 = 'Excelente disciplina: destinas al menos el 20% de tu flujo a amortizar deuda y consolidar ahorro.';
   }
@@ -2445,6 +2457,8 @@ export function calcularSaludFinancieraKPIs(params: {
         desvio: Number((pctAho - 20).toFixed(1)),
         estado: estadoAho,
         subcategorias: subcategoriasAho,
+        ahorroAsignado: Number(ahorroAsignado.toFixed(2)),
+        superavitSinAsignar: Number(superavitSinAsignar.toFixed(2)),
       },
       diagnostico: diagnostico503020,
     },

@@ -97,6 +97,15 @@ export function useDynamicRecordModal() {
         if (recordModalOptions.banco) {
           setBancoPrestamo(recordModalOptions.banco);
         }
+        if (recordModalOptions.monto !== undefined && recordModalOptions.monto !== '') {
+          setMontoInput(recordModalOptions.monto.toString());
+        }
+        if (recordModalOptions.concepto) {
+          setConcepto(recordModalOptions.concepto);
+        }
+        if (recordModalOptions.tag) {
+          setTag(recordModalOptions.tag);
+        }
       }
 
       setTimeout(() => {

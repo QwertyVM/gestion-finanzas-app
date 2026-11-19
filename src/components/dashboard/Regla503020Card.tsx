@@ -9,9 +9,10 @@ import { Regla503020CubetaCard } from './Regla503020CubetaCard';
 interface Regla503020CardProps {
   regla?: SaludFinancieraKPIs['regla503020'];
   moneda: string;
+  onAsignarSuperavit?: (monto: number) => void;
 }
 
-export function Regla503020Card({ regla, moneda }: Regla503020CardProps) {
+export function Regla503020Card({ regla, moneda, onAsignarSuperavit }: Regla503020CardProps) {
   const [cubetaSeleccionada, setCubetaSeleccionada] = useState<'necesidades' | 'deseos' | 'ahorroYDeuda' | null>(null);
 
   if (!regla) return null;
@@ -119,6 +120,7 @@ export function Regla503020Card({ regla, moneda }: Regla503020CardProps) {
           moneda={moneda}
           colorKey={cubetaSeleccionada === 'necesidades' ? 'sky' : cubetaSeleccionada === 'deseos' ? 'teal' : 'purple'}
           onCerrar={() => setCubetaSeleccionada(null)}
+          onAsignarSuperavit={cubetaSeleccionada === 'ahorroYDeuda' ? onAsignarSuperavit : undefined}
         />
       )}
 

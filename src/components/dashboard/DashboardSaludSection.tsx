@@ -12,12 +12,14 @@ interface DashboardSaludSectionProps {
   salud?: SaludFinancieraKPIs;
   moneda: string;
   onOpenRecordModal?: (tipo: 'INGRESO' | 'GASTO') => void;
+  onAsignarSuperavit?: (monto: number) => void;
 }
 
 export function DashboardSaludSection({
   salud,
   moneda,
   onOpenRecordModal,
+  onAsignarSuperavit,
 }: DashboardSaludSectionProps) {
   const [colapsado, setColapsado] = useState(false);
   const [tabActiva, setTabActiva] = useState<'503020' | 'RATIOS' | 'ALERTAS' | 'GUIA'>('503020');
@@ -106,7 +108,11 @@ export function DashboardSaludSection({
       {!colapsado && (
         <div className="animate-in fade-in duration-150">
           {tabActiva === '503020' && (
-            <Regla503020Card regla={salud.regla503020} moneda={moneda} />
+            <Regla503020Card
+              regla={salud.regla503020}
+              moneda={moneda}
+              onAsignarSuperavit={onAsignarSuperavit}
+            />
           )}
           {tabActiva === 'RATIOS' && (
             <SaludFinancieraScorecard salud={salud} moneda={moneda} />

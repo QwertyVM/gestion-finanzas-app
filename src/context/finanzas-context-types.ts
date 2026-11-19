@@ -9,6 +9,9 @@ export interface RecordModalOptions {
   tarjetaId?: string;
   categoriaId?: string;
   banco?: string;
+  monto?: number | string;
+  concepto?: string;
+  tag?: string;
 }
 
 export interface CacheEntry {

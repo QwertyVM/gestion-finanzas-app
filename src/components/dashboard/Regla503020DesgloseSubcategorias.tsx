@@ -3,7 +3,7 @@
 import React from 'react';
 import type { Subcategoria503020Item } from '@/lib/finanzas-service';
 import { formatMoney } from '@/lib/utils';
-import { X, Tag, Layers } from 'lucide-react';
+import { X, Tag, Layers, Sparkles, ArrowRight } from 'lucide-react';
 
 interface Regla503020DesgloseSubcategoriasProps {
   titulo: string;
@@ -12,6 +12,7 @@ interface Regla503020DesgloseSubcategoriasProps {
   moneda: string;
   colorKey: 'sky' | 'teal' | 'purple';
   onCerrar: () => void;
+  onAsignarSuperavit?: (monto: number) => void;
 }
 
 export function Regla503020DesgloseSubcategorias({
@@ -21,27 +22,28 @@ export function Regla503020DesgloseSubcategorias({
   moneda,
   colorKey,
   onCerrar,
+  onAsignarSuperavit,
 }: Regla503020DesgloseSubcategoriasProps) {
   const colorStyles = {
     sky: {
       border: 'border-sky-200 dark:border-sky-900/60',
       bg: 'bg-sky-50/40 dark:bg-sky-950/20',
-      badge: 'bg-sky-100 text-sky-800 dark:bg-sky-950/60 dark:text-sky-300 border-sky-300/50',
       accent: 'text-sky-700 dark:text-sky-300',
     },
     teal: {
       border: 'border-teal-200 dark:border-teal-900/60',
       bg: 'bg-teal-50/40 dark:bg-teal-950/20',
-      badge: 'bg-teal-100 text-teal-800 dark:bg-teal-950/60 dark:text-teal-300 border-teal-300/50',
       accent: 'text-teal-700 dark:text-teal-300',
     },
     purple: {
       border: 'border-purple-200 dark:border-purple-900/60',
       bg: 'bg-purple-50/40 dark:bg-purple-950/20',
-      badge: 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300/50',
       accent: 'text-purple-700 dark:text-purple-300',
     },
   }[colorKey];
+
+  const itemSuperavit = subcategorias.find((s) => s.esSuperavit || s.tag.toLowerCase().includes('superávit'));
+  const otrasSubcategorias = subcategorias.filter((s) => !s.esSuperavit && !s.tag.toLowerCase().includes('superávit'));
 
   return (
     <div
@@ -67,13 +69,55 @@ export function Regla503020DesgloseSubcategorias({
         </button>
       </div>
 
-      {subcategorias.length === 0 ? (
+      {/* Banner Especial de Superávit no asignado */}
+      {itemSuperavit && (
+        <div className="p-3 rounded-lg border border-amber-300/80 dark:border-amber-700/60 bg-amber-50/70 dark:bg-amber-950/30 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs">
+          <div className="flex items-start sm:items-center gap-2.5">
+            <div className="w-7 h-7 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 flex items-center justify-center shrink-0 mt-0.5 sm:mt-0">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold text-foreground">
+                  Superávit / Disponible Neto
+                </span>
+                <span className="text-[10px] bg-amber-500/20 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full font-semibold border border-amber-500/30">
+                  {itemSuperavit.porcentaje}% del bloque · Liquidez Libre
+                </span>
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                Capital no gastado. Asígnalo a tu Fondo de Emergencia, Inversiones o Prepagar Deuda para evitar fugas.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 self-end sm:self-auto shrink-0">
+            <span className="font-mono font-bold text-sm text-foreground tabular-nums">
+              {formatMoney(itemSuperavit.monto, moneda)}
+            </span>
+            {onAsignarSuperavit && (
+              <button
+                type="button"
+                onClick={() => onAsignarSuperavit(itemSuperavit.monto)}
+                className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-foreground text-background text-xs font-medium hover:opacity-90 transition active:scale-95 shadow-2xs cursor-pointer"
+                title="Crear registro de ahorro o inversión con este monto"
+              >
+                <span>Asignar a Meta</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Otras Subcategorías estructuradas */}
+      {otrasSubcategorias.length === 0 && !itemSuperavit ? (
         <p className="text-xs text-muted-foreground italic py-1">
           No hay subcategorías registradas en este bloque.
         </p>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2">
-          {subcategorias.map((sub) => (
+          {otrasSubcategorias.map((sub) => (
             <div
               key={sub.tag}
               className="p-2 rounded-lg bg-card/80 border border-border/60 flex items-center justify-between gap-2 shadow-2xs"

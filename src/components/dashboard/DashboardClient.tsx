@@ -124,6 +124,14 @@ export function DashboardClient() {
         salud={d.resumen.saludFinanciera}
         moneda={d.moneda}
         onOpenRecordModal={d.openRecordModal}
+        onAsignarSuperavit={(monto) => {
+          d.openRecordModal('GASTO', {
+            concepto: 'Fondo de Emergencia / Ahorro',
+            monto,
+            tag: 'Fondo de Emergencia',
+            metodoPago: 'TRANSFERENCIA',
+          });
+        }}
       />
 
       {/* 6. MODALES DEL DASHBOARD */}
