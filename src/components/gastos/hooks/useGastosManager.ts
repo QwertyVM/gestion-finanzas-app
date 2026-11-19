@@ -65,6 +65,8 @@ export function useGastosManager() {
     }),
     concepto: g.concepto,
     categoria: g.categoria,
+    categoriaId: g.categoriaId || null,
+    tag: g.tag || null,
     categoriaColor: g.categoriaColor,
     categoriaIcono: g.categoriaIcono,
     monto: g.monto,

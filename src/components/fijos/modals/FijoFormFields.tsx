@@ -32,6 +32,11 @@ interface FijoFormFieldsProps {
   tarjetaId: string;
   setTarjetaId: (id: string) => void;
   tarjetas: TarjetaItem[];
+  categoriaId?: string;
+  setCategoriaId?: (v: string) => void;
+  tag?: string;
+  setTag?: (v: string) => void;
+  categorias?: Array<{ id: string; nombre: string }>;
 }
 
 export function FijoFormFields({
@@ -55,6 +60,11 @@ export function FijoFormFields({
   tarjetaId,
   setTarjetaId,
   tarjetas,
+  categoriaId,
+  setCategoriaId,
+  tag,
+  setTag,
+  categorias,
 }: FijoFormFieldsProps) {
   return (
     <>
@@ -109,6 +119,41 @@ export function FijoFormFields({
           />
         </div>
       </div>
+
+      {categorias && setCategoriaId && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <label className="font-semibold text-foreground">
+              Categoría (50/30/20):
+            </label>
+            <select
+              value={categoriaId || ''}
+              onChange={(e) => setCategoriaId(e.target.value)}
+              className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground text-xs"
+            >
+              <option value="">Selecciona categoría</option>
+              {categorias.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="font-semibold text-foreground">
+              Minitag (opcional):
+            </label>
+            <input
+              type="text"
+              placeholder="Ej: Vivienda, Servicios..."
+              value={tag || ''}
+              onChange={(e) => setTag ? setTag(e.target.value) : undefined}
+              className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground text-xs"
+            />
+          </div>
+        </div>
+      )}
 
       <FijoPaymentMethodSelector
         metodoPago={metodoPago}

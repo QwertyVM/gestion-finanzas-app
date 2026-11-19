@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Home, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { FijoFormFields } from './FijoFormFields';
@@ -37,7 +37,19 @@ export function ModalCrearFijo({
   const [mesFin, setMesFin] = useState('');
   const [metodoPago, setMetodoPago] = useState<'EFECTIVO_DEBITO' | 'TRANSFERENCIA' | 'TARJETA_CREDITO'>('EFECTIVO_DEBITO');
   const [tarjetaId, setTarjetaId] = useState('');
+  const [categoriaId, setCategoriaId] = useState('');
+  const [tag, setTag] = useState('');
+  const [categorias, setCategorias] = useState<Array<{ id: string; nombre: string }>>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/categorias')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setCategorias(data);
+      })
+      .catch(() => {});
+  }, []);
 
   if (!open) return null;
 
@@ -76,6 +88,8 @@ export function ModalCrearFijo({
           mesFin: mesFin || null,
           metodoPago,
           tarjetaId: metodoPago === 'TARJETA_CREDITO' ? tarjetaId : null,
+          categoriaId: categoriaId || null,
+          tag: tag ? tag.trim() : null,
           periodo,
         }),
       });
@@ -89,6 +103,8 @@ export function ModalCrearFijo({
       setMoneda('PEN');
       setMetodoPago('EFECTIVO_DEBITO');
       setTarjetaId(tarjetas[0]?.id || '');
+      setCategoriaId('');
+      setTag('');
       await onSuccess();
     } catch (err: any) {
       toast.error(err.message || 'Error al crear');
@@ -135,6 +151,11 @@ export function ModalCrearFijo({
             tarjetaId={tarjetaId}
             setTarjetaId={setTarjetaId}
             tarjetas={tarjetas}
+            categoriaId={categoriaId}
+            setCategoriaId={setCategoriaId}
+            tag={tag}
+            setTag={setTag}
+            categorias={categorias}
           />
 
           <div className="pt-3 flex items-center justify-end gap-2 border-t border-border">

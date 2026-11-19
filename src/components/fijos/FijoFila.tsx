@@ -37,6 +37,8 @@ export function FijoFila({
       clasificacion: 'FIJO',
       concepto: cf.concepto,
       categoria: cf.categoria,
+      categoriaId: cf.categoriaId || null,
+      tag: cf.tag || null,
       monto: cf.monto,
       diaVencimiento: cf.diaVencimiento,
       estado: cf.estado,

@@ -41,6 +41,8 @@ export function FijoCardMobile({
           tipo: 'FIJO',
           concepto: cf.concepto,
           categoria: cf.categoria,
+          categoriaId: cf.categoriaId || null,
+          tag: cf.tag || null,
           monto: cf.monto,
           monedaOriginal: cf.monedaOriginal,
           montoOriginal: cf.montoOriginal,

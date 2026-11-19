@@ -38,7 +38,19 @@ export function ModalEditarFijo({
   const [mesFin, setMesFin] = useState('');
   const [metodoPago, setMetodoPago] = useState<'EFECTIVO_DEBITO' | 'TRANSFERENCIA' | 'TARJETA_CREDITO'>('EFECTIVO_DEBITO');
   const [tarjetaId, setTarjetaId] = useState('');
+  const [categoriaId, setCategoriaId] = useState('');
+  const [tag, setTag] = useState('');
+  const [categorias, setCategorias] = useState<Array<{ id: string; nombre: string }>>([]);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetch('/api/categorias')
+      .then((r) => r.json())
+      .then((data) => {
+        if (Array.isArray(data)) setCategorias(data);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (costoFijo) {
@@ -57,6 +69,8 @@ export function ModalEditarFijo({
       setMesFin(costoFijo.mesFin || '');
       setMetodoPago(costoFijo.metodoPago || 'EFECTIVO_DEBITO');
       setTarjetaId(costoFijo.tarjetaId || (tarjetas[0]?.id || ''));
+      setCategoriaId(costoFijo.categoriaId || '');
+      setTag(costoFijo.tag || '');
     }
   }, [costoFijo, periodo, configTc, tarjetas]);
 
@@ -98,6 +112,8 @@ export function ModalEditarFijo({
           mesFin: mesFin || null,
           metodoPago,
           tarjetaId: metodoPago === 'TARJETA_CREDITO' ? tarjetaId : null,
+          categoriaId: categoriaId || null,
+          tag: tag ? tag.trim() : null,
         }),
       });
 
@@ -150,6 +166,11 @@ export function ModalEditarFijo({
             tarjetaId={tarjetaId}
             setTarjetaId={setTarjetaId}
             tarjetas={tarjetas}
+            categoriaId={categoriaId}
+            setCategoriaId={setCategoriaId}
+            tag={tag}
+            setTag={setTag}
+            categorias={categorias}
           />
 
           <div className="pt-3 flex items-center justify-end gap-2 border-t border-border">
