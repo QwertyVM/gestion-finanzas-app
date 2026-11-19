@@ -28,9 +28,38 @@ export function DetalleIngresoAsignadoBox({
   const [saving, setSaving] = useState(false);
   const [selectedId, setSelectedId] = useState<string>(item.ingresoId || '');
 
-  // Solo mostrar si hay más de 1 ingreso en el mes
-  if (!ingresosMes || ingresosMes.length <= 1) {
+  // Si no hay ingresos en el mes
+  if (!ingresosMes || ingresosMes.length === 0) {
     return null;
+  }
+
+  // Si solo hay 1 ingreso en el mes
+  if (ingresosMes.length === 1) {
+    const unicoIngreso = ingresosMes[0];
+    return (
+      <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 space-y-1.5 text-xs">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1.5">
+            <Wallet className="w-3.5 h-3.5" />
+            <span>Ingreso que cubre este gasto</span>
+          </span>
+          <span className="text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-0.5 rounded font-medium">
+            1 fuente en este mes
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="font-semibold text-foreground flex items-center gap-1.5">
+            💰 {unicoIngreso.concepto}
+          </span>
+          <span className="text-[11px] font-mono text-muted-foreground">
+            {formatMoney(unicoIngreso.monto, monedaSimbolo)}
+          </span>
+        </div>
+        <p className="text-[11px] text-muted-foreground pt-0.5 leading-relaxed">
+          Este mes solo tiene 1 ingreso registrado. Para asignar gastos a fuentes diferenciadas (ej. <strong>Gratificación</strong> o <strong>Bono</strong>), registra otro ingreso con <strong>&quot;+ Ingreso&quot;</strong> o navega a <strong>Diciembre</strong>.
+        </p>
+      </div>
+    );
   }
 
   const ingresoAsignado = ingresosMes.find((i) => i.id === item.ingresoId);

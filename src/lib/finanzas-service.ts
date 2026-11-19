@@ -211,6 +211,13 @@ export interface AnalisisCategoriasResumen {
   tarjetas: TarjetaAnalisisItem[];
 }
 
+export interface Subcategoria503020Item {
+  tag: string;
+  monto: number;
+  porcentaje: number;
+  conteo: number;
+}
+
 export interface SaludFinancieraKPIs {
   dti: {
     porcentaje: number;
@@ -250,6 +257,7 @@ export interface SaludFinancieraKPIs {
       objetivo: number;
       desvio: number;
       estado: 'OPTIMO' | 'EXCEDIDO' | 'BAJO';
+      subcategorias?: Subcategoria503020Item[];
     };
     deseos: {
       monto: number;
@@ -257,6 +265,7 @@ export interface SaludFinancieraKPIs {
       objetivo: number;
       desvio: number;
       estado: 'OPTIMO' | 'EXCEDIDO' | 'BAJO';
+      subcategorias?: Subcategoria503020Item[];
     };
     ahorroYDeuda: {
       monto: number;
@@ -264,6 +273,7 @@ export interface SaludFinancieraKPIs {
       objetivo: number;
       desvio: number;
       estado: 'OPTIMO' | 'EXCEDIDO' | 'DEFICIT';
+      subcategorias?: Subcategoria503020Item[];
     };
     diagnostico: string;
   };
@@ -2164,18 +2174,41 @@ export interface ResumenFinanciero {
       let montoDeseos = 0;
       let montoAhorroDirecto = 0;
 
+      const mapSubcatsNec = new Map<string, { tag: string; monto: number; conteo: number }>();
+      const mapSubcatsDes = new Map<string, { tag: string; monto: number; conteo: number }>();
+      const mapSubcatsAho = new Map<string, { tag: string; monto: number; conteo: number }>();
+
+      const registrarSubcat = (
+        map: Map<string, { tag: string; monto: number; conteo: number }>,
+        tag: string,
+        monto: number
+      ) => {
+        const key = tag || 'Sin subcategoría';
+        const item = map.get(key) || { tag: key, monto: 0, conteo: 0 };
+        item.monto += monto;
+        item.conteo += 1;
+        map.set(key, item);
+      };
+
       for (const item of egresosConsolidados) {
         if (item.clasificacion === 'PRESTAMO') {
           // Los préstamos bancarios se acumulan en totalDeudas
+          const tagPrestamo = item.banco ? `Préstamo ${item.banco}` : (item.tag || item.concepto || 'Préstamo Bancario');
+          registrarSubcat(mapSubcatsAho, tagPrestamo, item.monto);
           continue;
         }
         const cat = (item.categoria || '').toLowerCase();
+        const tag = item.tag || (item.concepto ? item.concepto.split('(')[0].trim() : 'General');
+
         if (cat.includes('necesidad') || cat.includes('50')) {
           montoNecesidades += item.monto;
+          registrarSubcat(mapSubcatsNec, tag, item.monto);
         } else if (cat.includes('ahorro') || cat.includes('invers') || cat.includes('20')) {
           montoAhorroDirecto += item.monto;
+          registrarSubcat(mapSubcatsAho, tag, item.monto);
         } else if (cat.includes('deseo') || cat.includes('30')) {
           montoDeseos += item.monto;
+          registrarSubcat(mapSubcatsDes, tag, item.monto);
         } else {
           const conc = (item.concepto || '').toLowerCase();
           const esNecesidad =
@@ -2194,13 +2227,46 @@ export interface ResumenFinanciero {
             conc.includes('luz');
           if (esNecesidad) {
             montoNecesidades += item.monto;
+            registrarSubcat(mapSubcatsNec, tag, item.monto);
           } else {
             montoDeseos += item.monto;
+            registrarSubcat(mapSubcatsDes, tag, item.monto);
           }
         }
       }
 
+      // Si hay compras en cuotas de tarjeta diferidas y no se sumaron a préstamos, registrarlas para transparencia en Ahorro & Deuda
+      const cuotasDiferidas = egresosConsolidados.filter((e) => e.clasificacion === 'CUOTA');
+      if (cuotasDiferidas.length > 0) {
+        for (const c of cuotasDiferidas) {
+          const tagCuota = c.tarjetaNombre ? `Cuotas ${c.tarjetaNombre}` : 'Compras en Cuotas';
+          registrarSubcat(mapSubcatsAho, tagCuota, c.monto);
+        }
+      }
+
+      if (dineroDisponibleNeto > 0) {
+        registrarSubcat(mapSubcatsAho, 'Superávit / Disponible Neto', dineroDisponibleNeto);
+      }
+
       const montoAhorroDeuda = totalDeudas + montoAhorroDirecto + Math.max(0, dineroDisponibleNeto);
+
+      const formatearSubcats = (
+        map: Map<string, { tag: string; monto: number; conteo: number }>,
+        totalBucket: number
+      ): Subcategoria503020Item[] => {
+        return Array.from(map.values())
+          .map((s) => ({
+            tag: s.tag,
+            monto: Number(s.monto.toFixed(2)),
+            porcentaje: totalBucket > 0 ? Number(((s.monto / totalBucket) * 100).toFixed(1)) : 0,
+            conteo: s.conteo,
+          }))
+          .sort((a, b) => b.monto - a.monto);
+      };
+
+      const subcategoriasNec = formatearSubcats(mapSubcatsNec, montoNecesidades);
+      const subcategoriasDes = formatearSubcats(mapSubcatsDes, montoDeseos);
+      const subcategoriasAho = formatearSubcats(mapSubcatsAho, montoAhorroDeuda);
 
       const base503020 = totalIngresos > 0 ? totalIngresos : Math.max(1, totalEgresos);
       const pctNec = Number(((montoNecesidades / base503020) * 100).toFixed(1));
@@ -2340,6 +2406,7 @@ export interface ResumenFinanciero {
             objetivo: 50,
             desvio: Number((pctNec - 50).toFixed(1)),
             estado: estadoNec,
+            subcategorias: subcategoriasNec,
           },
           deseos: {
             monto: Number(montoDeseos.toFixed(2)),
@@ -2347,6 +2414,7 @@ export interface ResumenFinanciero {
             objetivo: 30,
             desvio: Number((pctDes - 30).toFixed(1)),
             estado: estadoDes,
+            subcategorias: subcategoriasDes,
           },
           ahorroYDeuda: {
             monto: Number(montoAhorroDeuda.toFixed(2)),
@@ -2354,6 +2422,7 @@ export interface ResumenFinanciero {
             objetivo: 20,
             desvio: Number((pctAho - 20).toFixed(1)),
             estado: estadoAho,
+            subcategorias: subcategoriasAho,
           },
           diagnostico: diagnostico503020,
         },

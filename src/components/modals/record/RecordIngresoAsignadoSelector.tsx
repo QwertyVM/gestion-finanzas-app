@@ -26,7 +26,26 @@ export function RecordIngresoAsignadoSelector({
   onSelectIngreso,
   moneda = 'S/',
 }: RecordIngresoAsignadoSelectorProps) {
-  if (!ingresos || ingresos.length <= 1) return null;
+  if (!ingresos || ingresos.length === 0) return null;
+
+  if (ingresos.length === 1) {
+    return (
+      <div className="space-y-1 p-3 rounded-xl bg-muted/40 border border-border/60 text-xs">
+        <div className="flex items-center justify-between">
+          <span className="text-[11px] font-medium text-foreground flex items-center gap-1.5">
+            <Wallet className="w-3.5 h-3.5 text-amber-500" />
+            <span>Fuente de Pago: <strong>{ingresos[0].concepto}</strong></span>
+          </span>
+          <span className="text-[10px] text-muted-foreground font-mono">
+            {formatMoney(ingresos[0].monto, moneda)}
+          </span>
+        </div>
+        <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+          1 solo ingreso en este mes. Si agregas otra fuente (ej. Gratificación o Bono con &quot;+ Ingreso&quot;), podrás elegir cuál cubre este gasto.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2 p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
