@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { formatMoney } from '@/lib/utils';
-import { Briefcase, Gift, TrendingUp, Coins, Sparkles } from 'lucide-react';
+import { Briefcase, Gift, TrendingUp, Coins, Sparkles, ArrowRight } from 'lucide-react';
 import type { IngresoItem } from './IngresoCardMobile';
 
 interface IngresosFuentesCardsProps {
@@ -11,33 +12,15 @@ interface IngresosFuentesCardsProps {
   moneda: string;
 }
 
+const FUENTE_CONFIGS: Record<string, { label: string; Icon: React.ElementType; iconBg: string }> = {
+  SUELDO: { label: 'Sueldo Planilla', Icon: Briefcase, iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' },
+  GRATIFICACION: { label: 'Gratificación', Icon: Gift, iconBg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400' },
+  UTILIDADES: { label: 'Utilidades', Icon: TrendingUp, iconBg: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400' },
+};
+const DEFAULT_FUENTE = { label: 'Ingreso Extra', Icon: Coins, iconBg: 'bg-violet-500/10 text-violet-600 dark:text-violet-400' };
+
 function getFuenteConfig(tipo: string) {
-  switch (tipo) {
-    case 'SUELDO':
-      return {
-        label: 'Sueldo Planilla',
-        Icon: Briefcase,
-        iconBg: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
-      };
-    case 'GRATIFICACION':
-      return {
-        label: 'Gratificación',
-        Icon: Gift,
-        iconBg: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-      };
-    case 'UTILIDADES':
-      return {
-        label: 'Utilidades',
-        Icon: TrendingUp,
-        iconBg: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400',
-      };
-    default:
-      return {
-        label: 'Ingreso Extra',
-        Icon: Coins,
-        iconBg: 'bg-violet-500/10 text-violet-600 dark:text-violet-400',
-      };
-  }
+  return FUENTE_CONFIGS[tipo] || DEFAULT_FUENTE;
 }
 
 export function IngresosFuentesCards({
@@ -191,6 +174,15 @@ export function IngresosFuentesCards({
             <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
               <span>Gastos: <strong className="text-foreground">{formatMoney(totalGastosMonto, moneda)}</strong></span>
               <span>Ingresos: {formatMoney(totalIngresosMonto, moneda)}</span>
+            </div>
+            <div className="pt-1.5 border-t border-border/40 flex justify-end">
+              <Link
+                href="/presupuesto-operativo"
+                className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400 hover:underline inline-flex items-center gap-1"
+              >
+                <span>Planificar para vivir el próximo mes</span>
+                <ArrowRight className="w-3 h-3" />
+              </Link>
             </div>
           </div>
         </div>

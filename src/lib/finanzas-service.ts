@@ -2993,3 +2993,280 @@ export async function ajustarCuotasGasto(params: {
     cuotasRestantes: nuevasRestantes,
   };
 }
+
+export interface SobreGastoOperativo {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  icono: string;
+  color: string;
+  porcentaje: number;
+  monto: number;
+  montoSemanal: number;
+  montoDiario: number;
+}
+
+export interface EscenarioPresupuesto {
+  id: string;
+  nombre: string;
+  descripcion: string;
+  icono: string;
+  distribucion: Array<{ sobreId: string; porcentaje: number }>;
+}
+
+export interface SemanaRunwayItem {
+  semana: number;
+  etiqueta: string;
+  rangoFechas: string;
+  montoSugerido: number;
+}
+
+export interface PresupuestoOperativoData {
+  periodoOrigen: string;
+  nombreMesOrigen: string;
+  periodoDestino: string;
+  nombreMesDestino: string;
+  moneda: string;
+  ingresosCierreOrigen: number;
+  compromisosCierreOrigen: {
+    total: number;
+    fijos: number;
+    prestamos: number;
+    cuotas: number;
+    variables: number;
+  };
+  capitalOperativoParaVivir: number;
+  estadoSaludCapital: 'OPTIMO' | 'ADECUADO' | 'AJUSTADO' | 'DEFICIT';
+  runway: {
+    diasTotales: number;
+    semanasTotales: number;
+    limiteDiario: number;
+    limiteSemanal: number;
+    desgloseSemanas: SemanaRunwayItem[];
+  };
+  sobres: SobreGastoOperativo[];
+  escenarios: EscenarioPresupuesto[];
+  benchmarkHistorico: {
+    promedioAlimentacion: number;
+    promedioMovilidad: number;
+    comentario: string;
+  };
+  consejoConsultor: string;
+}
+
+export async function getPresupuestoOperativo(
+  periodoOrigen: string,
+  usuarioOrId?: string | any
+): Promise<PresupuestoOperativoData> {
+  const resumen = await getResumenMensual(periodoOrigen, usuarioOrId);
+  const moneda = resumen.config?.monedaSimbolo || 'S/';
+
+  const [anoStr, mesStr] = periodoOrigen.split('-');
+  const ano = parseInt(anoStr, 10);
+  const mes = parseInt(mesStr, 10);
+
+  const mesesNombres = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  const nextDate = new Date(ano, mes, 1);
+  const nextAno = nextDate.getFullYear();
+  const nextMesNum = nextDate.getMonth() + 1;
+  const periodoDestino = `${nextAno}-${String(nextMesNum).padStart(2, '0')}`;
+
+  const nombreMesOrigen = `${mesesNombres[mes - 1]} ${ano}`;
+  const nombreMesDestino = `${mesesNombres[nextDate.getMonth()]} ${nextAno}`;
+
+  const diasTotales = new Date(nextAno, nextMesNum, 0).getDate();
+  const semanasTotales = Number((diasTotales / 7).toFixed(1));
+
+  const ingresosCierreOrigen = resumen.totalIngresos || 0;
+  const compromisosCierreOrigen = {
+    total: resumen.totalEgresos || 0,
+    fijos: resumen.totalesPorClasificacion?.fijos || 0,
+    prestamos: resumen.totalesPorClasificacion?.prestamos || 0,
+    cuotas: resumen.totalesPorClasificacion?.cuotas || 0,
+    variables: resumen.totalesPorClasificacion?.variables || 0,
+  };
+
+  const netoDisponible = Number((ingresosCierreOrigen - compromisosCierreOrigen.total).toFixed(2));
+  const capitalOperativoParaVivir = Math.max(0, netoDisponible);
+
+  let estadoSaludCapital: 'OPTIMO' | 'ADECUADO' | 'AJUSTADO' | 'DEFICIT' = 'ADECUADO';
+  if (netoDisponible < 0) {
+    estadoSaludCapital = 'DEFICIT';
+  } else if (capitalOperativoParaVivir >= 2500) {
+    estadoSaludCapital = 'OPTIMO';
+  } else if (capitalOperativoParaVivir >= 1400) {
+    estadoSaludCapital = 'ADECUADO';
+  } else {
+    estadoSaludCapital = 'AJUSTADO';
+  }
+
+  const limiteDiario = diasTotales > 0
+    ? Number((capitalOperativoParaVivir / diasTotales).toFixed(2))
+    : 0;
+  const limiteSemanal = semanasTotales > 0
+    ? Number((capitalOperativoParaVivir / semanasTotales).toFixed(2))
+    : 0;
+
+  const mesAbrev = mesesNombres[nextDate.getMonth()].slice(0, 3);
+  const semanasDetalle: SemanaRunwayItem[] = [
+    {
+      semana: 1,
+      etiqueta: 'Semana 1',
+      rangoFechas: `01 al 07 de ${mesAbrev}`,
+      montoSugerido: limiteSemanal,
+    },
+    {
+      semana: 2,
+      etiqueta: 'Semana 2',
+      rangoFechas: `08 al 14 de ${mesAbrev}`,
+      montoSugerido: limiteSemanal,
+    },
+    {
+      semana: 3,
+      etiqueta: 'Semana 3',
+      rangoFechas: `15 al 21 de ${mesAbrev}`,
+      montoSugerido: limiteSemanal,
+    },
+    {
+      semana: 4,
+      etiqueta: 'Semana 4',
+      rangoFechas: `22 al 28 de ${mesAbrev}`,
+      montoSugerido: limiteSemanal,
+    },
+  ];
+
+  if (diasTotales > 28) {
+    const diasRem = diasTotales - 28;
+    const montoRem = Number((limiteDiario * diasRem).toFixed(2));
+    semanasDetalle.push({
+      semana: 5,
+      etiqueta: 'Cierre de mes',
+      rangoFechas: `29 al ${diasTotales} de ${mesAbrev}`,
+      montoSugerido: montoRem,
+    });
+  }
+
+  const sobres: SobreGastoOperativo[] = [
+    {
+      id: 'ALIMENTACION',
+      nombre: 'Alimentación & Despensa',
+      descripcion: 'Supermercado, carnes, verduras y comida diaria del hogar',
+      icono: 'Utensils',
+      color: '#0284c7',
+      porcentaje: 45,
+      monto: Number((capitalOperativoParaVivir * 0.45).toFixed(2)),
+      montoSemanal: Number(((capitalOperativoParaVivir * 0.45) / semanasTotales).toFixed(2)),
+      montoDiario: Number(((capitalOperativoParaVivir * 0.45) / diasTotales).toFixed(2)),
+    },
+    {
+      id: 'MOVILIDAD',
+      nombre: 'Movilidad & Combustible',
+      descripcion: 'Gasolina, transporte, peajes y mantenimiento menor del auto',
+      icono: 'Fuel',
+      color: '#0d9488',
+      porcentaje: 25,
+      monto: Number((capitalOperativoParaVivir * 0.25).toFixed(2)),
+      montoSemanal: Number(((capitalOperativoParaVivir * 0.25) / semanasTotales).toFixed(2)),
+      montoDiario: Number(((capitalOperativoParaVivir * 0.25) / diasTotales).toFixed(2)),
+    },
+    {
+      id: 'HOGAR_IMPREVISTOS',
+      nombre: 'Hogar & Farmacia / Imprevistos',
+      descripcion: 'Artículos de limpieza, farmacia y pequeñas urgencias',
+      icono: 'ShieldAlert',
+      color: '#d97706',
+      porcentaje: 15,
+      monto: Number((capitalOperativoParaVivir * 0.15).toFixed(2)),
+      montoSemanal: Number(((capitalOperativoParaVivir * 0.15) / semanasTotales).toFixed(2)),
+      montoDiario: Number(((capitalOperativoParaVivir * 0.15) / diasTotales).toFixed(2)),
+    },
+    {
+      id: 'BOLSILLO_OCIO',
+      nombre: 'Bolsillo Personal & Ocio Flexible',
+      descripcion: 'Salidas de fin de semana, café y recreación sin culpa',
+      icono: 'Coffee',
+      color: '#7c3aed',
+      porcentaje: 15,
+      monto: Number((capitalOperativoParaVivir * 0.15).toFixed(2)),
+      montoSemanal: Number(((capitalOperativoParaVivir * 0.15) / semanasTotales).toFixed(2)),
+      montoDiario: Number(((capitalOperativoParaVivir * 0.15) / diasTotales).toFixed(2)),
+    },
+  ];
+
+  const escenarios: EscenarioPresupuesto[] = [
+    {
+      id: 'EQUILIBRADO',
+      nombre: 'Equilibrado (Recomendado)',
+      descripcion: 'Distribución balanceada para vivir con tranquilidad y cubrir lo indispensable sin privaciones.',
+      icono: 'Scale',
+      distribucion: [
+        { sobreId: 'ALIMENTACION', porcentaje: 45 },
+        { sobreId: 'MOVILIDAD', porcentaje: 25 },
+        { sobreId: 'HOGAR_IMPREVISTOS', porcentaje: 15 },
+        { sobreId: 'BOLSILLO_OCIO', porcentaje: 15 },
+      ],
+    },
+    {
+      id: 'FIESTAS',
+      nombre: 'Festivo / Fin de Año',
+      descripcion: 'Amplía el bolsillo personal para celebraciones, cenas o salidas especiales reduciendo otros márgenes.',
+      icono: 'PartyPopper',
+      distribucion: [
+        { sobreId: 'ALIMENTACION', porcentaje: 40 },
+        { sobreId: 'MOVILIDAD', porcentaje: 20 },
+        { sobreId: 'HOGAR_IMPREVISTOS', porcentaje: 15 },
+        { sobreId: 'BOLSILLO_OCIO', porcentaje: 25 },
+      ],
+    },
+    {
+      id: 'AUSTERO',
+      nombre: 'Ahorro Máximo / Austero',
+      descripcion: 'Prioriza 100% supervivencia y reserva un colchón de protección eliminando gastos prescindibles.',
+      icono: 'ShieldCheck',
+      distribucion: [
+        { sobreId: 'ALIMENTACION', porcentaje: 50 },
+        { sobreId: 'MOVILIDAD', porcentaje: 25 },
+        { sobreId: 'HOGAR_IMPREVISTOS', porcentaje: 15 },
+        { sobreId: 'BOLSILLO_OCIO', porcentaje: 10 },
+      ],
+    },
+  ];
+
+  const promedioAlimentacion = resumen.saludFinanciera?.alertasCategorias?.ratioAlimentacion?.monto || 1200;
+  const promedioMovilidad = 450;
+
+  const consejoConsultor = capitalOperativoParaVivir >= promedioAlimentacion + promedioMovilidad
+    ? `Cuentas con ${moneda} ${capitalOperativoParaVivir.toLocaleString('es-PE', { minimumFractionDigits: 2 })} disponibles para vivir en ${nombreMesDestino}. Mantén un ritmo promedio de ${moneda} ${limiteSemanal.toFixed(2)} por semana para llegar al siguiente cierre de mes con tranquilidad.`
+    : `Tu saldo operativo para ${nombreMesDestino} (${moneda} ${capitalOperativoParaVivir.toFixed(2)}) está ajustado respecto a tus gastos de subsistencia históricos. Prioriza alimentación y combustible y modera el gasto flexible.`;
+
+  return {
+    periodoOrigen,
+    nombreMesOrigen,
+    periodoDestino,
+    nombreMesDestino,
+    moneda,
+    ingresosCierreOrigen,
+    compromisosCierreOrigen,
+    capitalOperativoParaVivir,
+    estadoSaludCapital,
+    runway: {
+      diasTotales,
+      semanasTotales,
+      limiteDiario,
+      limiteSemanal,
+      desgloseSemanas: semanasDetalle,
+    },
+    sobres,
+    escenarios,
+    benchmarkHistorico: {
+      promedioAlimentacion,
+      promedioMovilidad,
+      comentario: `Historial de referencia: Alimentación ~${moneda} ${promedioAlimentacion.toFixed(0)}, Movilidad ~${moneda} ${promedioMovilidad.toFixed(0)}.`,
+    },
+    consejoConsultor,
+  };
+}

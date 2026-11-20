@@ -11,6 +11,7 @@ import {
   Calculator,
   Settings,
   UserCheck,
+  Gauge,
 } from 'lucide-react';
 
 interface SidebarNavLinksProps {
@@ -47,6 +48,11 @@ const navSections = [
   {
     title: 'Planificación',
     links: [
+      {
+        href: '/presupuesto-operativo',
+        label: 'Dinero para Vivir',
+        icon: Gauge,
+      },
       {
         href: '/flujo-anual',
         label: 'Proyección Anual',

@@ -1,8 +1,9 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { formatMoney } from '@/lib/utils';
-import { Sparkles, Shield, PiggyBank, Smile, ArrowRight } from 'lucide-react';
+import { Sparkles, Shield, PiggyBank, Smile, ArrowRight, Gauge } from 'lucide-react';
 
 interface DistribucionRecomendada {
   deuda: number;
@@ -128,6 +129,21 @@ export function Regla503020CapitalLibreCard({
           </button>
         </div>
       )}
+
+      {/* Puente Operativo: Dinero para Vivir el Próximo Mes */}
+      <div className="pt-2 border-t border-amber-200/50 dark:border-amber-800/40 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+        <span className="text-xs text-amber-900 dark:text-amber-200">
+          💡 ¿Este dinero es lo que necesitas para subsistir el próximo mes (comidas, gasolina)?
+        </span>
+        <Link
+          href="/presupuesto-operativo"
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-xs transition active:scale-95 cursor-pointer shrink-0 self-start sm:self-auto"
+        >
+          <Gauge className="w-3.5 h-3.5" />
+          <span>Planificar Dinero para Vivir</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
     </div>
   );
 }
