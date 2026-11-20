@@ -724,15 +724,15 @@ export async function getResumenMensual(periodo: string, usuarioOrId?: string | 
     }),
     prisma.registroCostoFijoMes.findMany({
       where: { periodo: { in: periodos12 }, costoFijo: { usuarioId: uId } },
-      select: { periodo: true, monto: true },
+      select: { periodo: true, monto: true, estado: true },
     }),
     prisma.cuotaPrestamo.findMany({
       where: { periodo: { in: periodos12 }, prestamo: { usuarioId: uId } },
-      select: { periodo: true, monto: true },
+      select: { periodo: true, monto: true, estado: true },
     }),
     prisma.gasto.findMany({
       where: { periodoPago: { in: periodos12 }, usuarioId: uId },
-      select: { monto: true, periodoPago: true },
+      select: { monto: true, periodoPago: true, estado: true },
     }),
   ]);
 
@@ -1309,6 +1309,7 @@ export async function getResumenMensual(periodo: string, usuarioOrId?: string | 
     // Costos fijos
     const fijosReg = registrosFijosMulti.filter((r) => r.periodo === p);
     let totalFij = fijosReg.reduce((acc, r) => acc + Number(r.monto), 0);
+    const adelantoFij = fijosReg.filter((r) => r.estado === EstadoPago.ADELANTADO).reduce((acc, r) => acc + Number(r.monto), 0);
     if (totalFij === 0) {
       const vigentes = costosFijosBase.filter((f) => {
         const inicioOk = !f.mesInicio || f.mesInicio <= p;
@@ -1321,13 +1322,17 @@ export async function getResumenMensual(periodo: string, usuarioOrId?: string | 
     // Préstamos
     const cuotasMes = cuotasMulti.filter((c) => c.periodo === p);
     const totalPres = cuotasMes.reduce((acc, c) => acc + Number(c.monto), 0);
+    const adelantoPres = cuotasMes.filter((c) => c.estado === EstadoPago.ADELANTADO).reduce((acc, c) => acc + Number(c.monto), 0);
 
     // Gastos
     const gastosMes = gastosMulti.filter((g) => g.periodoPago === p);
     const totalGas = gastosMes.reduce((acc, g) => acc + Number(g.monto), 0);
+    const adelantoGas = gastosMes.filter((g) => g.estado === EstadoPago.ADELANTADO).reduce((acc, g) => acc + Number(g.monto), 0);
 
     const totalEgr = Number((totalFij + totalPres + totalGas).toFixed(2));
-    const disp = Number((totalIng - totalEgr).toFixed(2));
+    const totalAdel = adelantoFij + adelantoPres + adelantoGas;
+    const egresosSueldo = Math.max(0, totalEgr - totalAdel);
+    const disp = Number((totalIng - egresosSueldo).toFixed(2));
 
     return {
       periodo: p,
@@ -3082,15 +3087,20 @@ export async function getPresupuestoOperativo(
   const semanasTotales = Number((diasTotales / 7).toFixed(1));
 
   const ingresosCierreOrigen = resumen.totalIngresos || 0;
+  const totalEgresosSueldoMes = Math.max(0, (resumen.totalEgresos || 0) - (resumen.totalAdelantado || 0));
   const compromisosCierreOrigen = {
-    total: resumen.totalEgresos || 0,
+    total: totalEgresosSueldoMes,
+    totalOriginal: resumen.totalEgresos || 0,
+    adelantado: resumen.totalAdelantado || 0,
     fijos: resumen.totalesPorClasificacion?.fijos || 0,
     prestamos: resumen.totalesPorClasificacion?.prestamos || 0,
     cuotas: resumen.totalesPorClasificacion?.cuotas || 0,
     variables: resumen.totalesPorClasificacion?.variables || 0,
   };
 
-  const netoDisponible = Number((ingresosCierreOrigen - compromisosCierreOrigen.total).toFixed(2));
+  const netoDisponible = Number(
+    (resumen.dineroDisponibleNeto ?? (ingresosCierreOrigen - totalEgresosSueldoMes)).toFixed(2)
+  );
   const capitalOperativoParaVivir = Math.max(0, netoDisponible);
 
   let estadoSaludCapital: 'OPTIMO' | 'ADECUADO' | 'AJUSTADO' | 'DEFICIT' = 'ADECUADO';

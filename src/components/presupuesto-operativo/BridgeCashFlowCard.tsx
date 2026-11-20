@@ -10,6 +10,8 @@ interface BridgeCashFlowCardProps {
   ingresosCierre: number;
   compromisosCierre: {
     total: number;
+    totalOriginal?: number;
+    adelantado?: number;
     fijos: number;
     prestamos: number;
     cuotas: number;
@@ -92,16 +94,20 @@ export function BridgeCashFlowCard({
         <div className="md:col-span-2 p-3.5 rounded-xl bg-muted/30 border border-border/50 space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
-              2. Compromisos Extinguidos
+              2. Compromisos a Liquidar
             </span>
           </div>
           <div className="font-mono text-lg sm:text-xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
             {formatMoney(compromisosCierre.total, moneda)}
           </div>
           <div className="text-[10px] text-muted-foreground font-mono flex items-center gap-1.5 flex-wrap">
-            <span>Fijos/Colegio: {formatMoney(compromisosCierre.fijos, moneda)}</span>
-            <span>·</span>
-            <span>Tarjetas/Deuda: {formatMoney(compromisosCierre.prestamos + compromisosCierre.cuotas, moneda)}</span>
+            {Boolean(compromisosCierre.adelantado && compromisosCierre.adelantado > 0) ? (
+              <span className="text-emerald-700 dark:text-emerald-300 font-medium">
+                ⚡ {formatMoney(compromisosCierre.adelantado, moneda)} ya adelantado
+              </span>
+            ) : (
+              <span>Fijos: {formatMoney(compromisosCierre.fijos, moneda)} · Deuda: {formatMoney(compromisosCierre.prestamos + compromisosCierre.cuotas, moneda)}</span>
+            )}
           </div>
         </div>
 
