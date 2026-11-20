@@ -17,6 +17,7 @@ export default function PresupuestoOperativoPage() {
     moneda,
     escenarioActivo,
     sobresLocales,
+    diaPagoSueldo,
     sumaPorcentajes,
     sumaMontos,
     descuadrePorcentaje,
@@ -25,7 +26,14 @@ export default function PresupuestoOperativoPage() {
     puedeIrMesAnterior,
     aplicarEscenario,
     actualizarPorcentajeSobre,
-    resetearASugerido,
+    actualizarMontoSobre,
+    autoCuadrar100,
+    guardarSobre,
+    eliminarSobre,
+    guardarNuevoEscenario,
+    eliminarEscenario,
+    cambiarDiaPago,
+    resetearDeFabrica,
     recargar,
   } = usePresupuestoOperativo();
 
@@ -76,7 +84,7 @@ export default function PresupuestoOperativoPage() {
         moneda={moneda}
       />
 
-      {/* 3. Ritmo de Vida & Runway Diario/Semanal */}
+      {/* 3. Ritmo de Vida & Runway Diario/Semanal con selector de día de cobro */}
       <RunwayVelocimetroCard
         nombreMesDestino={data.nombreMesDestino}
         diasTotales={data.runway.diasTotales}
@@ -85,17 +93,21 @@ export default function PresupuestoOperativoPage() {
         limiteSemanal={data.runway.limiteSemanal}
         desgloseSemanas={data.runway.desgloseSemanas}
         moneda={moneda}
+        diaPagoSueldo={diaPagoSueldo}
+        onCambiarDiaPago={cambiarDiaPago}
       />
 
-      {/* 4. Selector de Escenarios con 1 clic */}
+      {/* 4. Selector de Escenarios con 1 clic y presets guardables */}
       <EscenariosSelectorBar
         escenarios={data.escenarios}
         escenarioActivo={escenarioActivo}
         onSeleccionarEscenario={aplicarEscenario}
-        onResetear={resetearASugerido}
+        onGuardarNuevoEscenario={guardarNuevoEscenario}
+        onEliminarEscenario={eliminarEscenario}
+        onResetear={resetearDeFabrica}
       />
 
-      {/* 5. Grid de Sobres de Subsistencia (Sliders & Montos) */}
+      {/* 5. Grid de Sobres de Subsistencia Parametrizables (Edición bidireccional S/ y %) */}
       <SobresGastosGrid
         sobres={sobresLocales}
         moneda={moneda}
@@ -104,6 +116,10 @@ export default function PresupuestoOperativoPage() {
         capitalTotal={data.capitalOperativoParaVivir}
         descuadrePorcentaje={descuadrePorcentaje}
         onActualizarPorcentaje={actualizarPorcentajeSobre}
+        onActualizarMonto={actualizarMontoSobre}
+        onAutoCuadrar={autoCuadrar100}
+        onGuardarSobre={guardarSobre}
+        onEliminarSobre={eliminarSobre}
       />
 
       {/* 6. Consejo Consultor y Benchmark Histórico */}

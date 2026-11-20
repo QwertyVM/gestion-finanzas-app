@@ -3016,6 +3016,7 @@ export interface EscenarioPresupuesto {
   nombre: string;
   descripcion: string;
   icono: string;
+  esPersonalizado?: boolean;
   distribucion: Array<{ sobreId: string; porcentaje: number }>;
 }
 
@@ -3032,6 +3033,8 @@ export interface PresupuestoOperativoData {
   periodoDestino: string;
   nombreMesDestino: string;
   moneda: string;
+  diaPagoSueldo: number;
+  escenarioActivo: string;
   ingresosCierreOrigen: number;
   compromisosCierreOrigen: {
     total: number;
@@ -3059,12 +3062,100 @@ export interface PresupuestoOperativoData {
   consejoConsultor: string;
 }
 
+export const DEFAULT_SOBRES_PRESUPUESTO: Array<Omit<SobreGastoOperativo, 'monto' | 'montoSemanal' | 'montoDiario'>> = [
+  {
+    id: 'ALIMENTACION',
+    nombre: 'Alimentación & Despensa',
+    descripcion: 'Supermercado, carnes, verduras y comida diaria del hogar',
+    icono: 'Utensils',
+    color: '#0284c7',
+    porcentaje: 45,
+  },
+  {
+    id: 'MOVILIDAD',
+    nombre: 'Movilidad & Combustible',
+    descripcion: 'Gasolina, transporte, peajes y mantenimiento menor del auto',
+    icono: 'Fuel',
+    color: '#0d9488',
+    porcentaje: 25,
+  },
+  {
+    id: 'HOGAR_IMPREVISTOS',
+    nombre: 'Hogar & Farmacia / Imprevistos',
+    descripcion: 'Artículos de limpieza, farmacia y pequeñas urgencias',
+    icono: 'ShieldAlert',
+    color: '#d97706',
+    porcentaje: 15,
+  },
+  {
+    id: 'BOLSILLO_OCIO',
+    nombre: 'Bolsillo Personal & Ocio Flexible',
+    descripcion: 'Salidas de fin de semana, café y recreación sin culpa',
+    icono: 'Coffee',
+    color: '#7c3aed',
+    porcentaje: 15,
+  },
+];
+
+export const DEFAULT_ESCENARIOS_PRESUPUESTO: EscenarioPresupuesto[] = [
+  {
+    id: 'EQUILIBRADO',
+    nombre: 'Equilibrado (Recomendado)',
+    descripcion: 'Distribución balanceada para vivir con tranquilidad y cubrir lo indispensable sin privaciones.',
+    icono: 'Scale',
+    esPersonalizado: false,
+    distribucion: [
+      { sobreId: 'ALIMENTACION', porcentaje: 45 },
+      { sobreId: 'MOVILIDAD', porcentaje: 25 },
+      { sobreId: 'HOGAR_IMPREVISTOS', porcentaje: 15 },
+      { sobreId: 'BOLSILLO_OCIO', porcentaje: 15 },
+    ],
+  },
+  {
+    id: 'FIESTAS',
+    nombre: 'Festivo / Fin de Año',
+    descripcion: 'Amplía el bolsillo personal para celebraciones, cenas o salidas especiales reduciendo otros márgenes.',
+    icono: 'PartyPopper',
+    esPersonalizado: false,
+    distribucion: [
+      { sobreId: 'ALIMENTACION', porcentaje: 40 },
+      { sobreId: 'MOVILIDAD', porcentaje: 20 },
+      { sobreId: 'HOGAR_IMPREVISTOS', porcentaje: 15 },
+      { sobreId: 'BOLSILLO_OCIO', porcentaje: 25 },
+    ],
+  },
+  {
+    id: 'AUSTERO',
+    nombre: 'Ahorro Máximo / Austero',
+    descripcion: 'Prioriza 100% supervivencia y reserva un colchón de protección eliminando gastos prescindibles.',
+    icono: 'ShieldCheck',
+    esPersonalizado: false,
+    distribucion: [
+      { sobreId: 'ALIMENTACION', porcentaje: 50 },
+      { sobreId: 'MOVILIDAD', porcentaje: 25 },
+      { sobreId: 'HOGAR_IMPREVISTOS', porcentaje: 15 },
+      { sobreId: 'BOLSILLO_OCIO', porcentaje: 10 },
+    ],
+  },
+];
+
 export async function getPresupuestoOperativo(
   periodoOrigen: string,
   usuarioOrId?: string | any
 ): Promise<PresupuestoOperativoData> {
   const resumen = await getResumenMensual(periodoOrigen, usuarioOrId);
   const moneda = resumen.config?.monedaSimbolo || 'S/';
+
+  let usuario: any = null;
+  if (usuarioOrId && typeof usuarioOrId === 'object' && usuarioOrId.id) {
+    usuario = usuarioOrId;
+  } else if (typeof usuarioOrId === 'string') {
+    usuario = await prisma.usuario.findUnique({ where: { id: usuarioOrId } });
+  }
+  if (!usuario) {
+    usuario = await prisma.usuario.findFirst({ where: { activo: true }, orderBy: { createdAt: 'asc' } });
+  }
+  const uId = usuario?.id;
 
   const [anoStr, mesStr] = periodoOrigen.split('-');
   const ano = parseInt(anoStr, 10);
@@ -3082,6 +3173,28 @@ export async function getPresupuestoOperativo(
 
   const nombreMesOrigen = `${mesesNombres[mes - 1]} ${ano}`;
   const nombreMesDestino = `${mesesNombres[nextDate.getMonth()]} ${nextAno}`;
+
+  // 1. Obtener configuración guardada de Presupuesto Operativo (o heredar del periodo más reciente)
+  let configDb = uId
+    ? await prisma.presupuestoOperativoConfig.findUnique({
+      where: {
+        usuarioId_periodoDestino: {
+          usuarioId: uId,
+          periodoDestino,
+        },
+      },
+    })
+    : null;
+
+  if (!configDb && uId) {
+    configDb = await prisma.presupuestoOperativoConfig.findFirst({
+      where: { usuarioId: uId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  const diaPagoSueldo = configDb?.diaPagoSueldo || resumen.config?.diaPagoSueldo || 30;
+  const escenarioActivo = configDb?.escenarioActivo || 'EQUILIBRADO';
 
   const diasTotales = new Date(nextAno, nextMesNum, 0).getDate();
   const semanasTotales = Number((diasTotales / 7).toFixed(1));
@@ -3160,91 +3273,26 @@ export async function getPresupuestoOperativo(
     });
   }
 
-  const sobres: SobreGastoOperativo[] = [
-    {
-      id: 'ALIMENTACION',
-      nombre: 'Alimentación & Despensa',
-      descripcion: 'Supermercado, carnes, verduras y comida diaria del hogar',
-      icono: 'Utensils',
-      color: '#0284c7',
-      porcentaje: 45,
-      monto: Number((capitalOperativoParaVivir * 0.45).toFixed(2)),
-      montoSemanal: Number(((capitalOperativoParaVivir * 0.45) / semanasTotales).toFixed(2)),
-      montoDiario: Number(((capitalOperativoParaVivir * 0.45) / diasTotales).toFixed(2)),
-    },
-    {
-      id: 'MOVILIDAD',
-      nombre: 'Movilidad & Combustible',
-      descripcion: 'Gasolina, transporte, peajes y mantenimiento menor del auto',
-      icono: 'Fuel',
-      color: '#0d9488',
-      porcentaje: 25,
-      monto: Number((capitalOperativoParaVivir * 0.25).toFixed(2)),
-      montoSemanal: Number(((capitalOperativoParaVivir * 0.25) / semanasTotales).toFixed(2)),
-      montoDiario: Number(((capitalOperativoParaVivir * 0.25) / diasTotales).toFixed(2)),
-    },
-    {
-      id: 'HOGAR_IMPREVISTOS',
-      nombre: 'Hogar & Farmacia / Imprevistos',
-      descripcion: 'Artículos de limpieza, farmacia y pequeñas urgencias',
-      icono: 'ShieldAlert',
-      color: '#d97706',
-      porcentaje: 15,
-      monto: Number((capitalOperativoParaVivir * 0.15).toFixed(2)),
-      montoSemanal: Number(((capitalOperativoParaVivir * 0.15) / semanasTotales).toFixed(2)),
-      montoDiario: Number(((capitalOperativoParaVivir * 0.15) / diasTotales).toFixed(2)),
-    },
-    {
-      id: 'BOLSILLO_OCIO',
-      nombre: 'Bolsillo Personal & Ocio Flexible',
-      descripcion: 'Salidas de fin de semana, café y recreación sin culpa',
-      icono: 'Coffee',
-      color: '#7c3aed',
-      porcentaje: 15,
-      monto: Number((capitalOperativoParaVivir * 0.15).toFixed(2)),
-      montoSemanal: Number(((capitalOperativoParaVivir * 0.15) / semanasTotales).toFixed(2)),
-      montoDiario: Number(((capitalOperativoParaVivir * 0.15) / diasTotales).toFixed(2)),
-    },
-  ];
+  // Cargar sobres desde configDb o usar los valores predeterminados
+  const sobresConfig: any[] = (configDb?.sobres as any[]) || DEFAULT_SOBRES_PRESUPUESTO;
+  const sobres: SobreGastoOperativo[] = sobresConfig.map((s) => {
+    const pct = Number(s.porcentaje) || 0;
+    const monto = Number(((capitalOperativoParaVivir * pct) / 100).toFixed(2));
+    return {
+      id: s.id,
+      nombre: s.nombre,
+      descripcion: s.descripcion || '',
+      icono: s.icono || 'Utensils',
+      color: s.color || '#0284c7',
+      porcentaje: pct,
+      monto,
+      montoSemanal: semanasTotales > 0 ? Number((monto / semanasTotales).toFixed(2)) : 0,
+      montoDiario: diasTotales > 0 ? Number((monto / diasTotales).toFixed(2)) : 0,
+    };
+  });
 
-  const escenarios: EscenarioPresupuesto[] = [
-    {
-      id: 'EQUILIBRADO',
-      nombre: 'Equilibrado (Recomendado)',
-      descripcion: 'Distribución balanceada para vivir con tranquilidad y cubrir lo indispensable sin privaciones.',
-      icono: 'Scale',
-      distribucion: [
-        { sobreId: 'ALIMENTACION', porcentaje: 45 },
-        { sobreId: 'MOVILIDAD', porcentaje: 25 },
-        { sobreId: 'HOGAR_IMPREVISTOS', porcentaje: 15 },
-        { sobreId: 'BOLSILLO_OCIO', porcentaje: 15 },
-      ],
-    },
-    {
-      id: 'FIESTAS',
-      nombre: 'Festivo / Fin de Año',
-      descripcion: 'Amplía el bolsillo personal para celebraciones, cenas o salidas especiales reduciendo otros márgenes.',
-      icono: 'PartyPopper',
-      distribucion: [
-        { sobreId: 'ALIMENTACION', porcentaje: 40 },
-        { sobreId: 'MOVILIDAD', porcentaje: 20 },
-        { sobreId: 'HOGAR_IMPREVISTOS', porcentaje: 15 },
-        { sobreId: 'BOLSILLO_OCIO', porcentaje: 25 },
-      ],
-    },
-    {
-      id: 'AUSTERO',
-      nombre: 'Ahorro Máximo / Austero',
-      descripcion: 'Prioriza 100% supervivencia y reserva un colchón de protección eliminando gastos prescindibles.',
-      icono: 'ShieldCheck',
-      distribucion: [
-        { sobreId: 'ALIMENTACION', porcentaje: 50 },
-        { sobreId: 'MOVILIDAD', porcentaje: 25 },
-        { sobreId: 'HOGAR_IMPREVISTOS', porcentaje: 15 },
-        { sobreId: 'BOLSILLO_OCIO', porcentaje: 10 },
-      ],
-    },
-  ];
+  // Cargar escenarios desde configDb o usar los predeterminados
+  const escenarios: EscenarioPresupuesto[] = (configDb?.escenarios as any[]) || DEFAULT_ESCENARIOS_PRESUPUESTO;
 
   const promedioAlimentacion = resumen.saludFinanciera?.alertasCategorias?.ratioAlimentacion?.monto || 1200;
   const promedioMovilidad = 450;
@@ -3259,6 +3307,8 @@ export async function getPresupuestoOperativo(
     periodoDestino,
     nombreMesDestino,
     moneda,
+    diaPagoSueldo,
+    escenarioActivo,
     ingresosCierreOrigen,
     compromisosCierreOrigen,
     capitalOperativoParaVivir,
@@ -3279,4 +3329,87 @@ export async function getPresupuestoOperativo(
     },
     consejoConsultor,
   };
+}
+
+export interface GuardarPresupuestoOperativoInput {
+  periodoDestino: string;
+  diaPagoSueldo?: number;
+  sobres: Array<{
+    id: string;
+    nombre: string;
+    descripcion: string;
+    icono: string;
+    color: string;
+    porcentaje: number;
+  }>;
+  escenarios?: EscenarioPresupuesto[];
+  escenarioActivo?: string;
+}
+
+export async function guardarPresupuestoOperativo(
+  input: GuardarPresupuestoOperativoInput,
+  usuarioOrId?: string | any
+): Promise<{ success: boolean; data?: any }> {
+  let usuario: any = null;
+  if (usuarioOrId && typeof usuarioOrId === 'object' && usuarioOrId.id) {
+    usuario = usuarioOrId;
+  } else if (typeof usuarioOrId === 'string') {
+    usuario = await prisma.usuario.findUnique({ where: { id: usuarioOrId } });
+  }
+  if (!usuario) {
+    usuario = await prisma.usuario.findFirst({ where: { activo: true }, orderBy: { createdAt: 'asc' } });
+  }
+  const uId = usuario?.id;
+  if (!uId) throw new Error('Usuario no encontrado');
+
+  const config = await prisma.presupuestoOperativoConfig.upsert({
+    where: {
+      usuarioId_periodoDestino: {
+        usuarioId: uId,
+        periodoDestino: input.periodoDestino,
+      },
+    },
+    update: {
+      diaPagoSueldo: input.diaPagoSueldo !== undefined ? input.diaPagoSueldo : undefined,
+      sobres: input.sobres as any,
+      escenarios: input.escenarios !== undefined ? (input.escenarios as any) : undefined,
+      escenarioActivo: input.escenarioActivo !== undefined ? input.escenarioActivo : undefined,
+    },
+    create: {
+      usuarioId: uId,
+      periodoDestino: input.periodoDestino,
+      diaPagoSueldo: input.diaPagoSueldo || 30,
+      sobres: input.sobres as any,
+      escenarios: (input.escenarios as any) || (DEFAULT_ESCENARIOS_PRESUPUESTO as any),
+      escenarioActivo: input.escenarioActivo || 'EQUILIBRADO',
+    },
+  });
+
+  return { success: true, data: config };
+}
+
+export async function restablecerPresupuestoOperativo(
+  periodoDestino: string,
+  usuarioOrId?: string | any
+): Promise<{ success: boolean }> {
+  let usuario: any = null;
+  if (usuarioOrId && typeof usuarioOrId === 'object' && usuarioOrId.id) {
+    usuario = usuarioOrId;
+  } else if (typeof usuarioOrId === 'string') {
+    usuario = await prisma.usuario.findUnique({ where: { id: usuarioOrId } });
+  }
+  if (!usuario) {
+    usuario = await prisma.usuario.findFirst({ where: { activo: true }, orderBy: { createdAt: 'asc' } });
+  }
+  const uId = usuario?.id;
+  if (!uId) throw new Error('Usuario no encontrado');
+
+  await prisma.presupuestoOperativoConfig.deleteMany({
+    where: {
+      usuarioId: uId,
+      periodoDestino,
+    },
+  });
+
+  return { success: true };
 }

@@ -58,6 +58,7 @@ model Usuario {
   ingresos           IngresoMes[]
   categorias         Categoria[]
   sesiones           Sesion[]
+  presupuestosOperativos PresupuestoOperativoConfig[]
 }
 
 model Sesion {
@@ -253,4 +254,20 @@ model IngresoMes {
   cuotasPrestamo         CuotaPrestamo[]
 
   @@unique([usuarioId, periodo, tipo, concepto])
+}
+
+model PresupuestoOperativoConfig {
+  id              String   @id @default(uuid())
+  usuarioId       String
+  usuario         Usuario  @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  periodoDestino  String   // "2026-12" o "DEFAULT"
+  diaPagoSueldo   Int      @default(30)
+  sobres          Json
+  escenarios      Json?
+  escenarioActivo String   @default("EQUILIBRADO")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([usuarioId, periodoDestino])
+  @@index([usuarioId])
 }
