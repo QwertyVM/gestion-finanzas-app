@@ -2,6 +2,11 @@ import prisma from './prisma';
 import { ClasificacionEgreso, EstadoPago, MetodoPago, TipoIngreso } from '@prisma/client';
 import { calcularPeriodoFacturacion, calcularCuotasPeriodos } from './billing-cycles';
 import { formatPeriodoLabel, esItemRecurrente } from './utils';
+import {
+  calcularMetricasSobre,
+  calcularMontosSobres,
+  normalizarSuma100,
+} from './presupuesto-operativo-helpers';
 
 export interface EgresoConsolidado {
   id: string;
@@ -3230,9 +3235,8 @@ export async function getPresupuestoOperativo(
   const limiteDiario = diasTotales > 0
     ? Number((capitalOperativoParaVivir / diasTotales).toFixed(2))
     : 0;
-  const limiteSemanal = semanasTotales > 0
-    ? Number((capitalOperativoParaVivir / semanasTotales).toFixed(2))
-    : 0;
+  // Una semana son estrictamente 7 días del ritmo diario recomendado
+  const limiteSemanal = Number((limiteDiario * 7).toFixed(2));
 
   const mesAbrev = mesesNombres[nextDate.getMonth()].slice(0, 3);
   const semanasDetalle: SemanaRunwayItem[] = [
@@ -3275,21 +3279,21 @@ export async function getPresupuestoOperativo(
 
   // Cargar sobres desde configDb o usar los valores predeterminados
   const sobresConfig: any[] = (configDb?.sobres as any[]) || DEFAULT_SOBRES_PRESUPUESTO;
-  const sobres: SobreGastoOperativo[] = sobresConfig.map((s) => {
-    const pct = Number(s.porcentaje) || 0;
-    const monto = Number(((capitalOperativoParaVivir * pct) / 100).toFixed(2));
-    return {
+  const sobresNormalizados = normalizarSuma100(
+    sobresConfig.map((s) => ({
       id: s.id,
       nombre: s.nombre,
       descripcion: s.descripcion || '',
       icono: s.icono || 'Utensils',
       color: s.color || '#0284c7',
-      porcentaje: pct,
-      monto,
-      montoSemanal: semanasTotales > 0 ? Number((monto / semanasTotales).toFixed(2)) : 0,
-      montoDiario: diasTotales > 0 ? Number((monto / diasTotales).toFixed(2)) : 0,
-    };
-  });
+      porcentaje: Number(s.porcentaje) || 0,
+    }))
+  );
+  const sobres: SobreGastoOperativo[] = calcularMontosSobres(
+    sobresNormalizados,
+    capitalOperativoParaVivir,
+    diasTotales
+  );
 
   // Cargar escenarios desde configDb o usar los predeterminados
   const escenarios: EscenarioPresupuesto[] = (configDb?.escenarios as any[]) || DEFAULT_ESCENARIOS_PRESUPUESTO;
@@ -3362,6 +3366,8 @@ export async function guardarPresupuestoOperativo(
   const uId = usuario?.id;
   if (!uId) throw new Error('Usuario no encontrado');
 
+  const sobresNormalizados = normalizarSuma100(input.sobres);
+
   const config = await prisma.presupuestoOperativoConfig.upsert({
     where: {
       usuarioId_periodoDestino: {
@@ -3371,7 +3377,7 @@ export async function guardarPresupuestoOperativo(
     },
     update: {
       diaPagoSueldo: input.diaPagoSueldo !== undefined ? input.diaPagoSueldo : undefined,
-      sobres: input.sobres as any,
+      sobres: sobresNormalizados as any,
       escenarios: input.escenarios !== undefined ? (input.escenarios as any) : undefined,
       escenarioActivo: input.escenarioActivo !== undefined ? input.escenarioActivo : undefined,
     },
@@ -3379,7 +3385,7 @@ export async function guardarPresupuestoOperativo(
       usuarioId: uId,
       periodoDestino: input.periodoDestino,
       diaPagoSueldo: input.diaPagoSueldo || 30,
-      sobres: input.sobres as any,
+      sobres: sobresNormalizados as any,
       escenarios: (input.escenarios as any) || (DEFAULT_ESCENARIOS_PRESUPUESTO as any),
       escenarioActivo: input.escenarioActivo || 'EQUILIBRADO',
     },

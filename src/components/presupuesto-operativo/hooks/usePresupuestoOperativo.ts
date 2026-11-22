@@ -8,6 +8,12 @@ import type {
   EscenarioPresupuesto,
 } from '@/lib/finanzas-service';
 import { toast } from 'sonner';
+import {
+  redistribuirPorcentajes,
+  redistribuirAlEliminar,
+  normalizarSuma100,
+  calcularMontosSobres,
+} from '@/lib/presupuesto-operativo-helpers';
 
 export function usePresupuestoOperativo() {
   const { periodo, irMesAnterior, irMesSiguiente, puedeIrMesAnterior } = useFinanzas();
@@ -27,7 +33,13 @@ export function usePresupuestoOperativo() {
       if (!res.ok) throw new Error('Error al cargar presupuesto operativo');
       const json: PresupuestoOperativoData = await res.json();
       setData(json);
-      setSobresLocales(json.sobres);
+      const normalizados = normalizarSuma100(json.sobres);
+      const conMontos = calcularMontosSobres(
+        normalizados,
+        json.capitalOperativoParaVivir,
+        json.runway.diasTotales
+      );
+      setSobresLocales(conMontos);
       setEscenarioActivo(json.escenarioActivo || 'EQUILIBRADO');
       setDiaPagoSueldo(json.diaPagoSueldo || 30);
     } catch (err: any) {
@@ -89,136 +101,139 @@ export function usePresupuestoOperativo() {
       [data, diaPagoSueldo, escenarioActivo]
     );
 
-    const recalcularSobresConPorcentajes = (
-      sobresBase: SobreGastoOperativo[],
-      obtenerPct: (s: SobreGastoOperativo) => number
-    ) => {
-      if (!data) return sobresBase;
-      const capital = data.capitalOperativoParaVivir;
-      const dias = data.runway.diasTotales;
-      const semanas = data.runway.semanasTotales;
+    const aplicarEscenario = (escenarioId: string) => {
+      if (!data) return;
+      const esc = data.escenarios.find((e) => e.id === escenarioId);
+      if (!esc) return;
 
-        return sobresBase.map((s) => {
-          const pct = Math.max(0, Math.min(100, Math.round(obtenerPct(s))));
-          const monto = Number(((capital * pct) / 100).toFixed(2));
-          return {
-            ...s,
-            porcentaje: pct,
-            monto,
-            montoSemanal: semanas > 0 ? Number((monto / semanas).toFixed(2)) : 0,
-            montoDiario: dias > 0 ? Number((monto / dias).toFixed(2)) : 0,
-          };
-        });
-      };
+      setEscenarioActivo(escenarioId);
+      const combinados = sobresLocales.map((s) => {
+        const match = esc.distribucion.find((d) => d.sobreId === s.id);
+        return {
+          ...s,
+          porcentaje: match !== undefined ? match.porcentaje : s.porcentaje,
+        };
+      });
+      const normalizados = normalizarSuma100(combinados);
+      const actualizados = calcularMontosSobres(
+        normalizados,
+        data.capitalOperativoParaVivir,
+        data.runway.diasTotales
+      );
 
-      const aplicarEscenario = (escenarioId: string) => {
-        if (!data) return;
-        const esc = data.escenarios.find((e) => e.id === escenarioId);
-        if (!esc) return;
+      setSobresLocales(actualizados);
+      persistirEnBackend(actualizados, data.escenarios, escenarioId);
+      toast.success(`Escenario ${esc.nombre} aplicado`);
+    };
 
-        setEscenarioActivo(escenarioId);
-        const actualizados = recalcularSobresConPorcentajes(sobresLocales, (s) => {
-          const match = esc.distribucion.find((d) => d.sobreId === s.id);
-          return match ? match.porcentaje : s.porcentaje;
-        });
+    const actualizarPorcentajeSobre = (sobreId: string, nuevoPct: number) => {
+      if (!data) return;
+      // Redistribuir proporcionalmente para mantener siempre la suma al 100%
+      const redistribuidos = redistribuirPorcentajes(sobresLocales, sobreId, nuevoPct);
+      const actualizados = calcularMontosSobres(
+        redistribuidos,
+        data.capitalOperativoParaVivir,
+        data.runway.diasTotales
+      );
+      setSobresLocales(actualizados);
+      setEscenarioActivo('PERSONALIZADO');
+      persistirEnBackend(actualizados, data.escenarios, 'PERSONALIZADO');
+    };
 
-        setSobresLocales(actualizados);
-        persistirEnBackend(actualizados, data.escenarios, escenarioId);
-        toast.success(`Escenario ${esc.nombre} aplicado`);
-      };
+    const actualizarMontoSobre = (sobreId: string, nuevoMonto: number) => {
+      if (!data || data.capitalOperativoParaVivir <= 0) return;
+      const calcPct = Math.max(
+        0,
+        Math.min(100, Math.round((nuevoMonto / data.capitalOperativoParaVivir) * 100))
+      );
+      actualizarPorcentajeSobre(sobreId, calcPct);
+    };
 
-      const actualizarPorcentajeSobre = (sobreId: string, nuevoPct: number) => {
-        if (!data) return;
-    const actualizados = recalcularSobresConPorcentajes(sobresLocales, (s) =>
-            s.id === sobreId ? nuevoPct : s.porcentaje
-          );
-        setSobresLocales(actualizados);
-        setEscenarioActivo('PERSONALIZADO');
-        persistirEnBackend(actualizados, data.escenarios, 'PERSONALIZADO');
-      };
+    const autoCuadrar100 = () => {
+      if (!data || sobresLocales.length === 0) return;
+      const normalizados = normalizarSuma100(sobresLocales);
+      const actualizados = calcularMontosSobres(
+        normalizados,
+        data.capitalOperativoParaVivir,
+        data.runway.diasTotales
+      );
+      setSobresLocales(actualizados);
+      setEscenarioActivo('PERSONALIZADO');
+      persistirEnBackend(actualizados, data.escenarios, 'PERSONALIZADO');
+      toast.success('Distribución auto-cuadrada al 100%');
+    };
 
-      const actualizarMontoSobre = (sobreId: string, nuevoMonto: number) => {
-        if (!data || data.capitalOperativoParaVivir <= 0) return;
-        const calcPct = Math.round((nuevoMonto / data.capitalOperativoParaVivir) * 100);
-        actualizarPorcentajeSobre(sobreId, calcPct);
-      };
+    const guardarSobre = (datos: {
+      id?: string;
+      nombre: string;
+      descripcion: string;
+      icono: string;
+      color: string;
+      porcentaje: number;
+    }) => {
+      if (!data) return;
+      let actualizados: SobreGastoOperativo[];
 
-      const autoCuadrar100 = () => {
-        if (!data || sobresLocales.length === 0) return;
-        const sumaActual = sobresLocales.reduce((acc, s) => acc + s.porcentaje, 0);
-        const dif = 100 - sumaActual;
-        if (dif === 0) return;
-
-        // Sumar la diferencia al primer sobre o al más grande
-        const copia = [...sobresLocales];
-        copia[0] = { ...copia[0], porcentaje: Math.max(0, copia[0].porcentaje + dif) };
-
-        const actualizados = recalcularSobresConPorcentajes(copia, (s) => s.porcentaje);
-        setSobresLocales(actualizados);
-        setEscenarioActivo('PERSONALIZADO');
-        persistirEnBackend(actualizados, data.escenarios, 'PERSONALIZADO');
-        toast.success('Distribución auto-cuadrada al 100%');
-      };
-
-      const guardarSobre = (datos: {
-        id?: string;
-        nombre: string;
-        descripcion: string;
-        icono: string;
-        color: string;
-        porcentaje: number;
-      }) => {
-        if (!data) return;
-        let actualizados: SobreGastoOperativo[];
-
-        if (datos.id) {
-          actualizados = sobresLocales.map((s) =>
-            s.id === datos.id
-              ? {
+      if (datos.id) {
+        actualizados = sobresLocales.map((s) =>
+          s.id === datos.id
+            ? {
                 ...s,
                 nombre: datos.nombre,
                 descripcion: datos.descripcion,
                 icono: datos.icono,
                 color: datos.color,
-                porcentaje: datos.porcentaje,
               }
-              : s
-          );
-        } else {
-          const nuevoId = `SOBRE_${Date.now()}`;
-          actualizados = [
-            ...sobresLocales,
-            {
-              id: nuevoId,
-              nombre: datos.nombre,
-              descripcion: datos.descripcion,
-              icono: datos.icono,
-              color: datos.color,
-              porcentaje: datos.porcentaje,
-              monto: 0,
-              montoSemanal: 0,
-              montoDiario: 0,
-            },
-          ];
-        }
+            : s
+        );
+        setSobresLocales(actualizados);
+        persistirEnBackend(actualizados, data.escenarios, escenarioActivo);
+        toast.success('Sobre actualizado');
+      } else {
+        const nuevoId = `SOBRE_${Date.now()}`;
+        const pctInicial = Math.max(5, Math.min(25, Math.floor(100 / (sobresLocales.length + 1))));
+        const conNuevo: SobreGastoOperativo[] = [
+          ...sobresLocales,
+          {
+            id: nuevoId,
+            nombre: datos.nombre,
+            descripcion: datos.descripcion,
+            icono: datos.icono,
+            color: datos.color,
+            porcentaje: 0,
+            monto: 0,
+            montoSemanal: 0,
+            montoDiario: 0,
+          },
+        ];
+        const redistribuidos = redistribuirPorcentajes(conNuevo, nuevoId, pctInicial);
+        actualizados = calcularMontosSobres(
+          redistribuidos,
+          data.capitalOperativoParaVivir,
+          data.runway.diasTotales
+        );
+        setSobresLocales(actualizados);
+        setEscenarioActivo('PERSONALIZADO');
+        persistirEnBackend(actualizados, data.escenarios, 'PERSONALIZADO');
+        toast.success('Nuevo sobre creado');
+      }
+    };
 
-        const recalculados = recalcularSobresConPorcentajes(actualizados, (s) => s.porcentaje);
-        setSobresLocales(recalculados);
-        persistirEnBackend(recalculados, data.escenarios, escenarioActivo);
-        toast.success(datos.id ? 'Sobre actualizado' : 'Nuevo sobre creado');
-      };
-
-      const eliminarSobre = (id: string) => {
-        if (!data || sobresLocales.length <= 1) {
-          toast.error('Debes mantener al menos un sobre');
-          return;
-        }
-        const actualizados = sobresLocales.filter((s) => s.id !== id);
-        const recalculados = recalcularSobresConPorcentajes(actualizados, (s) => s.porcentaje);
-        setSobresLocales(recalculados);
-        persistirEnBackend(recalculados, data.escenarios, escenarioActivo);
-        toast.success('Sobre eliminado');
-      };
+    const eliminarSobre = (id: string) => {
+      if (!data || sobresLocales.length <= 1) {
+        toast.error('Debes mantener al menos un sobre');
+        return;
+      }
+      const redistribuidos = redistribuirAlEliminar(sobresLocales, id);
+      const actualizados = calcularMontosSobres(
+        redistribuidos,
+        data.capitalOperativoParaVivir,
+        data.runway.diasTotales
+      );
+      setSobresLocales(actualizados);
+      persistirEnBackend(actualizados, data.escenarios, escenarioActivo);
+      toast.success('Sobre eliminado');
+    };
 
       const guardarNuevoEscenario = (nombre: string, descripcion: string, icono: string) => {
         if (!data) return;
