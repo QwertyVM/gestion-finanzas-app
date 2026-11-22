@@ -25,6 +25,7 @@ interface SobresGastosGridProps {
     porcentaje: number;
   }) => void;
   onEliminarSobre: (id: string) => void;
+  onToggleBloqueo?: (sobreId: string) => void;
 }
 
 export function SobresGastosGrid({
@@ -39,6 +40,7 @@ export function SobresGastosGrid({
   onAutoCuadrar,
   onGuardarSobre,
   onEliminarSobre,
+  onToggleBloqueo,
 }: SobresGastosGridProps) {
     const [modalOpen, setModalOpen] = useState(false);
     const [sobreSeleccionado, setSobreSeleccionado] = useState<SobreGastoOperativo | null>(null);
@@ -77,6 +79,7 @@ export function SobresGastosGrid({
                 onActualizarPorcentaje={onActualizarPorcentaje}
                 onActualizarMonto={onActualizarMonto}
                 onEditar={handleAbrirEditar}
+                onToggleBloqueo={onToggleBloqueo}
               />
             ))}
           </div>

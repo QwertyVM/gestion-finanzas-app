@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Pencil } from 'lucide-react';
+import { Pencil, Lock, Unlock } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
 import { getPresupuestoIcon } from './iconHelper';
 import type { SobreGastoOperativo } from '@/lib/finanzas-service';
@@ -13,6 +13,7 @@ interface SobreGastoCardProps {
   onActualizarPorcentaje: (sobreId: string, nuevoPct: number) => void;
   onActualizarMonto: (sobreId: string, nuevoMonto: number) => void;
   onEditar: (sobre: SobreGastoOperativo) => void;
+  onToggleBloqueo?: (sobreId: string) => void;
 }
 
 export function SobreGastoCard({
@@ -22,6 +23,7 @@ export function SobreGastoCard({
   onActualizarPorcentaje,
   onActualizarMonto,
   onEditar,
+  onToggleBloqueo,
 }: SobreGastoCardProps) {
   const IconComponent = getPresupuestoIcon(sobre.icono);
   const [montoInput, setMontoInput] = useState<string>(sobre.monto.toFixed(2));
@@ -63,66 +65,109 @@ export function SobreGastoCard({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => onEditar(sobre)}
-            title="Editar sobre"
-            className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer shrink-0 transition"
-          >
-            <Pencil className="w-3.5 h-3.5" />
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            {onToggleBloqueo && (
+              <button
+                type="button"
+                onClick={() => onToggleBloqueo(sobre.id)}
+                title={
+                  sobre.bloqueado
+                    ? 'Sobre fijado con candado. Haz clic para desbloquearlo.'
+                    : 'Fijar porcentaje con candado para que no cambie al ajustar otros sobres'
+                }
+                className={`p-1 rounded-md transition cursor-pointer ${sobre.bloqueado
+                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25'
+                    : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted'
+                  }`}
+              >
+                {sobre.bloqueado ? (
+                  <Lock className="w-3.5 h-3.5" />
+                ) : (
+                  <Unlock className="w-3.5 h-3.5" />
+                )}
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => onEditar(sobre)}
+              title="Editar sobre"
+              className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer shrink-0 transition"
+            >
+              <Pencil className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </div>
 
         {/* Input directo de Monto en Soles */}
         <div className="flex items-center justify-between gap-2 pt-1">
           <span className="text-[11px] font-medium text-muted-foreground">Monto Asignado:</span>
-          <div className="flex items-center gap-1 bg-muted/30 border border-border/70 rounded-lg px-2 py-0.5 focus-within:ring-1 focus-within:ring-primary focus-within:border-primary">
-            <span className="text-xs font-bold font-mono text-muted-foreground">{moneda}</span>
+            <div
+              className={`flex items-center gap-1 border rounded-lg px-2 py-0.5 ${sobre.bloqueado
+                  ? 'bg-muted/15 border-border/40 opacity-75'
+                  : 'bg-muted/30 border-border/70 focus-within:ring-1 focus-within:ring-primary focus-within:border-primary'
+                }`}
+            >
+              <span className="text-xs font-bold font-mono text-muted-foreground">{moneda}</span>
+              <input
+                type="number"
+                step="1"
+                min="0"
+                max={capitalTotal * 2}
+                value={montoInput}
+                disabled={sobre.bloqueado}
+                onChange={(e) => setMontoInput(e.target.value)}
+                onBlur={handleBlurMonto}
+                onKeyDown={handleKeyDownMonto}
+                className={`w-24 text-right font-mono text-sm font-bold bg-transparent text-foreground focus:outline-hidden ${sobre.bloqueado ? 'cursor-not-allowed text-muted-foreground' : ''
+                  }`}
+              />
+            </div>
+          </div>
+
+          {/* Slider interactivo y porcentaje sincronizado */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between text-[11px] font-mono">
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">Participación</span>
+                {sobre.bloqueado && (
+                  <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1 py-0.2 rounded inline-flex items-center gap-0.5">
+                    <Lock className="w-2.5 h-2.5" />
+                    Fijado
+                  </span>
+                )}
+              </div>
+              <span className="font-bold text-foreground px-1.5 py-0.2 rounded bg-muted/60">
+                {sobre.porcentaje}%
+              </span>
+            </div>
             <input
-              type="number"
-              step="1"
+              type="range"
               min="0"
-              max={capitalTotal * 2}
-              value={montoInput}
-              onChange={(e) => setMontoInput(e.target.value)}
-              onBlur={handleBlurMonto}
-              onKeyDown={handleKeyDownMonto}
-              className="w-24 text-right font-mono text-sm font-bold bg-transparent text-foreground focus:outline-hidden"
+              max="100"
+              step="1"
+              value={sobre.porcentaje}
+              disabled={sobre.bloqueado}
+              onChange={(e) => onActualizarPorcentaje(sobre.id, Number(e.target.value))}
+              className={`w-full h-1.5 rounded-lg transition ${sobre.bloqueado
+                  ? 'accent-amber-500/50 bg-muted/40 opacity-50 cursor-not-allowed'
+                  : 'accent-primary bg-muted cursor-pointer'
+                }`}
             />
           </div>
         </div>
 
-        {/* Slider interactivo y porcentaje sincronizado */}
-        <div className="space-y-1">
-          <div className="flex items-center justify-between text-[11px] font-mono">
-            <span className="text-muted-foreground">Participación</span>
-            <span className="font-bold text-foreground px-1.5 py-0.2 rounded bg-muted/60">
-              {sobre.porcentaje}%
-            </span>
+        {/* Ritmo Semanal y Diario del Sobre */}
+        <div className="pt-2 border-t border-border/40 grid grid-cols-2 gap-2 text-[10px] font-mono">
+          <div className="p-1.5 rounded bg-muted/30">
+            <span className="text-muted-foreground block text-[9px] uppercase">Por semana</span>
+            <span className="font-bold text-foreground">{formatMoney(sobre.montoSemanal, moneda)}</span>
           </div>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            step="1"
-            value={sobre.porcentaje}
-            onChange={(e) => onActualizarPorcentaje(sobre.id, Number(e.target.value))}
-            className="w-full accent-primary h-1.5 bg-muted rounded-lg cursor-pointer"
-          />
+          <div className="p-1.5 rounded bg-muted/30">
+            <span className="text-muted-foreground block text-[9px] uppercase">Por día</span>
+            <span className="font-bold text-foreground">{formatMoney(sobre.montoDiario, moneda)}</span>
+          </div>
         </div>
       </div>
-
-      {/* Ritmo Semanal y Diario del Sobre */}
-      <div className="pt-2 border-t border-border/40 grid grid-cols-2 gap-2 text-[10px] font-mono">
-        <div className="p-1.5 rounded bg-muted/30">
-          <span className="text-muted-foreground block text-[9px] uppercase">Por semana</span>
-          <span className="font-bold text-foreground">{formatMoney(sobre.montoSemanal, moneda)}</span>
-        </div>
-        <div className="p-1.5 rounded bg-muted/30">
-          <span className="text-muted-foreground block text-[9px] uppercase">Por día</span>
-          <span className="font-bold text-foreground">{formatMoney(sobre.montoDiario, moneda)}</span>
-        </div>
-      </div>
-    </div>
-  );
+      );
 }

@@ -30,6 +30,7 @@ export default function PresupuestoOperativoPage() {
     autoCuadrar100,
     guardarSobre,
     eliminarSobre,
+    toggleBloqueo,
     guardarNuevoEscenario,
     eliminarEscenario,
     cambiarDiaPago,
@@ -120,6 +121,7 @@ export default function PresupuestoOperativoPage() {
         onAutoCuadrar={autoCuadrar100}
         onGuardarSobre={guardarSobre}
         onEliminarSobre={eliminarSobre}
+        onToggleBloqueo={toggleBloqueo}
       />
 
       {/* 6. Consejo Consultor y Benchmark Histórico */}

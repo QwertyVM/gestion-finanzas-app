@@ -1,6 +1,7 @@
 export interface ItemPorcentaje {
   id: string;
   porcentaje: number;
+  bloqueado?: boolean;
   [key: string]: any;
 }
 
@@ -20,7 +21,7 @@ export function calcularMetricasSobre(
 
 /**
  * Normaliza cualquier lista de porcentajes para que sumen exactamente 100%
- * usando el método del resto mayor (Hare-Niemeyer).
+ * usando el método del resto mayor (Hare-Niemeyer), respetando los sobres bloqueados.
  */
 export function normalizarSuma100<T extends ItemPorcentaje>(sobres: T[]): T[] {
   if (sobres.length === 0) return sobres;
@@ -31,160 +32,187 @@ export function normalizarSuma100<T extends ItemPorcentaje>(sobres: T[]): T[] {
   const suma = sobres.reduce((acc, s) => acc + (s.porcentaje || 0), 0);
   if (suma === 100) return sobres;
 
-  const items = sobres.map((s, index) => {
-    const ideal = suma > 0 ? (s.porcentaje / suma) * 100 : 100 / sobres.length;
-    const baseFloor = Math.floor(ideal);
-    const remainder = ideal - baseFloor;
-    return { id: s.id, baseFloor, remainder, originalIndex: index, sobre: s };
-  });
+    const bloqueados = sobres.filter((s) => s.bloqueado);
+    const variables = sobres.filter((s) => !s.bloqueado);
 
-  const sumaBase = items.reduce((acc, item) => acc + item.baseFloor, 0);
-  const diff = 100 - sumaBase;
-
-  const ordenados = [...items].sort((a, b) => {
-    if (Math.abs(b.remainder - a.remainder) > 0.000001) {
-      return b.remainder - a.remainder;
+    // Si todos están bloqueados o no hay variables, normalizar proporcionalmente entre todos
+    if (variables.length === 0) {
+      return distribuirHareNiemeyer(sobres, 100);
     }
-    return a.originalIndex - b.originalIndex;
-  });
 
-  const idsConBonus = new Set<string>();
-  for (let i = 0; i < diff; i++) {
-    idsConBonus.add(ordenados[i].id);
+    const sumaBloqueados = bloqueados.reduce((acc, s) => acc + (s.porcentaje || 0), 0);
+    const presupuestoParaVariables = Math.max(0, 100 - sumaBloqueados);
+
+    const variablesNormalizadas = distribuirHareNiemeyer(variables, presupuestoParaVariables);
+    const mapaVariables = new Map<string, number>(variablesNormalizadas.map((v) => [v.id, v.porcentaje]));
+
+    return sobres.map((s) => {
+      if (s.bloqueado) return s;
+      return { ...s, porcentaje: mapaVariables.get(s.id) ?? 0 };
+    });
   }
 
-  return items.map((item) => ({
-    ...item.sobre,
-    porcentaje: item.baseFloor + (idsConBonus.has(item.id) ? 1 : 0),
-  }));
-}
+/**
+ * Distribuye un total meta entre un conjunto de items usando Hare-Niemeyer
+ */
+function distribuirHareNiemeyer<T extends ItemPorcentaje>(items: T[], totalMeta: number): T[] {
+      if (items.length === 0) return items;
+      if (items.length === 1) {
+        return [{ ...items[0], porcentaje: totalMeta }];
+      }
+
+      const sumaActual = items.reduce((acc, s) => acc + (s.porcentaje || 0), 0);
+      const calculados = items.map((s, index) => {
+        const ideal = sumaActual > 0 ? (s.porcentaje / sumaActual) * totalMeta : totalMeta / items.length;
+        const baseFloor = Math.floor(ideal);
+        const remainder = ideal - baseFloor;
+        return { id: s.id, baseFloor, remainder, originalIndex: index, item: s };
+      });
+
+      const sumaBase = calculados.reduce((acc, c) => acc + c.baseFloor, 0);
+      const diff = totalMeta - sumaBase;
+
+        const ordenados = [...calculados].sort((a, b) => {
+          if (Math.abs(b.remainder - a.remainder) > 0.000001) {
+            return b.remainder - a.remainder;
+          }
+          return a.originalIndex - b.originalIndex;
+        });
+
+        const idsConBonus = new Set<string>();
+        for (let i = 0; i < diff; i++) {
+          idsConBonus.add(ordenados[i].id);
+        }
+
+          return calculados.map((c) => ({
+            ...c.item,
+            porcentaje: c.baseFloor + (idsConBonus.has(c.id) ? 1 : 0),
+          }));
+        }
 
 /**
  * Redistribuye los porcentajes cuando se modifica uno específico,
  * asegurando que todos los indicadores SIEMPRE sumen exactamente 100%.
- * Si se sube o baja uno, la diferencia se redistribuye proporcionalmente
- * entre los demás mediante el método del resto mayor (Hare-Niemeyer).
+ *
+ * Respeta el candado (bloqueado: true):
+ * - Los sobres bloqueados no se modifican.
+ * - Si el sobre modificado es el único variable, absorbe estrictamente (100 - sumaBloqueados).
+ * - La diferencia se redistribuye proporcionalmente SOLO entre los demás sobres variables.
  */
 export function redistribuirPorcentajes<T extends ItemPorcentaje>(
-  sobres: T[],
-  idModificado: string,
-  nuevoPorcentaje: number
-): T[] {
-  if (sobres.length === 0) return sobres;
-  if (sobres.length === 1) {
-    return [{ ...sobres[0], porcentaje: 100 }];
-  }
+          sobres: T[],
+          idModificado: string,
+          nuevoPorcentaje: number
+        ): T[] {
+          if (sobres.length === 0) return sobres;
+          if (sobres.length === 1) {
+            return [{ ...sobres[0], porcentaje: 100 }];
+          }
 
-  // Clampear entre 0 y 100
-  const targetPct = Math.max(0, Math.min(100, Math.round(nuevoPorcentaje)));
-  const restante = 100 - targetPct;
+          const otrosSobres = sobres.filter((s) => s.id !== idModificado);
+          const otrosBloqueados = otrosSobres.filter((s) => s.bloqueado);
+          const otrosVariables = otrosSobres.filter((s) => !s.bloqueado);
 
-  const otrosSobres = sobres.filter((s) => s.id !== idModificado);
-  const sumaOtros = otrosSobres.reduce((acc, s) => acc + (s.porcentaje || 0), 0);
+          const sumaBloqueados = otrosBloqueados.reduce((acc, s) => acc + (s.porcentaje || 0), 0);
+          const maxDisponible = Math.max(0, 100 - sumaBloqueados);
 
-  const items = otrosSobres.map((s, index) => {
-    let ideal: number;
-    if (sumaOtros > 0) {
-      ideal = (s.porcentaje / sumaOtros) * restante;
-    } else {
-      ideal = restante / otrosSobres.length;
-    }
-    const baseFloor = Math.floor(ideal);
-    const remainder = ideal - baseFloor;
-    return {
-      id: s.id,
-      baseFloor,
-      remainder,
-      originalIndex: index,
-      sobre: s,
-    };
-  });
+          // Si no quedan otros sobres variables, el modificado debe asumir exactamente todo el remanente disponible
+          if (otrosVariables.length === 0) {
+            return sobres.map((s) => {
+              if (s.id === idModificado) {
+                return { ...s, porcentaje: maxDisponible };
+              }
+              return s;
+            });
+          }
 
-  const sumaBase = items.reduce((acc, item) => acc + item.baseFloor, 0);
-  const diff = restante - sumaBase;
+          // Clampear el valor deseado entre 0 y el máximo disponible
+          const targetPct = Math.max(0, Math.min(maxDisponible, Math.round(nuevoPorcentaje)));
+          const restanteParaVariables = maxDisponible - targetPct;
 
-  const ordenados = [...items].sort((a, b) => {
-    if (Math.abs(b.remainder - a.remainder) > 0.000001) {
-      return b.remainder - a.remainder;
-    }
-    return a.originalIndex - b.originalIndex;
-  });
+          const variablesRedistribuidas = distribuirHareNiemeyer(otrosVariables, restanteParaVariables);
+          const mapaVariables = new Map<string, number>(variablesRedistribuidas.map((v) => [v.id, v.porcentaje]));
 
-  const idsConBonus = new Set<string>();
-  for (let i = 0; i < diff; i++) {
-    idsConBonus.add(ordenados[i].id);
-  }
-
-  const mapaNuevosPct = new Map<string, number>();
-  for (const item of items) {
-    mapaNuevosPct.set(item.id, item.baseFloor + (idsConBonus.has(item.id) ? 1 : 0));
-  }
-
-  return sobres.map((s) => {
-    if (s.id === idModificado) {
-      return { ...s, porcentaje: targetPct };
-    }
-    return { ...s, porcentaje: mapaNuevosPct.get(s.id) ?? 0 };
-  });
-}
-
-/**
- * Redistribuye los porcentajes tras eliminar un sobre para mantener el 100%.
- */
-export function redistribuirAlEliminar<T extends ItemPorcentaje>(
-  sobres: T[],
-  idAEliminar: string
-): T[] {
-  const restantes = sobres.filter((s) => s.id !== idAEliminar);
-  return normalizarSuma100(restantes);
-}
-
-/**
- * Calcula los montos en moneda local (total, semanal y diario) para cada sobre,
- * ajustando posibles diferencias de céntimos por redondeo para que la suma cuadre exacta.
- */
-export function calcularMontosSobres<T extends ItemPorcentaje>(
-  sobres: T[],
-  capitalOperativo: number,
-  diasTotales: number
-): Array<T & { monto: number; montoSemanal: number; montoDiario: number }> {
-  if (sobres.length === 0) return [];
-
-  const resultado = sobres.map((s) => {
-    const pct = Math.max(0, Math.min(100, Math.round(s.porcentaje)));
-    const monto = Number(((capitalOperativo * pct) / 100).toFixed(2));
-    const { montoDiario, montoSemanal } = calcularMetricasSobre(monto, diasTotales);
-    return {
-      ...s,
-      porcentaje: pct,
-      monto,
-      montoSemanal,
-      montoDiario,
-    };
-  });
-
-  // Si la suma de porcentajes es 100%, ajustar discrepancias de redondeo al sobre con mayor peso
-  const sumaPorcentajes = resultado.reduce((acc, s) => acc + s.porcentaje, 0);
-  if (sumaPorcentajes === 100 && capitalOperativo > 0) {
-    const sumaMontos = Number(resultado.reduce((acc, s) => acc + s.monto, 0).toFixed(2));
-    const diffCents = Number((capitalOperativo - sumaMontos).toFixed(2));
-    if (diffCents !== 0 && Math.abs(diffCents) <= 0.05) {
-      let maxIdx = 0;
-      for (let i = 1; i < resultado.length; i++) {
-        if (resultado[i].porcentaje > resultado[maxIdx].porcentaje) {
-          maxIdx = i;
+          return sobres.map((s) => {
+            if (s.id === idModificado) {
+              return { ...s, porcentaje: targetPct };
+            }
+            if (s.bloqueado) {
+              return s;
+            }
+            return { ...s, porcentaje: mapaVariables.get(s.id) ?? 0 };
+          });
         }
-      }
-      const nuevoMonto = Number((resultado[maxIdx].monto + diffCents).toFixed(2));
-      const { montoDiario, montoSemanal } = calcularMetricasSobre(nuevoMonto, diasTotales);
-      resultado[maxIdx] = {
-        ...resultado[maxIdx],
-        monto: nuevoMonto,
-        montoDiario,
-        montoSemanal,
-      };
-    }
-  }
 
-  return resultado;
-}
+        /**
+         * Conmuta el estado de fijación / candado de un sobre.
+         */
+        export function toggleBloqueoSobre<T extends ItemPorcentaje>(
+          sobres: T[],
+          id: string
+        ): T[] {
+          return sobres.map((s) =>
+            s.id === id ? { ...s, bloqueado: !s.bloqueado } : s
+          );
+        }
+
+        /**
+         * Redistribuye los porcentajes tras eliminar un sobre para mantener el 100%.
+         */
+        export function redistribuirAlEliminar<T extends ItemPorcentaje>(
+          sobres: T[],
+          idAEliminar: string
+        ): T[] {
+          const restantes = sobres.filter((s) => s.id !== idAEliminar);
+          return normalizarSuma100(restantes);
+        }
+
+        /**
+         * Calcula los montos en moneda local (total, semanal y diario) para cada sobre,
+         * ajustando posibles diferencias de céntimos por redondeo para que la suma cuadre exacta.
+         */
+        export function calcularMontosSobres<T extends ItemPorcentaje>(
+          sobres: T[],
+          capitalOperativo: number,
+          diasTotales: number
+        ): Array<T & { monto: number; montoSemanal: number; montoDiario: number }> {
+          if (sobres.length === 0) return [];
+
+          const resultado = sobres.map((s) => {
+            const pct = Math.max(0, Math.min(100, Math.round(s.porcentaje)));
+            const monto = Number(((capitalOperativo * pct) / 100).toFixed(2));
+            const { montoDiario, montoSemanal } = calcularMetricasSobre(monto, diasTotales);
+            return {
+              ...s,
+              porcentaje: pct,
+              monto,
+              montoSemanal,
+              montoDiario,
+            };
+          });
+
+          // Si la suma de porcentajes es 100%, ajustar discrepancias de redondeo al sobre con mayor peso
+          const sumaPorcentajes = resultado.reduce((acc, s) => acc + s.porcentaje, 0);
+          if (sumaPorcentajes === 100 && capitalOperativo > 0) {
+            const sumaMontos = Number(resultado.reduce((acc, s) => acc + s.monto, 0).toFixed(2));
+            const diffCents = Number((capitalOperativo - sumaMontos).toFixed(2));
+            if (diffCents !== 0 && Math.abs(diffCents) <= 0.05) {
+              let maxIdx = 0;
+              for (let i = 1; i < resultado.length; i++) {
+                if (resultado[i].porcentaje > resultado[maxIdx].porcentaje) {
+                  maxIdx = i;
+                }
+              }
+              const nuevoMonto = Number((resultado[maxIdx].monto + diffCents).toFixed(2));
+              const { montoDiario, montoSemanal } = calcularMetricasSobre(nuevoMonto, diasTotales);
+              resultado[maxIdx] = {
+                ...resultado[maxIdx],
+                monto: nuevoMonto,
+                montoDiario,
+                montoSemanal,
+              };
+            }
+          }
+
+          return resultado;
+        }

@@ -3014,6 +3014,7 @@ export interface SobreGastoOperativo {
   monto: number;
   montoSemanal: number;
   montoDiario: number;
+  bloqueado?: boolean;
 }
 
 export interface EscenarioPresupuesto {
@@ -3287,6 +3288,7 @@ export async function getPresupuestoOperativo(
       icono: s.icono || 'Utensils',
       color: s.color || '#0284c7',
       porcentaje: Number(s.porcentaje) || 0,
+      bloqueado: Boolean(s.bloqueado),
     }))
   );
   const sobres: SobreGastoOperativo[] = calcularMontosSobres(
@@ -3345,6 +3347,7 @@ export interface GuardarPresupuestoOperativoInput {
     icono: string;
     color: string;
     porcentaje: number;
+    bloqueado?: boolean;
   }>;
   escenarios?: EscenarioPresupuesto[];
   escenarioActivo?: string;
