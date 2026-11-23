@@ -142,6 +142,8 @@ model CostoFijo {
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
   registrosMes   RegistroCostoFijoMes[]
+
+  @@index([usuarioId, activo])
 }
 
 model RegistroCostoFijoMes {
@@ -162,6 +164,8 @@ model RegistroCostoFijoMes {
   updatedAt     DateTime        @updatedAt
 
   @@unique([costoFijoId, periodo])
+  @@index([periodo])
+  @@index([costoFijoId])
 }
 
 model Prestamo {
@@ -181,6 +185,8 @@ model Prestamo {
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
   cuotas           CuotaPrestamo[]
+
+  @@index([usuarioId, activo])
 }
 
 model CuotaPrestamo {
@@ -198,6 +204,8 @@ model CuotaPrestamo {
   updatedAt     DateTime   @updatedAt
 
   @@unique([prestamoId, numeroCuota])
+  @@index([periodo])
+  @@index([prestamoId])
 }
 
 model Gasto {
@@ -229,6 +237,11 @@ model Gasto {
   notas           String?
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
+
+  @@index([usuarioId, periodoPago])
+  @@index([periodoPago])
+  @@index([gastoPadreId])
+  @@index([usuarioId, estado])
 }
 
 model IngresoMes {
