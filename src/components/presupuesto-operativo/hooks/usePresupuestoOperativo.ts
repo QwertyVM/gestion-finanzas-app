@@ -16,6 +16,7 @@ import {
   sincronizarSobresConCapital,
   toggleBloqueoSobre as toggleBloqueoHelper,
   calcularRunwayDesdeMonto,
+  calcularPeriodoCobroYSemanas,
 } from '@/lib/presupuesto-operativo-helpers';
 
 export function usePresupuestoOperativo() {
@@ -320,9 +321,12 @@ export function usePresupuestoOperativo() {
 
   const runwayBolsilloActivo: RunwayBolsilloData | null = useMemo(() => {
     if (!data || !sobreBolsillo) return null;
-    const diasTotales = data.runway.diasTotales;
-    const mesAbrev = data.nombreMesDestino ? data.nombreMesDestino.split(' ')[0].slice(0, 3) : 'Mes';
-    const calculo = calcularRunwayDesdeMonto(sobreBolsillo.monto, diasTotales, mesAbrev);
+    const calculo = calcularPeriodoCobroYSemanas(
+      sobreBolsillo.monto,
+      data.periodoOrigen,
+      data.periodoDestino,
+      diaPagoSueldo
+    );
     return {
       sobreId: sobreBolsillo.id,
       nombreSobre: sobreBolsillo.nombre,
@@ -330,7 +334,7 @@ export function usePresupuestoOperativo() {
       porcentajeAsignado: sobreBolsillo.porcentaje,
       ...calculo,
     };
-  }, [data, sobreBolsillo]);
+  }, [data, sobreBolsillo, diaPagoSueldo]);
 
   return {
     periodo,

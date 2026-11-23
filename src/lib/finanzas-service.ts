@@ -7,6 +7,7 @@ import {
   sincronizarSobresConCapital,
   normalizarSuma100,
   calcularRunwayDesdeMonto,
+  calcularPeriodoCobroYSemanas,
 } from './presupuesto-operativo-helpers';
 
 export interface EgresoConsolidado {
@@ -3040,7 +3041,10 @@ export interface RunwayBolsilloData {
   montoAsignado: number;
   porcentajeAsignado: number;
   diasTotales: number;
-  semanasTotales: number;
+  semanasTotales?: number;
+  semanasCompletas?: number;
+  diasRemanentes?: number;
+  textoPeriodo?: string;
   limiteDiario: number;
   limiteSemanal: number;
   desgloseSemanas: SemanaRunwayItem[];
@@ -3319,7 +3323,12 @@ export async function getPresupuestoOperativo(
 
   const montoBolsillo = sobreBolsillo?.monto || 0;
   const pctBolsillo = sobreBolsillo?.porcentaje || 0;
-  const runwayBolsilloCalc = calcularRunwayDesdeMonto(montoBolsillo, diasTotales, mesAbrev);
+  const runwayBolsilloCalc = calcularPeriodoCobroYSemanas(
+    montoBolsillo,
+    periodoOrigen,
+    periodoDestino,
+    diaPagoSueldo
+  );
 
   const runwayBolsillo: RunwayBolsilloData = {
     sobreId: sobreBolsillo?.id || 'BOLSILLO_OCIO',

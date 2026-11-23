@@ -5,9 +5,7 @@ import { usePresupuestoOperativo } from '@/components/presupuesto-operativo/hook
 import { PresupuestoOperativoHeader } from '@/components/presupuesto-operativo/PresupuestoOperativoHeader';
 import { BridgeCashFlowCard } from '@/components/presupuesto-operativo/BridgeCashFlowCard';
 import { RunwayVelocimetroCard } from '@/components/presupuesto-operativo/RunwayVelocimetroCard';
-import { EscenariosSelectorBar } from '@/components/presupuesto-operativo/EscenariosSelectorBar';
 import { SobresGastosGrid } from '@/components/presupuesto-operativo/SobresGastosGrid';
-import { PresupuestoConsejoBanner } from '@/components/presupuesto-operativo/PresupuestoConsejoBanner';
 import { Loader2 } from 'lucide-react';
 
 export default function PresupuestoOperativoPage() {
@@ -15,7 +13,6 @@ export default function PresupuestoOperativoPage() {
     data,
     loading,
     moneda,
-    escenarioActivo,
     sobresLocales,
     sobreBolsillo,
     runwayBolsilloActivo,
@@ -26,17 +23,13 @@ export default function PresupuestoOperativoPage() {
     irMesAnterior,
     irMesSiguiente,
     puedeIrMesAnterior,
-    aplicarEscenario,
     actualizarPorcentajeSobre,
     actualizarMontoSobre,
     autoCuadrar100,
     guardarSobre,
     eliminarSobre,
     toggleBloqueo,
-    guardarNuevoEscenario,
-    eliminarEscenario,
     cambiarDiaPago,
-    resetearDeFabrica,
     recargar,
   } = usePresupuestoOperativo();
 
@@ -76,8 +69,8 @@ export default function PresupuestoOperativoPage() {
         onRecargar={recargar}
       />
 
-      {/* SECCIÓN 1: Puente Financiero (Ingresos - Egresos = Dinero para Vivir) */}
-      <section aria-label="Puente Financiero">
+      {/* BLOQUE 1: Saldo Disponible (Ingresos - Egresos = Dinero para Vivir) */}
+      <section aria-label="Saldo Disponible">
         <BridgeCashFlowCard
           nombreMesOrigen={data.nombreMesOrigen}
           nombreMesDestino={data.nombreMesDestino}
@@ -89,19 +82,19 @@ export default function PresupuestoOperativoPage() {
         />
       </section>
 
-      {/* SECCIÓN 2: Distribución de Dinero (Escenarios y Sobres de Gasto) */}
-      <section aria-label="Distribución de Dinero" className="space-y-4">
-        {/* Selector de Escenarios con 1 clic y presets guardables */}
-        <EscenariosSelectorBar
-          escenarios={data.escenarios}
-          escenarioActivo={escenarioActivo}
-          onSeleccionarEscenario={aplicarEscenario}
-          onGuardarNuevoEscenario={guardarNuevoEscenario}
-          onEliminarEscenario={eliminarEscenario}
-          onResetear={resetearDeFabrica}
-        />
+      {/* BLOQUE 2: Tus Sobres de Gasto Personalizados */}
+      <section aria-label="Tus Sobres de Gasto" className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
+              Tus Sobres de Gasto
+            </h2>
+            <p className="text-[11px] text-muted-foreground">
+              Asigna el 100% de tu dinero disponible a tus categorías personalizadas.
+            </p>
+          </div>
+        </div>
 
-        {/* Grid de Sobres de Subsistencia Parametrizables */}
         <SobresGastosGrid
           sobres={sobresLocales}
           moneda={moneda}
@@ -118,12 +111,14 @@ export default function PresupuestoOperativoPage() {
         />
       </section>
 
-      {/* SECCIÓN 3: Ritmo de Vida & Runway basado en Bolsillo Personal & Ocio Flexible */}
+      {/* BLOQUE 3: Runway de Ocio & Semanas hasta el Próximo Cobro */}
       <section aria-label="Runway de Ocio Personal">
         <RunwayVelocimetroCard
           nombreMesDestino={data.nombreMesDestino}
           diasTotales={runwayBolsilloActivo?.diasTotales ?? data.runway.diasTotales}
-          semanasTotales={runwayBolsilloActivo?.semanasTotales ?? data.runway.semanasTotales}
+          semanasCompletas={runwayBolsilloActivo?.semanasCompletas}
+          diasRemanentes={runwayBolsilloActivo?.diasRemanentes}
+          textoPeriodo={runwayBolsilloActivo?.textoPeriodo}
           limiteDiario={runwayBolsilloActivo?.limiteDiario ?? 0}
           limiteSemanal={runwayBolsilloActivo?.limiteSemanal ?? 0}
           desgloseSemanas={runwayBolsilloActivo?.desgloseSemanas ?? []}
@@ -135,12 +130,6 @@ export default function PresupuestoOperativoPage() {
           onCambiarDiaPago={cambiarDiaPago}
         />
       </section>
-
-      {/* Consejo Consultor y Benchmark Histórico */}
-      <PresupuestoConsejoBanner
-        consejoConsultor={data.consejoConsultor}
-        benchmarkHistorico={data.benchmarkHistorico}
-      />
     </div>
   );
 }

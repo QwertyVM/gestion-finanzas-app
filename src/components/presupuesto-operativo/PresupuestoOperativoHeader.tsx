@@ -28,16 +28,11 @@ export function PresupuestoOperativoHeader({
             Dinero para Vivir
           </h1>
           <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-500/20">
-            Distribución de Gastos
-          </span>
-          <span className="text-[11px] font-medium bg-muted/60 text-muted-foreground px-2 py-0.5 rounded-md border border-border/60">
-            Flujo Puente Mes a Mes
+            Método de Sobres
           </span>
         </div>
         <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5 flex-wrap">
-          <span>Cierre de compromisos de <strong>{nombreMesOrigen}</strong></span>
-          <ArrowRight className="w-3 h-3 text-muted-foreground" />
-          <span>Presupuesto operativo para subsistir en <strong>{nombreMesDestino}</strong></span>
+          <span>Planificas tu subsistencia en <strong>{nombreMesDestino}</strong> con el saldo de cierre de <strong>{nombreMesOrigen}</strong></span>
         </p>
       </div>
 

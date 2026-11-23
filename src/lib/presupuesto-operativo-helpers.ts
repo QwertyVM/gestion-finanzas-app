@@ -15,9 +15,123 @@ export interface SemanaRunwayItem {
   montoSugerido: number;
 }
 
+export interface DesgloseSemanasPeriodo {
+  diasTotales: number;
+  semanasCompletas: number;
+  diasRemanentes: number;
+  textoPeriodo: string;
+  limiteDiario: number;
+  limiteSemanal: number;
+  desgloseSemanas: SemanaRunwayItem[];
+}
+
 /**
- * Calcula el desglose del Runway (tope diario, semanal y semanas individuales)
- * a partir de un monto asignado (ej. Bolsillo Personal & Ocio Flexible) y los días totales del mes.
+ * Calcula con precisión de calendario cuántas semanas y días tiene el periodo
+ * comprendido entre la fecha de cobro del sueldo y el cobro del próximo mes.
+ */
+export function calcularPeriodoCobroYSemanas(
+  monto: number,
+  periodoOrigen: string,
+  periodoDestino: string,
+  diaPagoSueldo: number = 30
+): DesgloseSemanasPeriodo {
+  const [anoOri, mesOri] = periodoOrigen.split('-').map(Number);
+  const [anoDest, mesDest] = periodoDestino.split('-').map(Number);
+
+  const mesesAbrev = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Set', 'Oct', 'Nov', 'Dic'];
+
+  const maxDiasOri = new Date(anoOri, mesOri, 0).getDate();
+  const maxDiasDest = new Date(anoDest, mesDest, 0).getDate();
+
+  const diaCobroEfectivoOri = Math.min(diaPagoSueldo, maxDiasOri);
+  const diaCobroEfectivoDest = Math.min(diaPagoSueldo, maxDiasDest);
+
+  let fechaInicio: Date;
+  if (diaCobroEfectivoOri >= maxDiasOri) {
+    fechaInicio = new Date(anoDest, mesDest - 1, 1);
+  } else {
+    fechaInicio = new Date(anoOri, mesOri - 1, diaCobroEfectivoOri + 1);
+  }
+
+  const fechaFin = new Date(anoDest, mesDest - 1, diaCobroEfectivoDest);
+
+  const diffTime = fechaFin.getTime() - fechaInicio.getTime();
+  let diasTotales = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)) + 1);
+
+  if (diasTotales < 15) {
+    diasTotales = maxDiasDest;
+  }
+
+  const semanasCompletas = Math.floor(diasTotales / 7);
+  const diasRemanentes = diasTotales % 7;
+
+  const textoPeriodo = diasRemanentes > 0
+    ? `${semanasCompletas} semanas y ${diasRemanentes} día${diasRemanentes > 1 ? 's' : ''} hasta el próximo cobro (${diasTotales} días)`
+    : `${semanasCompletas} semanas exactas hasta el próximo cobro (${diasTotales} días)`;
+
+  const limiteDiario = diasTotales > 0 ? Number((monto / diasTotales).toFixed(2)) : 0;
+  const limiteSemanal = Number((limiteDiario * 7).toFixed(2));
+
+  const desgloseSemanas: SemanaRunwayItem[] = [];
+  let fechaCursor = new Date(fechaInicio);
+
+  for (let s = 1; s <= semanasCompletas; s++) {
+    const fechaFinSemana = new Date(fechaCursor);
+    fechaFinSemana.setDate(fechaFinSemana.getDate() + 6);
+
+    const dIni = String(fechaCursor.getDate()).padStart(2, '0');
+    const mIni = mesesAbrev[fechaCursor.getMonth()];
+    const dFin = String(fechaFinSemana.getDate()).padStart(2, '0');
+    const mFin = mesesAbrev[fechaFinSemana.getMonth()];
+
+    const rangoFechas = mIni === mFin
+      ? `${dIni} al ${dFin} de ${mIni}`
+      : `${dIni} ${mIni} al ${dFin} ${mFin}`;
+
+    desgloseSemanas.push({
+      semana: s,
+      etiqueta: `Semana ${s}`,
+      rangoFechas,
+      montoSugerido: limiteSemanal,
+    });
+
+    fechaCursor.setDate(fechaCursor.getDate() + 7);
+  }
+
+  if (diasRemanentes > 0) {
+    const dIni = String(fechaCursor.getDate()).padStart(2, '0');
+    const mIni = mesesAbrev[fechaCursor.getMonth()];
+    const dFin = String(fechaFin.getDate()).padStart(2, '0');
+    const mFin = mesesAbrev[fechaFin.getMonth()];
+
+    const rangoFechas = mIni === mFin
+      ? `${dIni} al ${dFin} de ${mIni}`
+      : `${dIni} ${mIni} al ${dFin} ${mFin}`;
+
+    const montoSemanasPrevias = Number((limiteSemanal * semanasCompletas).toFixed(2));
+    const montoRem = Math.max(0, Number((monto - montoSemanasPrevias).toFixed(2)));
+
+    desgloseSemanas.push({
+      semana: semanasCompletas + 1,
+      etiqueta: `Cierre (${diasRemanentes}d)`,
+      rangoFechas,
+      montoSugerido: montoRem,
+    });
+  }
+
+  return {
+    diasTotales,
+    semanasCompletas,
+    diasRemanentes,
+    textoPeriodo,
+    limiteDiario,
+    limiteSemanal,
+    desgloseSemanas,
+  };
+}
+
+/**
+ * Calcula el desglose del Runway básico
  */
 export function calcularRunwayDesdeMonto(
   monto: number,

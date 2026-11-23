@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Pencil, Lock, Unlock } from 'lucide-react';
+import { Pencil, Lock, Unlock, Sparkles } from 'lucide-react';
 import { formatMoney } from '@/lib/utils';
 import { getPresupuestoIcon } from './iconHelper';
 import type { SobreGastoOperativo } from '@/lib/finanzas-service';
@@ -26,6 +26,8 @@ export function SobreGastoCard({
   onToggleBloqueo,
 }: SobreGastoCardProps) {
   const IconComponent = getPresupuestoIcon(sobre.icono);
+  const esBolsilloOcio = sobre.id === 'BOLSILLO_OCIO' || /bolsillo|ocio/i.test(sobre.nombre);
+
   const [montoInput, setMontoInput] = useState<string>(
     Number.isInteger(sobre.monto) ? sobre.monto.toString() : sobre.monto.toFixed(2)
   );
@@ -54,9 +56,15 @@ export function SobreGastoCard({
   };
 
   return (
-    <div className="bg-card border border-border/80 rounded-xl p-4 shadow-2xs space-y-3 flex flex-col justify-between hover:border-border transition">
-      <div className="space-y-2">
-        {/* Header con icono, título y botón editar */}
+    <div
+      className={`bg-card rounded-xl p-4 shadow-2xs space-y-3 flex flex-col justify-between transition border ${
+        esBolsilloOcio
+          ? 'border-purple-300/80 dark:border-purple-700/60 ring-1 ring-purple-500/10'
+          : 'border-border/80 hover:border-border'
+      }`}
+    >
+      <div className="space-y-2.5">
+        {/* Header con icono, título y acciones */}
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-2 min-w-0">
             <div
@@ -66,7 +74,15 @@ export function SobreGastoCard({
               <IconComponent className="w-3.5 h-3.5" />
             </div>
             <div className="min-w-0">
-              <h4 className="text-xs font-bold text-foreground truncate">{sobre.nombre}</h4>
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h4 className="text-xs font-bold text-foreground truncate">{sobre.nombre}</h4>
+                {esBolsilloOcio && (
+                  <span className="text-[9px] font-semibold text-purple-700 dark:text-purple-300 bg-purple-500/10 border border-purple-500/20 px-1.5 py-0.2 rounded-full inline-flex items-center gap-0.5">
+                    <Sparkles className="w-2.5 h-2.5" />
+                    <span>Runway</span>
+                  </span>
+                )}
+              </div>
               <p className="text-[10px] text-muted-foreground line-clamp-1">{sobre.descripcion}</p>
             </div>
           </div>
@@ -79,12 +95,13 @@ export function SobreGastoCard({
                 title={
                   sobre.bloqueado
                     ? 'Sobre fijado con candado. Haz clic para desbloquearlo.'
-                    : 'Fijar porcentaje con candado para que no cambie al ajustar otros sobres'
+                    : 'Fijar monto con candado para no alterarlo al mover otros sobres'
                 }
-                className={`p-1 rounded-md transition cursor-pointer ${sobre.bloqueado
-                  ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25'
-                  : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted'
-                  }`}
+                className={`p-1 rounded-md transition cursor-pointer ${
+                  sobre.bloqueado
+                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 hover:bg-amber-500/25'
+                    : 'text-muted-foreground/60 hover:text-foreground hover:bg-muted'
+                }`}
               >
                 {sobre.bloqueado ? (
                   <Lock className="w-3.5 h-3.5" />
@@ -97,7 +114,7 @@ export function SobreGastoCard({
             <button
               type="button"
               onClick={() => onEditar(sobre)}
-              title="Editar sobre"
+              title="Editar nombre, icono o color"
               className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer shrink-0 transition"
             >
               <Pencil className="w-3.5 h-3.5" />
@@ -105,14 +122,15 @@ export function SobreGastoCard({
           </div>
         </div>
 
-        {/* Input directo de Monto en Soles */}
-        <div className="flex items-center justify-between gap-2 pt-1">
-          <span className="text-[11px] font-medium text-muted-foreground">Monto Asignado:</span>
+        {/* Asignación directa en Soles */}
+        <div className="flex items-center justify-between gap-2 pt-0.5">
+          <span className="text-[11px] font-medium text-muted-foreground">Monto asignado:</span>
           <div
-            className={`flex items-center gap-1 border rounded-lg px-2 py-0.5 ${sobre.bloqueado
-              ? 'bg-muted/15 border-border/40 opacity-75'
-              : 'bg-muted/30 border-border/70 focus-within:ring-1 focus-within:ring-primary focus-within:border-primary'
-              }`}
+            className={`flex items-center gap-1 border rounded-lg px-2 py-0.5 ${
+              sobre.bloqueado
+                ? 'bg-muted/15 border-border/40 opacity-75'
+                : 'bg-muted/30 border-border/70 focus-within:ring-1 focus-within:ring-primary focus-within:border-primary'
+            }`}
           >
             <span className="text-xs font-bold font-mono text-muted-foreground">{moneda}</span>
             <input
@@ -125,8 +143,9 @@ export function SobreGastoCard({
               onChange={(e) => setMontoInput(e.target.value)}
               onBlur={handleBlurMonto}
               onKeyDown={handleKeyDownMonto}
-              className={`w-24 text-right font-mono text-sm font-bold bg-transparent text-foreground focus:outline-hidden ${sobre.bloqueado ? 'cursor-not-allowed text-muted-foreground' : ''
-                }`}
+              className={`w-24 text-right font-mono text-sm font-bold bg-transparent text-foreground focus:outline-hidden ${
+                sobre.bloqueado ? 'cursor-not-allowed text-muted-foreground' : ''
+              }`}
             />
           </div>
         </div>
@@ -135,7 +154,7 @@ export function SobreGastoCard({
         <div className="space-y-1">
           <div className="flex items-center justify-between text-[11px] font-mono">
             <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground">Participación</span>
+              <span className="text-muted-foreground text-[10px]">Participación</span>
               {sobre.bloqueado && (
                 <span className="text-[9px] font-bold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1 py-0.2 rounded inline-flex items-center gap-0.5">
                   <Lock className="w-2.5 h-2.5" />
@@ -143,7 +162,7 @@ export function SobreGastoCard({
                 </span>
               )}
             </div>
-            <span className="font-bold text-foreground px-1.5 py-0.2 rounded bg-muted/60">
+            <span className="font-bold text-foreground px-1.5 py-0.2 rounded bg-muted/60 text-[10px]">
               {Number.isInteger(sobre.porcentaje) ? sobre.porcentaje : sobre.porcentaje.toFixed(1)}%
             </span>
           </div>
@@ -155,15 +174,16 @@ export function SobreGastoCard({
             value={sobre.porcentaje}
             disabled={sobre.bloqueado}
             onChange={(e) => onActualizarPorcentaje(sobre.id, Number(e.target.value))}
-            className={`w-full h-1.5 rounded-lg transition ${sobre.bloqueado
-              ? 'accent-amber-500/50 bg-muted/40 opacity-50 cursor-not-allowed'
-              : 'accent-primary bg-muted cursor-pointer'
-              }`}
+            className={`w-full h-1.5 rounded-lg transition ${
+              sobre.bloqueado
+                ? 'accent-amber-500/50 bg-muted/40 opacity-50 cursor-not-allowed'
+                : 'accent-primary bg-muted cursor-pointer'
+            }`}
           />
         </div>
       </div>
 
-      {/* Ritmo Semanal y Diario del Sobre */}
+      {/* Ritmo Semanal y Diario Personalizado */}
       <div className="pt-2 border-t border-border/40 grid grid-cols-2 gap-2 text-[10px] font-mono">
         <div className="p-1.5 rounded bg-muted/30">
           <span className="text-muted-foreground block text-[9px] uppercase">Por semana</span>
