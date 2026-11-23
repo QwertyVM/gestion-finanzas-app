@@ -86,29 +86,29 @@ export default function PresupuestoOperativoPage() {
       <section aria-label="Tus Sobres de Gasto" className="space-y-3">
         <div className="flex items-center justify-between px-1">
           <div>
-            <h2 className="text-xs font-bold uppercase tracking-wider text-foreground">
-              Tus Sobres de Gasto
-            </h2>
-            <p className="text-[11px] text-muted-foreground">
-              Asigna el 100% de tu dinero disponible a tus categorías personalizadas.
-            </p>
+              <h2 className="text-sm font-bold uppercase tracking-wider text-foreground">
+                Tus Sobres de Gasto
+              </h2>
+                <p className="text-xs text-muted-foreground">
+                  Asigna el 100% de tu dinero disponible a tus categorías personalizadas.
+                </p>
+              </div>
           </div>
-        </div>
 
-        <SobresGastosGrid
-          sobres={sobresLocales}
-          moneda={moneda}
-          sumaPorcentajes={sumaPorcentajes}
-          sumaMontos={sumaMontos}
-          capitalTotal={data.capitalOperativoParaVivir}
-          descuadrePorcentaje={descuadrePorcentaje}
-          onActualizarPorcentaje={actualizarPorcentajeSobre}
-          onActualizarMonto={actualizarMontoSobre}
-          onAutoCuadrar={autoCuadrar100}
-          onGuardarSobre={guardarSobre}
-          onEliminarSobre={eliminarSobre}
-          onToggleBloqueo={toggleBloqueo}
-        />
+          <SobresGastosGrid
+            sobres={sobresLocales}
+            moneda={moneda}
+            sumaPorcentajes={sumaPorcentajes}
+            sumaMontos={sumaMontos}
+            capitalTotal={data.capitalOperativoParaVivir}
+            descuadrePorcentaje={descuadrePorcentaje}
+            onActualizarPorcentaje={actualizarPorcentajeSobre}
+            onActualizarMonto={actualizarMontoSobre}
+            onAutoCuadrar={autoCuadrar100}
+            onGuardarSobre={guardarSobre}
+            onEliminarSobre={eliminarSobre}
+            onToggleBloqueo={toggleBloqueo}
+          />
       </section>
 
       {/* BLOQUE 3: Runway de Ocio & Semanas hasta el Próximo Cobro */}
