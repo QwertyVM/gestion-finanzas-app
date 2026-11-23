@@ -6,6 +6,7 @@ import {
   calcularMetricasSobre,
   sincronizarSobresConCapital,
   normalizarSuma100,
+  calcularRunwayDesdeMonto,
 } from './presupuesto-operativo-helpers';
 
 export interface EgresoConsolidado {
@@ -3033,6 +3034,18 @@ export interface SemanaRunwayItem {
   montoSugerido: number;
 }
 
+export interface RunwayBolsilloData {
+  sobreId: string;
+  nombreSobre: string;
+  montoAsignado: number;
+  porcentajeAsignado: number;
+  diasTotales: number;
+  semanasTotales: number;
+  limiteDiario: number;
+  limiteSemanal: number;
+  desgloseSemanas: SemanaRunwayItem[];
+}
+
 export interface PresupuestoOperativoData {
   periodoOrigen: string;
   nombreMesOrigen: string;
@@ -3058,6 +3071,7 @@ export interface PresupuestoOperativoData {
     limiteSemanal: number;
     desgloseSemanas: SemanaRunwayItem[];
   };
+  runwayBolsillo?: RunwayBolsilloData;
   sobres: SobreGastoOperativo[];
   escenarios: EscenarioPresupuesto[];
   benchmarkHistorico: {
@@ -3298,6 +3312,23 @@ export async function getPresupuestoOperativo(
     diasTotales
   );
 
+  // Calcular Runway específico para el sobre de Bolsillo Personal & Ocio Flexible
+  const sobreBolsillo = sobres.find(
+    (s) => s.id === 'BOLSILLO_OCIO' || /bolsillo|ocio/i.test(s.nombre)
+  ) || sobres[0];
+
+  const montoBolsillo = sobreBolsillo?.monto || 0;
+  const pctBolsillo = sobreBolsillo?.porcentaje || 0;
+  const runwayBolsilloCalc = calcularRunwayDesdeMonto(montoBolsillo, diasTotales, mesAbrev);
+
+  const runwayBolsillo: RunwayBolsilloData = {
+    sobreId: sobreBolsillo?.id || 'BOLSILLO_OCIO',
+    nombreSobre: sobreBolsillo?.nombre || 'Bolsillo Personal & Ocio Flexible',
+    montoAsignado: montoBolsillo,
+    porcentajeAsignado: pctBolsillo,
+    ...runwayBolsilloCalc,
+  };
+
   // Cargar escenarios desde configDb o usar los predeterminados
   const escenarios: EscenarioPresupuesto[] = (configDb?.escenarios as any[]) || DEFAULT_ESCENARIOS_PRESUPUESTO;
 
@@ -3327,6 +3358,7 @@ export async function getPresupuestoOperativo(
       limiteSemanal,
       desgloseSemanas: semanasDetalle,
     },
+    runwayBolsillo,
     sobres,
     escenarios,
     benchmarkHistorico: {

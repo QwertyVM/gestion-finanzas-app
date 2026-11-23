@@ -8,6 +8,79 @@ export interface ItemPorcentaje {
   [key: string]: any;
 }
 
+export interface SemanaRunwayItem {
+  semana: number;
+  etiqueta: string;
+  rangoFechas: string;
+  montoSugerido: number;
+}
+
+/**
+ * Calcula el desglose del Runway (tope diario, semanal y semanas individuales)
+ * a partir de un monto asignado (ej. Bolsillo Personal & Ocio Flexible) y los días totales del mes.
+ */
+export function calcularRunwayDesdeMonto(
+  monto: number,
+  diasTotales: number,
+  mesAbrev: string
+): {
+  diasTotales: number;
+  semanasTotales: number;
+  limiteDiario: number;
+  limiteSemanal: number;
+  desgloseSemanas: SemanaRunwayItem[];
+} {
+  const semanasTotales = diasTotales > 0 ? Number((diasTotales / 7).toFixed(1)) : 0;
+  const limiteDiario = diasTotales > 0 ? Number((monto / diasTotales).toFixed(2)) : 0;
+  const limiteSemanal = Number((limiteDiario * 7).toFixed(2));
+
+  const desgloseSemanas: SemanaRunwayItem[] = [
+    {
+      semana: 1,
+      etiqueta: 'Semana 1',
+      rangoFechas: `01 al 07 de ${mesAbrev}`,
+      montoSugerido: limiteSemanal,
+    },
+    {
+      semana: 2,
+      etiqueta: 'Semana 2',
+      rangoFechas: `08 al 14 de ${mesAbrev}`,
+      montoSugerido: limiteSemanal,
+    },
+    {
+      semana: 3,
+      etiqueta: 'Semana 3',
+      rangoFechas: `15 al 21 de ${mesAbrev}`,
+      montoSugerido: limiteSemanal,
+    },
+    {
+      semana: 4,
+      etiqueta: 'Semana 4',
+      rangoFechas: `22 al 28 de ${mesAbrev}`,
+      montoSugerido: limiteSemanal,
+    },
+  ];
+
+  if (diasTotales > 28) {
+    const montoSemanasPrevias = Number((limiteSemanal * 4).toFixed(2));
+    const montoRem = Math.max(0, Number((monto - montoSemanasPrevias).toFixed(2)));
+    desgloseSemanas.push({
+      semana: 5,
+      etiqueta: 'Cierre de mes',
+      rangoFechas: `29 al ${diasTotales} de ${mesAbrev}`,
+      montoSugerido: montoRem,
+    });
+  }
+
+  return {
+    diasTotales,
+    semanasTotales,
+    limiteDiario,
+    limiteSemanal,
+    desgloseSemanas,
+  };
+}
+
 /**
  * Calcula el monto diario y semanal de un sobre o límite.
  * Una semana son estrictamente 7 días del ritmo diario, garantizando

@@ -17,6 +17,8 @@ export default function PresupuestoOperativoPage() {
     moneda,
     escenarioActivo,
     sobresLocales,
+    sobreBolsillo,
+    runwayBolsilloActivo,
     diaPagoSueldo,
     sumaPorcentajes,
     sumaMontos,
@@ -42,7 +44,7 @@ export default function PresupuestoOperativoPage() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        <p className="text-xs text-muted-foreground">Calculando puente y presupuesto operativo...</p>
+        <p className="text-xs text-muted-foreground">Calculando puente y distribución de gastos...</p>
       </div>
     );
   }
@@ -64,7 +66,7 @@ export default function PresupuestoOperativoPage() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-5 pb-10">
-      {/* 1. Header con Periodo Origen y Destino */}
+      {/* Header con Periodo Origen y Destino */}
       <PresupuestoOperativoHeader
         nombreMesOrigen={data.nombreMesOrigen}
         nombreMesDestino={data.nombreMesDestino}
@@ -74,57 +76,67 @@ export default function PresupuestoOperativoPage() {
         onRecargar={recargar}
       />
 
-      {/* 2. Puente Financiero Cierre -> Dinero para Vivir */}
-      <BridgeCashFlowCard
-        nombreMesOrigen={data.nombreMesOrigen}
-        nombreMesDestino={data.nombreMesDestino}
-        ingresosCierre={data.ingresosCierreOrigen}
-        compromisosCierre={data.compromisosCierreOrigen}
-        capitalOperativo={data.capitalOperativoParaVivir}
-        estadoSalud={data.estadoSaludCapital}
-        moneda={moneda}
-      />
+      {/* SECCIÓN 1: Puente Financiero (Ingresos - Egresos = Dinero para Vivir) */}
+      <section aria-label="Puente Financiero">
+        <BridgeCashFlowCard
+          nombreMesOrigen={data.nombreMesOrigen}
+          nombreMesDestino={data.nombreMesDestino}
+          ingresosCierre={data.ingresosCierreOrigen}
+          compromisosCierre={data.compromisosCierreOrigen}
+          capitalOperativo={data.capitalOperativoParaVivir}
+          estadoSalud={data.estadoSaludCapital}
+          moneda={moneda}
+        />
+      </section>
 
-      {/* 3. Ritmo de Vida & Runway Diario/Semanal con selector de día de cobro */}
-      <RunwayVelocimetroCard
-        nombreMesDestino={data.nombreMesDestino}
-        diasTotales={data.runway.diasTotales}
-        semanasTotales={data.runway.semanasTotales}
-        limiteDiario={data.runway.limiteDiario}
-        limiteSemanal={data.runway.limiteSemanal}
-        desgloseSemanas={data.runway.desgloseSemanas}
-        moneda={moneda}
-        diaPagoSueldo={diaPagoSueldo}
-        onCambiarDiaPago={cambiarDiaPago}
-      />
+      {/* SECCIÓN 2: Distribución de Dinero (Escenarios y Sobres de Gasto) */}
+      <section aria-label="Distribución de Dinero" className="space-y-4">
+        {/* Selector de Escenarios con 1 clic y presets guardables */}
+        <EscenariosSelectorBar
+          escenarios={data.escenarios}
+          escenarioActivo={escenarioActivo}
+          onSeleccionarEscenario={aplicarEscenario}
+          onGuardarNuevoEscenario={guardarNuevoEscenario}
+          onEliminarEscenario={eliminarEscenario}
+          onResetear={resetearDeFabrica}
+        />
 
-      {/* 4. Selector de Escenarios con 1 clic y presets guardables */}
-      <EscenariosSelectorBar
-        escenarios={data.escenarios}
-        escenarioActivo={escenarioActivo}
-        onSeleccionarEscenario={aplicarEscenario}
-        onGuardarNuevoEscenario={guardarNuevoEscenario}
-        onEliminarEscenario={eliminarEscenario}
-        onResetear={resetearDeFabrica}
-      />
+        {/* Grid de Sobres de Subsistencia Parametrizables */}
+        <SobresGastosGrid
+          sobres={sobresLocales}
+          moneda={moneda}
+          sumaPorcentajes={sumaPorcentajes}
+          sumaMontos={sumaMontos}
+          capitalTotal={data.capitalOperativoParaVivir}
+          descuadrePorcentaje={descuadrePorcentaje}
+          onActualizarPorcentaje={actualizarPorcentajeSobre}
+          onActualizarMonto={actualizarMontoSobre}
+          onAutoCuadrar={autoCuadrar100}
+          onGuardarSobre={guardarSobre}
+          onEliminarSobre={eliminarSobre}
+          onToggleBloqueo={toggleBloqueo}
+        />
+      </section>
 
-      {/* 5. Grid de Sobres de Subsistencia Parametrizables (Edición bidireccional S/ y %) */}
-      <SobresGastosGrid
-        sobres={sobresLocales}
-        moneda={moneda}
-        sumaPorcentajes={sumaPorcentajes}
-        sumaMontos={sumaMontos}
-        capitalTotal={data.capitalOperativoParaVivir}
-        descuadrePorcentaje={descuadrePorcentaje}
-        onActualizarPorcentaje={actualizarPorcentajeSobre}
-        onActualizarMonto={actualizarMontoSobre}
-        onAutoCuadrar={autoCuadrar100}
-        onGuardarSobre={guardarSobre}
-        onEliminarSobre={eliminarSobre}
-        onToggleBloqueo={toggleBloqueo}
-      />
+      {/* SECCIÓN 3: Ritmo de Vida & Runway basado en Bolsillo Personal & Ocio Flexible */}
+      <section aria-label="Runway de Ocio Personal">
+        <RunwayVelocimetroCard
+          nombreMesDestino={data.nombreMesDestino}
+          diasTotales={runwayBolsilloActivo?.diasTotales ?? data.runway.diasTotales}
+          semanasTotales={runwayBolsilloActivo?.semanasTotales ?? data.runway.semanasTotales}
+          limiteDiario={runwayBolsilloActivo?.limiteDiario ?? 0}
+          limiteSemanal={runwayBolsilloActivo?.limiteSemanal ?? 0}
+          desgloseSemanas={runwayBolsilloActivo?.desgloseSemanas ?? []}
+          moneda={moneda}
+          diaPagoSueldo={diaPagoSueldo}
+          nombreSobre={sobreBolsillo?.nombre ?? 'Bolsillo Personal & Ocio Flexible'}
+          montoAsignado={sobreBolsillo?.monto ?? 0}
+          porcentajeAsignado={sobreBolsillo?.porcentaje ?? 0}
+          onCambiarDiaPago={cambiarDiaPago}
+        />
+      </section>
 
-      {/* 6. Consejo Consultor y Benchmark Histórico */}
+      {/* Consejo Consultor y Benchmark Histórico */}
       <PresupuestoConsejoBanner
         consejoConsultor={data.consejoConsultor}
         benchmarkHistorico={data.benchmarkHistorico}

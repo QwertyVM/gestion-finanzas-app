@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useFinanzas } from '@/context/FinanzasContext';
 import type {
   PresupuestoOperativoData,
   SobreGastoOperativo,
   EscenarioPresupuesto,
+  RunwayBolsilloData,
 } from '@/lib/finanzas-service';
 import { toast } from 'sonner';
 import {
@@ -14,6 +15,7 @@ import {
   normalizarSuma100,
   sincronizarSobresConCapital,
   toggleBloqueoSobre as toggleBloqueoHelper,
+  calcularRunwayDesdeMonto,
 } from '@/lib/presupuesto-operativo-helpers';
 
 export function usePresupuestoOperativo() {
@@ -35,10 +37,10 @@ export function usePresupuestoOperativo() {
       const json: PresupuestoOperativoData = await res.json();
       setData(json);
       const conMontos = sincronizarSobresConCapital(
-          json.sobres,
-          json.capitalOperativoParaVivir,
-          json.runway.diasTotales
-        );
+        json.sobres,
+        json.capitalOperativoParaVivir,
+        json.runway.diasTotales
+      );
       setSobresLocales(conMontos);
       setEscenarioActivo(json.escenarioActivo || 'EQUILIBRADO');
       setDiaPagoSueldo(json.diaPagoSueldo || 30);
@@ -120,10 +122,10 @@ export function usePresupuestoOperativo() {
       };
     });
     const actualizados = sincronizarSobresConCapital(
-        combinados,
-        data.capitalOperativoParaVivir,
-        data.runway.diasTotales
-      );
+      combinados,
+      data.capitalOperativoParaVivir,
+      data.runway.diasTotales
+    );
 
     setSobresLocales(actualizados);
     persistirEnBackend(actualizados, data.escenarios, escenarioId);
@@ -148,12 +150,12 @@ export function usePresupuestoOperativo() {
   const actualizarMontoSobre = (sobreId: string, nuevoMonto: number) => {
     if (!data || data.capitalOperativoParaVivir <= 0) return;
     const actualizados = redistribuirPorMonto(
-        sobresLocales,
-        sobreId,
-        nuevoMonto,
-        data.capitalOperativoParaVivir,
-        data.runway.diasTotales
-      );
+      sobresLocales,
+      sobreId,
+      nuevoMonto,
+      data.capitalOperativoParaVivir,
+      data.runway.diasTotales
+    );
     setSobresLocales(actualizados);
     setEscenarioActivo('PERSONALIZADO');
     persistirEnBackend(actualizados, data.escenarios, 'PERSONALIZADO');
@@ -162,10 +164,10 @@ export function usePresupuestoOperativo() {
   const autoCuadrar100 = () => {
     if (!data || sobresLocales.length === 0) return;
     const actualizados = sincronizarSobresConCapital(
-        sobresLocales,
-        data.capitalOperativoParaVivir,
-        data.runway.diasTotales
-      );
+      sobresLocales,
+      data.capitalOperativoParaVivir,
+      data.runway.diasTotales
+    );
     setSobresLocales(actualizados);
     setEscenarioActivo('PERSONALIZADO');
     persistirEnBackend(actualizados, data.escenarios, 'PERSONALIZADO');
@@ -239,11 +241,11 @@ export function usePresupuestoOperativo() {
       return;
     }
     const actualizados = redistribuirAlEliminar(
-        sobresLocales,
-        id,
-        data.capitalOperativoParaVivir,
-        data.runway.diasTotales
-      );
+      sobresLocales,
+      id,
+      data.capitalOperativoParaVivir,
+      data.runway.diasTotales
+    );
     setSobresLocales(actualizados);
     persistirEnBackend(actualizados, data.escenarios, escenarioActivo);
     toast.success('Sobre eliminado');
@@ -308,6 +310,28 @@ export function usePresupuestoOperativo() {
   const sumaMontos = Number(sobresLocales.reduce((acc, s) => acc + s.monto, 0).toFixed(2));
   const descuadrePorcentaje = 100 - sumaPorcentajes;
 
+  const sobreBolsillo = useMemo(() => {
+    return (
+      sobresLocales.find((s) => s.id === 'BOLSILLO_OCIO' || /bolsillo|ocio/i.test(s.nombre)) ||
+      sobresLocales[0] ||
+      null
+    );
+  }, [sobresLocales]);
+
+  const runwayBolsilloActivo: RunwayBolsilloData | null = useMemo(() => {
+    if (!data || !sobreBolsillo) return null;
+    const diasTotales = data.runway.diasTotales;
+    const mesAbrev = data.nombreMesDestino ? data.nombreMesDestino.split(' ')[0].slice(0, 3) : 'Mes';
+    const calculo = calcularRunwayDesdeMonto(sobreBolsillo.monto, diasTotales, mesAbrev);
+    return {
+      sobreId: sobreBolsillo.id,
+      nombreSobre: sobreBolsillo.nombre,
+      montoAsignado: sobreBolsillo.monto,
+      porcentajeAsignado: sobreBolsillo.porcentaje,
+      ...calculo,
+    };
+  }, [data, sobreBolsillo]);
+
   return {
     periodo,
     moneda: data?.moneda || 'S/',
@@ -316,6 +340,8 @@ export function usePresupuestoOperativo() {
     saving,
     escenarioActivo,
     sobresLocales,
+    sobreBolsillo,
+    runwayBolsilloActivo,
     diaPagoSueldo,
     sumaPorcentajes,
     sumaMontos,

@@ -28,6 +28,9 @@ export function PresupuestoOperativoHeader({
             Dinero para Vivir
           </h1>
           <span className="text-[11px] font-semibold bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 px-2 py-0.5 rounded-md border border-emerald-500/20">
+            Distribución de Gastos
+          </span>
+          <span className="text-[11px] font-medium bg-muted/60 text-muted-foreground px-2 py-0.5 rounded-md border border-border/60">
             Flujo Puente Mes a Mes
           </span>
         </div>

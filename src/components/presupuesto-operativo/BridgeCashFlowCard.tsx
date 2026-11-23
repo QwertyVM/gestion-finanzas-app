@@ -59,9 +59,14 @@ export function BridgeCashFlowCard({
   return (
     <div className="bg-card border border-border/80 rounded-xl p-4 sm:p-5 shadow-xs space-y-3">
       <div className="flex items-center justify-between gap-2 flex-wrap pb-2 border-b border-border/60">
-        <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-          <span>Puente Financiero de Cierre a Subsistencia</span>
-        </span>
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+            <span>Puente Financiero de Cierre a Subsistencia</span>
+          </span>
+          <span className="text-[10px] font-mono font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+            Ingresos − Egresos = Dinero para Vivir
+          </span>
+        </div>
         <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border flex items-center gap-1 ${saludConfig.class}`}>
           <SaludIcon className="w-3 h-3" />
           <span>{saludConfig.label}</span>
@@ -94,7 +99,7 @@ export function BridgeCashFlowCard({
         <div className="md:col-span-2 p-3.5 rounded-xl bg-muted/30 border border-border/50 space-y-1">
           <div className="flex items-center justify-between">
             <span className="text-[10px] uppercase font-semibold text-muted-foreground block">
-              2. Compromisos a Liquidar
+              2. Compromisos a Liquidar (Egresos)
             </span>
           </div>
           <div className="font-mono text-lg sm:text-xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
