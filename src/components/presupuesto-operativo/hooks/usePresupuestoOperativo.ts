@@ -9,10 +9,10 @@ import type {
 } from '@/lib/finanzas-service';
 import { toast } from 'sonner';
 import {
-  redistribuirPorcentajes,
+  redistribuirPorMonto,
   redistribuirAlEliminar,
   normalizarSuma100,
-  calcularMontosSobres,
+  sincronizarSobresConCapital,
   toggleBloqueoSobre as toggleBloqueoHelper,
 } from '@/lib/presupuesto-operativo-helpers';
 
@@ -34,12 +34,11 @@ export function usePresupuestoOperativo() {
       if (!res.ok) throw new Error('Error al cargar presupuesto operativo');
       const json: PresupuestoOperativoData = await res.json();
       setData(json);
-      const normalizados = normalizarSuma100(json.sobres);
-      const conMontos = calcularMontosSobres(
-        normalizados,
-        json.capitalOperativoParaVivir,
-        json.runway.diasTotales
-      );
+      const conMontos = sincronizarSobresConCapital(
+          json.sobres,
+          json.capitalOperativoParaVivir,
+          json.runway.diasTotales
+        );
       setSobresLocales(conMontos);
       setEscenarioActivo(json.escenarioActivo || 'EQUILIBRADO');
       setDiaPagoSueldo(json.diaPagoSueldo || 30);
@@ -79,6 +78,9 @@ export function usePresupuestoOperativo() {
               icono: s.icono,
               color: s.color,
               porcentaje: s.porcentaje,
+              monto: s.monto,
+              montoSemanal: s.montoSemanal,
+              montoDiario: s.montoDiario,
               bloqueado: Boolean(s.bloqueado),
             })),
             escenarios: escenariosNuevos || data.escenarios,
@@ -114,14 +116,14 @@ export function usePresupuestoOperativo() {
       return {
         ...s,
         porcentaje: match !== undefined ? match.porcentaje : s.porcentaje,
+        bloqueado: false,
       };
     });
-    const normalizados = normalizarSuma100(combinados);
-    const actualizados = calcularMontosSobres(
-      normalizados,
-      data.capitalOperativoParaVivir,
-      data.runway.diasTotales
-    );
+    const actualizados = sincronizarSobresConCapital(
+        combinados,
+        data.capitalOperativoParaVivir,
+        data.runway.diasTotales
+      );
 
     setSobresLocales(actualizados);
     persistirEnBackend(actualizados, data.escenarios, escenarioId);
@@ -129,11 +131,12 @@ export function usePresupuestoOperativo() {
   };
 
   const actualizarPorcentajeSobre = (sobreId: string, nuevoPct: number) => {
-    if (!data) return;
-    // Redistribuir proporcionalmente para mantener siempre la suma al 100%
-    const redistribuidos = redistribuirPorcentajes(sobresLocales, sobreId, nuevoPct);
-    const actualizados = calcularMontosSobres(
-      redistribuidos,
+    if (!data || data.capitalOperativoParaVivir <= 0) return;
+    const nuevoMonto = Number(((data.capitalOperativoParaVivir * nuevoPct) / 100).toFixed(2));
+    const actualizados = redistribuirPorMonto(
+      sobresLocales,
+      sobreId,
+      nuevoMonto,
       data.capitalOperativoParaVivir,
       data.runway.diasTotales
     );
@@ -144,21 +147,25 @@ export function usePresupuestoOperativo() {
 
   const actualizarMontoSobre = (sobreId: string, nuevoMonto: number) => {
     if (!data || data.capitalOperativoParaVivir <= 0) return;
-    const calcPct = Math.max(
-      0,
-      Math.min(100, Math.round((nuevoMonto / data.capitalOperativoParaVivir) * 100))
-    );
-    actualizarPorcentajeSobre(sobreId, calcPct);
+    const actualizados = redistribuirPorMonto(
+        sobresLocales,
+        sobreId,
+        nuevoMonto,
+        data.capitalOperativoParaVivir,
+        data.runway.diasTotales
+      );
+    setSobresLocales(actualizados);
+    setEscenarioActivo('PERSONALIZADO');
+    persistirEnBackend(actualizados, data.escenarios, 'PERSONALIZADO');
   };
 
   const autoCuadrar100 = () => {
     if (!data || sobresLocales.length === 0) return;
-    const normalizados = normalizarSuma100(sobresLocales);
-    const actualizados = calcularMontosSobres(
-      normalizados,
-      data.capitalOperativoParaVivir,
-      data.runway.diasTotales
-    );
+    const actualizados = sincronizarSobresConCapital(
+        sobresLocales,
+        data.capitalOperativoParaVivir,
+        data.runway.diasTotales
+      );
     setSobresLocales(actualizados);
     setEscenarioActivo('PERSONALIZADO');
     persistirEnBackend(actualizados, data.escenarios, 'PERSONALIZADO');
@@ -231,12 +238,12 @@ export function usePresupuestoOperativo() {
       toast.error('Debes mantener al menos un sobre');
       return;
     }
-    const redistribuidos = redistribuirAlEliminar(sobresLocales, id);
-    const actualizados = calcularMontosSobres(
-      redistribuidos,
-      data.capitalOperativoParaVivir,
-      data.runway.diasTotales
-    );
+    const actualizados = redistribuirAlEliminar(
+        sobresLocales,
+        id,
+        data.capitalOperativoParaVivir,
+        data.runway.diasTotales
+      );
     setSobresLocales(actualizados);
     persistirEnBackend(actualizados, data.escenarios, escenarioActivo);
     toast.success('Sobre eliminado');

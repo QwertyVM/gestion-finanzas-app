@@ -4,7 +4,7 @@ import { calcularPeriodoFacturacion, calcularCuotasPeriodos } from './billing-cy
 import { formatPeriodoLabel, esItemRecurrente } from './utils';
 import {
   calcularMetricasSobre,
-  calcularMontosSobres,
+  sincronizarSobresConCapital,
   normalizarSuma100,
 } from './presupuesto-operativo-helpers';
 
@@ -3280,19 +3280,20 @@ export async function getPresupuestoOperativo(
 
   // Cargar sobres desde configDb o usar los valores predeterminados
   const sobresConfig: any[] = (configDb?.sobres as any[]) || DEFAULT_SOBRES_PRESUPUESTO;
-  const sobresNormalizados = normalizarSuma100(
-    sobresConfig.map((s) => ({
+  const sobresMapeados = sobresConfig.map((s) => ({
       id: s.id,
       nombre: s.nombre,
       descripcion: s.descripcion || '',
       icono: s.icono || 'Utensils',
       color: s.color || '#0284c7',
       porcentaje: Number(s.porcentaje) || 0,
+      monto: s.monto !== undefined ? Number(s.monto) : undefined,
+      montoSemanal: s.montoSemanal !== undefined ? Number(s.montoSemanal) : undefined,
+      montoDiario: s.montoDiario !== undefined ? Number(s.montoDiario) : undefined,
       bloqueado: Boolean(s.bloqueado),
-    }))
-  );
-  const sobres: SobreGastoOperativo[] = calcularMontosSobres(
-    sobresNormalizados,
+    }));
+  const sobres: SobreGastoOperativo[] = sincronizarSobresConCapital(
+    sobresMapeados,
     capitalOperativoParaVivir,
     diasTotales
   );
@@ -3347,6 +3348,9 @@ export interface GuardarPresupuestoOperativoInput {
     icono: string;
     color: string;
     porcentaje: number;
+    monto?: number;
+    montoSemanal?: number;
+    montoDiario?: number;
     bloqueado?: boolean;
   }>;
   escenarios?: EscenarioPresupuesto[];
