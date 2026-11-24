@@ -9,6 +9,7 @@ interface TarjetaItem {
   id: string;
   nombre: string;
   banco?: string;
+  diaCorte?: number;
 }
 
 interface FijoFormFieldsProps {

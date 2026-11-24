@@ -4,11 +4,13 @@ import React, { useState, useEffect } from 'react';
 import { Home, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { FijoFormFields } from './FijoFormFields';
+import { getCurrentPeriodo, formatPeriodoLabel } from '@/lib/utils';
 
 interface TarjetaItem {
   id: string;
   nombre: string;
   banco?: string;
+  diaCorte?: number;
 }
 
 interface ModalEditarFijoProps {
@@ -65,10 +67,29 @@ export function ModalEditarFijo({
         setMontoUSD('');
         setTc(configTc.toString());
       }
-      setMesDesde(periodo);
+      const targetMetodo = costoFijo.metodoPago || 'EFECTIVO_DEBITO';
+      const targetTarjetaId = costoFijo.tarjetaId || (tarjetas[0]?.id || '');
+      const tarjetaSeleccionada = tarjetas.find((t) => t.id === targetTarjetaId);
+
+      let mesInicioDefault = periodo;
+      const hoy = new Date();
+      const currentPeriod = getCurrentPeriodo();
+
+      // Si el gasto se paga con tarjeta de crédito y hoy ya pasó el día de corte (ej. día 10),
+      // la facturación del periodo actual ya cerró, por lo que el cambio no puede ser retroactivo
+      // y debe entrar en vigencia a partir del siguiente mes.
+      if (targetMetodo === 'TARJETA_CREDITO') {
+        const diaCorte = tarjetaSeleccionada?.diaCorte || 10;
+        if (periodo <= currentPeriod && hoy.getDate() > diaCorte) {
+          const prox = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+          mesInicioDefault = `${prox.getFullYear()}-${String(prox.getMonth() + 1).padStart(2, '0')}`;
+        }
+      }
+
+      setMesDesde(mesInicioDefault);
       setMesFin(costoFijo.mesFin || '');
-      setMetodoPago(costoFijo.metodoPago || 'EFECTIVO_DEBITO');
-      setTarjetaId(costoFijo.tarjetaId || (tarjetas[0]?.id || ''));
+      setMetodoPago(targetMetodo);
+      setTarjetaId(targetTarjetaId);
       setCategoriaId(costoFijo.categoriaId || '');
       setTag(costoFijo.tag || '');
     }
@@ -172,6 +193,12 @@ export function ModalEditarFijo({
             setTag={setTag}
             categorias={categorias}
           />
+
+          {metodoPago === 'TARJETA_CREDITO' && mesDesde > periodo && (
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-[11px] leading-relaxed">
+              💡 <strong>Corte de facturación cerrado:</strong> El corte de tarjeta de {formatPeriodoLabel(periodo)} ya cerró (día {tarjetas.find((t) => t.id === tarjetaId)?.diaCorte || 10}). Por tanto, el cambio no es retroactivo y comenzará a regir en <strong>{formatPeriodoLabel(mesDesde)}</strong>.
+            </div>
+          )}
 
           <div className="pt-3 flex items-center justify-end gap-2 border-t border-border">
             <button

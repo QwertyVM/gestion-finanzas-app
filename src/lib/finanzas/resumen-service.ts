@@ -300,7 +300,9 @@ export async function getResumenMensual(periodo: string, usuarioOrId?: string | 
       }
     }
 
-    if (monedaOriginal === 'USD' && montoOriginal && montoOriginal > 0) {
+    if (monedaOriginal === 'PEN') {
+      montoOriginal = null;
+    } else if (monedaOriginal === 'USD' && montoOriginal && montoOriginal > 0) {
       montoNum = Number((montoOriginal * tipoCambio).toFixed(2));
     }
     totalCostosFijos += montoNum;
@@ -392,6 +394,10 @@ export async function getResumenMensual(periodo: string, usuarioOrId?: string | 
       concepto: p.concepto,
       categoria: pCatNombre,
     });
+
+    if (pMonedaOriginal === 'PEN') {
+      pMontoOriginal = null;
+    }
 
     if (cuotaMes) {
       let montoNum = Number(cuotaMes.monto);

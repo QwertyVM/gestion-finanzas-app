@@ -92,18 +92,6 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    if (monedaOriginal !== undefined || montoOriginal !== undefined) {
-      await prisma.costoFijo.update({
-        where: { id: costoFijoId },
-        data: {
-          ...(monedaOriginal && { monedaOriginal }),
-          ...(montoOriginal !== undefined && { montoOriginal: montoOriginal !== null ? parseFloat(montoOriginal) : null }),
-          ...(tipoCambio && { tipoCambio: parseFloat(tipoCambio) }),
-          ...(montoNum !== undefined && { monto: montoNum }),
-        },
-      });
-    }
-
     return NextResponse.json({ success: true, data: registro });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
