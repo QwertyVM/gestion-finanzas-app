@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const { cuotaId, estado, monto, ingresoId } = await request.json();
+    const { cuotaId, estado, monto, monedaOriginal, montoOriginal, tipoCambio, ingresoId } = await request.json();
 
     const cuota = await prisma.cuotaPrestamo.findUnique({
       where: { id: cuotaId },
@@ -30,6 +30,15 @@ export async function POST(request: NextRequest) {
     if (monto !== undefined && monto !== null && monto !== '') {
       updateData.monto = parseFloat(monto);
     }
+    if (monedaOriginal !== undefined) {
+      updateData.monedaOriginal = monedaOriginal;
+    }
+    if (montoOriginal !== undefined) {
+      updateData.montoOriginal = montoOriginal !== null ? parseFloat(montoOriginal) : null;
+    }
+    if (tipoCambio !== undefined) {
+      updateData.tipoCambio = tipoCambio ? parseFloat(tipoCambio) : undefined;
+    }
     if (ingresoId !== undefined) {
       updateData.ingresoId = ingresoId || null;
     }
@@ -38,6 +47,18 @@ export async function POST(request: NextRequest) {
       where: { id: cuotaId },
       data: updateData,
     });
+
+    if (monedaOriginal !== undefined || montoOriginal !== undefined) {
+      await prisma.prestamo.update({
+        where: { id: cuota.prestamoId },
+        data: {
+          ...(monedaOriginal && { monedaOriginal }),
+          ...(montoOriginal !== undefined && { montoOriginal: montoOriginal !== null ? parseFloat(montoOriginal) : null }),
+          ...(tipoCambio && { tipoCambio: parseFloat(tipoCambio) }),
+          ...(monto !== undefined && monto !== null && monto !== '' && { montoCuota: parseFloat(monto) }),
+        },
+      });
+    }
 
     return NextResponse.json({ success: true, data: updated });
   } catch (error: any) {
@@ -51,7 +72,21 @@ export async function PUT(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const { id, concepto, banco, montoTotal, montoCuota, tasaInteresAnual, mesDesde, activo, cuotasTotales, cuotaActual } = await request.json();
+    const {
+      id,
+      concepto,
+      banco,
+      montoTotal,
+      montoCuota,
+      monedaOriginal,
+      montoOriginal,
+      tipoCambio,
+      tasaInteresAnual,
+      mesDesde,
+      activo,
+      cuotasTotales,
+      cuotaActual,
+    } = await request.json();
 
     const prestamo = await prisma.prestamo.findUnique({ where: { id } });
     if (!prestamo || prestamo.usuarioId !== user.id) {

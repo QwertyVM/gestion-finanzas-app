@@ -182,14 +182,27 @@ export function useFijosManager() {
         const res = await fetch('/api/fijos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ costoFijoId: item.dbId, periodo, monto: nuevoMonto }),
+          body: JSON.stringify({
+            costoFijoId: item.dbId,
+            periodo,
+            monto: nuevoMonto,
+            monedaOriginal: monedaInfo?.monedaOriginal,
+            montoOriginal: monedaInfo?.montoOriginal,
+            tipoCambio: monedaInfo?.tipoCambio,
+          }),
         });
         if (!res.ok) throw new Error('Error al actualizar fijo');
       } else if (item.tipo === 'PRESTAMO') {
         const res = await fetch('/api/prestamos', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ cuotaId: item.dbId, monto: nuevoMonto }),
+          body: JSON.stringify({
+            cuotaId: item.dbId,
+            monto: nuevoMonto,
+            monedaOriginal: monedaInfo?.monedaOriginal,
+            montoOriginal: monedaInfo?.montoOriginal,
+            tipoCambio: monedaInfo?.tipoCambio,
+          }),
         });
         if (!res.ok) throw new Error('Error al actualizar cuota de préstamo');
       } else {

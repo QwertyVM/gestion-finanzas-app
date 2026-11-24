@@ -274,28 +274,34 @@ export async function getResumenMensual(periodo: string, usuarioOrId?: string | 
     const reg = cf.registrosMes[0];
     let montoNum = reg ? Number(reg.monto) : Number(cf.monto);
 
-    let monedaOriginal = 'PEN';
-    let montoOriginal: number | null = null;
     const tcConfig = Number(config.tipoCambioUSD || 4.00);
-    let tipoCambio = tcConfig;
+    let monedaOriginal = reg?.monedaOriginal || cf.monedaOriginal || 'PEN';
+    let montoOriginal: number | null = reg?.montoOriginal !== null && reg?.montoOriginal !== undefined
+      ? Number(reg.montoOriginal)
+      : (cf.montoOriginal !== null && cf.montoOriginal !== undefined ? Number(cf.montoOriginal) : null);
+    let tipoCambio = reg?.tipoCambio
+      ? Number(reg.tipoCambio)
+      : (cf.tipoCambio ? Number(cf.tipoCambio) : tcConfig);
 
-    if (reg?.notas && reg.notas.includes('USD: $')) {
-      const mUsd = reg.notas.match(/USD:\s*\$([0-9.]+)/);
-      if (mUsd) {
-        monedaOriginal = 'USD';
-        montoOriginal = parseFloat(mUsd[1]);
-      }
-    } else {
-      const usdMatch = cf.concepto.match(/\$([0-9]+(?:\.[0-9]+)?)/);
-      if (usdMatch) {
-        monedaOriginal = 'USD';
-        montoOriginal = parseFloat(usdMatch[1]);
+    // Fallback retrocompatible para registros historicos sin campos de divisa explicitos
+    if (monedaOriginal !== 'USD') {
+      if (reg?.notas && reg.notas.includes('USD: $')) {
+        const mUsd = reg.notas.match(/USD:\s*\$([0-9.]+)/);
+        if (mUsd) {
+          monedaOriginal = 'USD';
+          montoOriginal = parseFloat(mUsd[1]);
+        }
+      } else {
+        const usdMatch = cf.concepto.match(/\$([0-9]+(?:\.[0-9]+)?)/);
+        if (usdMatch) {
+          monedaOriginal = 'USD';
+          montoOriginal = parseFloat(usdMatch[1]);
+        }
       }
     }
 
     if (monedaOriginal === 'USD' && montoOriginal && montoOriginal > 0) {
-      tipoCambio = tcConfig;
-      montoNum = Number((montoOriginal * tcConfig).toFixed(2));
+      montoNum = Number((montoOriginal * tipoCambio).toFixed(2));
     }
     totalCostosFijos += montoNum;
 
@@ -361,15 +367,22 @@ export async function getResumenMensual(periodo: string, usuarioOrId?: string | 
     const primeraCuota = p.cuotas[0];
     const ultimaCuota = p.cuotas[p.cuotas.length - 1];
 
-    let pMonedaOriginal = 'PEN';
-    let pMontoOriginal: number | null = null;
     const pTcConfig = Number(config.tipoCambioUSD || 4.00);
-    let pTipoCambio = pTcConfig;
-    const pUsdMatch = p.concepto.match(/\$([0-9]+(?:\.[0-9]+)?)/);
-    if (pUsdMatch) {
-      pMonedaOriginal = 'USD';
-      pMontoOriginal = parseFloat(pUsdMatch[1]);
-      pTipoCambio = pTcConfig;
+    let pMonedaOriginal = cuotaMes?.monedaOriginal || p.monedaOriginal || 'PEN';
+    let pMontoOriginal: number | null = cuotaMes?.montoOriginal !== null && cuotaMes?.montoOriginal !== undefined
+      ? Number(cuotaMes.montoOriginal)
+      : (p.montoOriginal !== null && p.montoOriginal !== undefined ? Number(p.montoOriginal) : null);
+    let pTipoCambio = cuotaMes?.tipoCambio
+      ? Number(cuotaMes.tipoCambio)
+      : (p.tipoCambio ? Number(p.tipoCambio) : pTcConfig);
+
+    if (pMonedaOriginal !== 'USD') {
+      const pUsdMatch = p.concepto.match(/\$([0-9]+(?:\.[0-9]+)?)/);
+      if (pUsdMatch) {
+        pMonedaOriginal = 'USD';
+        pMontoOriginal = parseFloat(pUsdMatch[1]);
+        pTipoCambio = pTcConfig;
+      }
     }
 
     const pCatNombre = '20% Ahorro & Deuda';

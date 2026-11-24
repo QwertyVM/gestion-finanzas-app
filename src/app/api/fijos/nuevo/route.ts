@@ -12,6 +12,9 @@ export async function POST(request: NextRequest) {
     const {
       concepto,
       monto,
+      monedaOriginal = 'PEN',
+      montoOriginal,
+      tipoCambio = 4.00,
       // diaVencimiento ignorado — siempre fin de mes (30)
       periodo,
       mesInicio,
@@ -27,6 +30,8 @@ export async function POST(request: NextRequest) {
 
     const startPeriodo = mesInicio || periodo || '2026-11';
     const montoFloat = parseFloat(monto);
+    const montoOrigFloat = montoOriginal !== undefined && montoOriginal !== null ? parseFloat(montoOriginal) : null;
+    const tcFloat = tipoCambio ? parseFloat(tipoCambio) : 4.00;
     const finalMetodoPago = (metodoPago as MetodoPago) || MetodoPago.EFECTIVO_DEBITO;
     const finalTarjetaId = finalMetodoPago === MetodoPago.TARJETA_CREDITO ? (tarjetaId || null) : null;
 
@@ -35,6 +40,9 @@ export async function POST(request: NextRequest) {
         usuarioId: usuarioId || undefined,
         concepto,
         monto: montoFloat,
+        monedaOriginal: monedaOriginal || 'PEN',
+        montoOriginal: montoOrigFloat,
+        tipoCambio: tcFloat,
         diaVencimiento: 30,
         mesInicio: startPeriodo,
         mesFin: mesFin || null,
@@ -46,6 +54,9 @@ export async function POST(request: NextRequest) {
           create: {
             periodo: startPeriodo,
             monto: montoFloat,
+            monedaOriginal: monedaOriginal || 'PEN',
+            montoOriginal: montoOrigFloat,
+            tipoCambio: tcFloat,
             estado: EstadoPago.PENDIENTE,
             metodoPago: finalMetodoPago,
             tarjetaId: finalTarjetaId,

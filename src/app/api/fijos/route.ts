@@ -9,7 +9,19 @@ export async function POST(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const { costoFijoId, periodo, estado, monto, notas, metodoPago, tarjetaId, ingresoId } = await request.json();
+    const {
+      costoFijoId,
+      periodo,
+      estado,
+      monto,
+      monedaOriginal,
+      montoOriginal,
+      tipoCambio,
+      notas,
+      metodoPago,
+      tarjetaId,
+      ingresoId,
+    } = await request.json();
 
     const costoFijo = await prisma.costoFijo.findUnique({ where: { id: costoFijoId } });
     if (!costoFijo || costoFijo.usuarioId !== user.id) {
@@ -26,6 +38,15 @@ export async function POST(request: NextRequest) {
     }
     if (montoNum !== undefined) {
       updateData.monto = montoNum;
+    }
+    if (monedaOriginal !== undefined) {
+      updateData.monedaOriginal = monedaOriginal;
+    }
+    if (montoOriginal !== undefined) {
+      updateData.montoOriginal = montoOriginal !== null ? parseFloat(montoOriginal) : null;
+    }
+    if (tipoCambio !== undefined) {
+      updateData.tipoCambio = tipoCambio ? parseFloat(tipoCambio) : undefined;
     }
     if (notas !== undefined) {
       updateData.notas = notas;
@@ -55,6 +76,13 @@ export async function POST(request: NextRequest) {
         costoFijoId,
         periodo,
         monto: montoNum !== undefined ? montoNum : costoFijo.monto,
+        monedaOriginal: monedaOriginal || costoFijo.monedaOriginal || 'PEN',
+        montoOriginal: montoOriginal !== undefined
+          ? (montoOriginal !== null ? parseFloat(montoOriginal) : null)
+          : (costoFijo.montoOriginal ? Number(costoFijo.montoOriginal) : null),
+        tipoCambio: tipoCambio
+          ? parseFloat(tipoCambio)
+          : (costoFijo.tipoCambio ? Number(costoFijo.tipoCambio) : 4.00),
         estado: (estado as EstadoPago) || EstadoPago.PENDIENTE,
         metodoPago: createMetodoPago,
         tarjetaId: createTarjetaId,
@@ -63,6 +91,18 @@ export async function POST(request: NextRequest) {
         notas,
       },
     });
+
+    if (monedaOriginal !== undefined || montoOriginal !== undefined) {
+      await prisma.costoFijo.update({
+        where: { id: costoFijoId },
+        data: {
+          ...(monedaOriginal && { monedaOriginal }),
+          ...(montoOriginal !== undefined && { montoOriginal: montoOriginal !== null ? parseFloat(montoOriginal) : null }),
+          ...(tipoCambio && { tipoCambio: parseFloat(tipoCambio) }),
+          ...(montoNum !== undefined && { monto: montoNum }),
+        },
+      });
+    }
 
     return NextResponse.json({ success: true, data: registro });
   } catch (error: any) {
@@ -78,7 +118,21 @@ export async function PUT(request: NextRequest) {
     const user = await getAuthenticatedUser(request);
     if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
 
-    const { id, concepto, monto, mesDesde, mesFin, activo, metodoPago, tarjetaId, categoriaId, tag } = await request.json();
+    const {
+      id,
+      concepto,
+      monto,
+      monedaOriginal,
+      montoOriginal,
+      tipoCambio,
+      mesDesde,
+      mesFin,
+      activo,
+      metodoPago,
+      tarjetaId,
+      categoriaId,
+      tag,
+    } = await request.json();
 
     const costoFijo = await prisma.costoFijo.findUnique({ where: { id } });
     if (!costoFijo || costoFijo.usuarioId !== user.id) {
@@ -86,6 +140,8 @@ export async function PUT(request: NextRequest) {
     }
 
     const montoNum = monto !== undefined ? parseFloat(monto) : Number(costoFijo.monto);
+    const mOrig = montoOriginal !== undefined ? (montoOriginal !== null ? parseFloat(montoOriginal) : null) : undefined;
+    const tcNum = tipoCambio !== undefined ? (tipoCambio ? parseFloat(tipoCambio) : undefined) : undefined;
 
     // 1. Actualizar definición base
     await prisma.costoFijo.update({
@@ -93,6 +149,9 @@ export async function PUT(request: NextRequest) {
       data: {
         ...(concepto && { concepto }),
         ...(monto !== undefined && { monto: montoNum }),
+        ...(monedaOriginal !== undefined && { monedaOriginal }),
+        ...(mOrig !== undefined && { montoOriginal: mOrig }),
+        ...(tcNum !== undefined && { tipoCambio: tcNum }),
         diaVencimiento: 30,
         ...(mesFin !== undefined && { mesFin }),
         ...(activo !== undefined && { activo }),
@@ -106,9 +165,12 @@ export async function PUT(request: NextRequest) {
     });
 
     // 2. Aplicar a registros futuros PENDIENTES (no retroactivo)
-    if (mesDesde && (monto !== undefined || metodoPago !== undefined)) {
+    if (mesDesde && (monto !== undefined || metodoPago !== undefined || monedaOriginal !== undefined)) {
       const updateDataFuture: any = {};
       if (monto !== undefined) updateDataFuture.monto = montoNum;
+      if (monedaOriginal !== undefined) updateDataFuture.monedaOriginal = monedaOriginal;
+      if (mOrig !== undefined) updateDataFuture.montoOriginal = mOrig;
+      if (tcNum !== undefined) updateDataFuture.tipoCambio = tcNum;
       if (metodoPago !== undefined) {
         updateDataFuture.metodoPago = metodoPago as MetodoPago;
         updateDataFuture.tarjetaId = metodoPago === MetodoPago.TARJETA_CREDITO ? (tarjetaId || null) : null;
