@@ -151,6 +151,17 @@ export function GastosMesTabla({
               </td>
               <td colSpan={2} />
             </tr>
+            {totalMontoUSD > 0 && (
+              <tr className="border-t border-border/40 bg-muted/30">
+                <td colSpan={6} className="py-2 px-3 text-muted-foreground text-[11px] font-medium">
+                  <span className="text-foreground font-semibold">Total en Soles</span> (consolidado al tipo de cambio)
+                </td>
+                <td colSpan={2} className="py-2 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
+                  {formatMoney(totalMonto, moneda)}
+                </td>
+                <td colSpan={2} />
+              </tr>
+            )}
           </tfoot>
         </table>
       </div>

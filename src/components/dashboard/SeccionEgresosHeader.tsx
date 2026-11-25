@@ -94,19 +94,51 @@ export function SeccionEgresosHeader({
           <span className="hidden sm:inline text-[11px]">Agregar</span>
         </button>
 
-        <div className="text-right">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">
-            Subtotal
-          </span>
-          <span className="font-mono font-bold text-xs text-foreground tabular-nums block">
-            {formatMoney(subtotal, moneda)}
-          </span>
-          {subtotalUSD > 0 && (
-            <span className="text-[10px] text-muted-foreground font-mono block">
-              S/ {subtotalSoles.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} · ${subtotalUSD.toFixed(2)} USD
+        {subtotalUSD > 0 ? (
+          <div className="flex items-center gap-2 sm:gap-3 text-right">
+            {/* 1. Sumatoria independiente en Soles */}
+            <div className="hidden sm:block text-right">
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground block font-medium">
+                Soles (S/)
+              </span>
+              <span className="font-mono font-semibold text-xs text-foreground tabular-nums">
+                {formatMoney(subtotalSoles, moneda)}
+              </span>
+            </div>
+
+            {/* 2. Sumatoria independiente en Dólares */}
+            <div className="hidden sm:block text-right">
+              <span className="text-[9px] uppercase tracking-wider text-muted-foreground block font-medium">
+                Dólares ($)
+              </span>
+              <span className="font-mono font-semibold text-xs text-foreground tabular-nums">
+                ${subtotalUSD.toFixed(2)}
+              </span>
+            </div>
+
+            {/* 3. Total en Soles */}
+            <div className="text-right sm:border-l sm:border-border/60 sm:pl-3">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground block font-bold">
+                Total Soles
+              </span>
+              <span className="font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums block">
+                {formatMoney(subtotal, moneda)}
+              </span>
+              <span className="text-[9.5px] text-muted-foreground font-mono block sm:hidden">
+                S/ {subtotalSoles.toFixed(2)} + ${subtotalUSD.toFixed(2)}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="text-right">
+            <span className="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">
+              Total Soles
             </span>
-          )}
-        </div>
+            <span className="font-mono font-bold text-xs text-foreground tabular-nums block">
+              {formatMoney(subtotal, moneda)}
+            </span>
+          </div>
+        )}
 
         <button
           type="button"
