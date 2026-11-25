@@ -34,6 +34,16 @@ export function FijosTabla({
     [costosFijos]
   );
 
+  const totalMontoSoles = useMemo(
+    () => costosFijos.filter((cf) => cf.monedaOriginal !== 'USD').reduce((sum, cf) => sum + (cf.monto || 0), 0),
+    [costosFijos]
+  );
+
+  const totalMontoUSD = useMemo(
+    () => costosFijos.filter((cf) => cf.monedaOriginal === 'USD').reduce((sum, cf) => sum + (cf.montoOriginal != null ? cf.montoOriginal : (cf.monto || 0) / (cf.tipoCambio || 4.0)), 0),
+    [costosFijos]
+  );
+
   const stats = useMemo(() => {
     const total = costosFijos.length;
     const pagados = costosFijos.filter((cf) => cf.estado === 'PAGADO').length;
@@ -93,7 +103,8 @@ export function FijosTabla({
             <tr>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Concepto</th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Categoría</th>
-              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Monto</th>
+              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Soles (S/)</th>
+              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Dólares ($)</th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Forma de Pago</th>
               <th scope="col" className="py-2.5 px-3 text-center text-foreground font-semibold">Estado</th>
               <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Acciones</th>
@@ -131,7 +142,10 @@ export function FijosTabla({
                 <span className="text-amber-600 dark:text-amber-400 font-medium">{stats.pendientes} pendientes</span>
               </td>
               <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
-                {formatMoney(totalMonto, moneda)}
+                {formatMoney(totalMontoSoles, moneda)}
+              </td>
+              <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
+                {totalMontoUSD > 0 ? `$${totalMontoUSD.toFixed(2)}` : '—'}
               </td>
               <td colSpan={3} />
             </tr>

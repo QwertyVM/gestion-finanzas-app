@@ -33,6 +33,16 @@ export function GastosMesTabla({
     [gastos]
   );
 
+  const totalMontoSoles = useMemo(
+    () => gastos.filter((g) => g.monedaOriginal !== 'USD').reduce((sum, g) => sum + (g.monto || 0), 0),
+    [gastos]
+  );
+
+  const totalMontoUSD = useMemo(
+    () => gastos.filter((g) => g.monedaOriginal === 'USD').reduce((sum, g) => sum + (g.montoOriginal != null ? g.montoOriginal : (g.monto || 0) / (g.tipoCambio || 4.0)), 0),
+    [gastos]
+  );
+
   const stats = useMemo(() => {
     const total = gastos.length;
     const pagados = gastos.filter((g) => g.estado === 'PAGADO').length;
@@ -98,7 +108,8 @@ export function GastosMesTabla({
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Método</th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Fecha</th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Cuota</th>
-              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Monto</th>
+              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Soles (S/)</th>
+              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Dólares ($)</th>
               <th scope="col" className="py-2.5 px-3 text-center text-foreground font-semibold">Estado</th>
               <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Acciones</th>
             </tr>
@@ -133,7 +144,10 @@ export function GastosMesTabla({
                 <span className="text-amber-600 dark:text-amber-400 font-medium">{stats.pendientes} pendientes</span>
               </td>
               <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
-                {formatMoney(totalMonto, moneda)}
+                {formatMoney(totalMontoSoles, moneda)}
+              </td>
+              <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
+                {totalMontoUSD > 0 ? `$${totalMontoUSD.toFixed(2)}` : '—'}
               </td>
               <td colSpan={2} />
             </tr>

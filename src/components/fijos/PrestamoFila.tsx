@@ -93,9 +93,28 @@ export function PrestamoFila({
         {p.tasaInteresAnual}%
       </td>
 
-      {/* 4. Cuota Mensual */}
-      <td className="py-2.5 px-3 text-right font-mono font-semibold text-foreground text-xs sm:text-sm tabular-nums whitespace-nowrap">
-        {formatMoney(p.montoCuota, moneda)}
+      {/* 4. Soles (S/) */}
+      <td className="py-2.5 px-3 text-right font-mono text-xs sm:text-sm tabular-nums whitespace-nowrap">
+        {p.monedaOriginal === 'USD' ? (
+          <span className="text-muted-foreground/60 font-normal text-xs" title={`Equivalente al TC ${p.tipoCambio || 4.0}`}>
+            ≈ {formatMoney(p.montoCuota, moneda)}
+          </span>
+        ) : (
+          <span className="font-semibold text-foreground">
+            {formatMoney(p.montoCuota, moneda)}
+          </span>
+        )}
+      </td>
+
+      {/* 5. Dólares ($) */}
+      <td className="py-2.5 px-3 text-right font-mono text-xs sm:text-sm tabular-nums whitespace-nowrap">
+        {p.monedaOriginal === 'USD' ? (
+          <span className="font-semibold text-foreground">
+            ${(p.montoOriginal != null ? p.montoOriginal : (p.montoCuota / (p.tipoCambio || 4.0))).toFixed(2)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/40 font-normal">—</span>
+        )}
       </td>
 
       {/* 5. Total */}

@@ -23,6 +23,14 @@ export function CuotasTarjetaTabla({
   onSelect,
   onToggleEstado,
 }: CuotasTarjetaTablaProps) {
+  const totalCuotasSoles = React.useMemo(
+    () => cuotasTarjeta.filter((c) => c.monedaOriginal !== 'USD').reduce((sum, c) => sum + (c.monto || 0), 0),
+    [cuotasTarjeta]
+  );
+  const totalCuotasUSD = React.useMemo(
+    () => cuotasTarjeta.filter((c) => c.monedaOriginal === 'USD').reduce((sum, c) => sum + (c.montoOriginal != null ? c.montoOriginal : (c.monto || 0) / (c.tipoCambio || 4.0)), 0),
+    [cuotasTarjeta]
+  );
   return (
     <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-2xs">
       {/* Vista Móvil: Tarjetas táctiles */}
@@ -57,7 +65,8 @@ export function CuotasTarjetaTabla({
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Concepto</th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Tarjeta</th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Cuota</th>
-              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Cuota Mensual</th>
+              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Soles (S/)</th>
+              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Dólares ($)</th>
               <th scope="col" className="py-2.5 px-3 text-center text-foreground font-semibold">Estado</th>
               <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Acciones</th>
             </tr>
@@ -80,7 +89,10 @@ export function CuotasTarjetaTabla({
                 Subtotal Compras en Tarjeta en Cuotas ({cuotasTarjeta.length} items)
               </td>
               <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
-                {formatMoney(totalCuotasTarjeta, moneda)}
+                {formatMoney(totalCuotasSoles, moneda)}
+              </td>
+              <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
+                {totalCuotasUSD > 0 ? `$${totalCuotasUSD.toFixed(2)}` : '—'}
               </td>
               <td colSpan={2} />
             </tr>

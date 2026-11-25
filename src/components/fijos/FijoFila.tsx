@@ -85,15 +85,27 @@ export function FijoFila({
         />
       </td>
 
-      {/* 3. Monto */}
-      <td className="py-2.5 px-3 text-right whitespace-nowrap">
-        <div className="font-mono font-semibold text-foreground text-xs sm:text-sm tabular-nums">
-          {formatMoney(cf.monto, moneda)}
-        </div>
-        {cf.monedaOriginal === 'USD' && cf.montoOriginal && (
-          <div className="text-[10px] text-muted-foreground font-mono font-normal mt-0.5">
-            ${cf.montoOriginal.toFixed(2)} USD
-          </div>
+      {/* 3. Soles (S/) */}
+      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
+        {cf.monedaOriginal === 'USD' ? (
+          <span className="text-muted-foreground/60 font-normal text-xs" title={`Equivalente al TC ${cf.tipoCambio || 4.0}`}>
+            ≈ {formatMoney(cf.monto, moneda)}
+          </span>
+        ) : (
+          <span className="font-semibold text-foreground">
+            {formatMoney(cf.monto, moneda)}
+          </span>
+        )}
+      </td>
+
+      {/* 4. Dólares ($) */}
+      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
+        {cf.monedaOriginal === 'USD' ? (
+          <span className="font-semibold text-foreground">
+            ${(cf.montoOriginal != null ? cf.montoOriginal : (cf.monto / (cf.tipoCambio || 4.0))).toFixed(2)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/40 font-normal">—</span>
         )}
       </td>
 

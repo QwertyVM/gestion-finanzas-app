@@ -86,13 +86,27 @@ export function CuotaTarjetaFila({
         </div>
       </td>
 
-      {/* 4. Cuota Mensual */}
-      <td className="py-2.5 px-3 text-right font-mono font-semibold text-foreground text-xs sm:text-sm tabular-nums whitespace-nowrap">
-        <div>{formatMoney(c.monto, moneda)}</div>
-        {c.monedaOriginal === 'USD' && c.montoOriginal && (
-          <div className="text-[10px] text-muted-foreground font-mono font-normal mt-0.5">
-            ${c.montoOriginal.toFixed(2)} USD
-          </div>
+      {/* 4. Soles (S/) */}
+      <td className="py-2.5 px-3 text-right font-mono text-xs sm:text-sm tabular-nums whitespace-nowrap">
+        {c.monedaOriginal === 'USD' ? (
+          <span className="text-muted-foreground/60 font-normal text-xs" title={`Equivalente al TC ${c.tipoCambio || 4.0}`}>
+            ≈ {formatMoney(c.monto, moneda)}
+          </span>
+        ) : (
+          <span className="font-semibold text-foreground">
+            {formatMoney(c.monto, moneda)}
+          </span>
+        )}
+      </td>
+
+      {/* 5. Dólares ($) */}
+      <td className="py-2.5 px-3 text-right font-mono text-xs sm:text-sm tabular-nums whitespace-nowrap">
+        {c.monedaOriginal === 'USD' ? (
+          <span className="font-semibold text-foreground">
+            ${(c.montoOriginal != null ? c.montoOriginal : (c.monto / (c.tipoCambio || 4.0))).toFixed(2)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/40 font-normal">—</span>
         )}
       </td>
 

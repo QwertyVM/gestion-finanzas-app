@@ -30,6 +30,16 @@ export function PrestamosTabla({
     [prestamos]
   );
 
+  const totalCuotasSoles = useMemo(
+    () => prestamos.reduce((sum, p) => (p.aplicaEsteMes !== false && p.monedaOriginal !== 'USD' ? sum + (p.montoCuota || 0) : sum), 0),
+    [prestamos]
+  );
+
+  const totalCuotasUSD = useMemo(
+    () => prestamos.reduce((sum, p) => (p.aplicaEsteMes !== false && p.monedaOriginal === 'USD' ? sum + (p.montoOriginal != null ? p.montoOriginal : (p.montoCuota || 0) / (p.tipoCambio || 4.0)) : sum), 0),
+    [prestamos]
+  );
+
   return (
     <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-2xs">
       {/* Vista Móvil: Tarjetas táctiles */}
@@ -66,7 +76,8 @@ export function PrestamosTabla({
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Concepto</th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Cuota</th>
               <th scope="col" className="py-2.5 px-3 text-center text-foreground font-semibold">TEA %</th>
-              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Cuota Mensual</th>
+              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Soles (S/)</th>
+              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Dólares ($)</th>
               <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Total</th>
               <th scope="col" className="py-2.5 px-3 text-center text-foreground font-semibold">Estado</th>
               <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Acciones</th>
@@ -92,7 +103,10 @@ export function PrestamosTabla({
                 Total Cuotas Préstamos del Mes ({prestamos.length} activos)
               </td>
               <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
-                {formatMoney(totalCuotasMes, moneda)}
+                {formatMoney(totalCuotasSoles, moneda)}
+              </td>
+              <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
+                {totalCuotasUSD > 0 ? `$${totalCuotasUSD.toFixed(2)}` : '—'}
               </td>
               <td colSpan={3} />
             </tr>

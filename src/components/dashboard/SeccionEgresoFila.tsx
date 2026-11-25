@@ -2,9 +2,10 @@
 
 import React from 'react';
 import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
-import { GripVertical, CheckSquare, Square, Check } from 'lucide-react';
+import { GripVertical, CheckSquare, Square } from 'lucide-react';
 import { SelectorIngresoPill } from './SelectorIngresoPill';
 import { CategoriaTagBadge } from '@/components/common/CategoriaTagBadge';
+import { SeccionEgresoAcciones } from './SeccionEgresoAcciones';
 
 interface SeccionEgresoFilaProps {
   item: any;
@@ -158,37 +159,37 @@ export function SeccionEgresoFila({
         </span>
       </td>
 
-      {/* 5. Monto */}
-      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono font-semibold text-foreground text-xs sm:text-sm tabular-nums">
-        <div>{formatMoney(item.monto, moneda)}</div>
-        {item.monedaOriginal === 'USD' && item.montoOriginal && (
-          <div className="text-[10px] text-muted-foreground font-mono font-normal mt-0.5">${item.montoOriginal.toFixed(2)} USD</div>
+      {/* 5. Soles (S/) */}
+      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
+        {item.monedaOriginal === 'USD' ? (
+          <span className="text-muted-foreground/60 font-normal text-xs" title={`Equivalente al TC ${item.tipoCambio || 4.0}`}>
+            ≈ {formatMoney(item.monto, moneda)}
+          </span>
+        ) : (
+          <span className="font-semibold text-foreground">
+            {formatMoney(item.monto, moneda)}
+          </span>
         )}
       </td>
 
-      {/* 6. Acción */}
-      <td className="py-2.5 px-3 text-right whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-end gap-1.5">
-          <button
-            type="button"
-            onClick={() => onToggleEstadoItem(item, isAdelantado ? 'PENDIENTE' : 'ADELANTADO')}
-            className={`h-6.5 px-2 rounded text-[11px] transition font-medium ${isAdelantado ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 font-semibold' : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'}`}
-            title="Alternar Adelantado"
-          >
-            {isAdelantado ? 'Adelantado' : 'Adelantar'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => onToggleEstadoItem(item, isPagado ? 'PENDIENTE' : 'PAGADO')}
-            className={`h-6.5 px-2.5 rounded-md text-[11px] font-semibold transition inline-flex items-center gap-1 ${isPagado ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40 hover:bg-emerald-100/70' : 'bg-foreground text-background hover:opacity-85 shadow-2xs'}`}
-            title="Alternar Pagado"
-          >
-            {isPagado && <Check className="w-3 h-3 stroke-[2.5]" />}
-            <span>{isPagado ? 'Pagado' : 'Pagar'}</span>
-          </button>
-        </div>
+      {/* 6. Dólares ($) */}
+      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
+        {item.monedaOriginal === 'USD' ? (
+          <span className="font-semibold text-foreground">
+            ${(item.montoOriginal != null ? item.montoOriginal : (item.monto / (item.tipoCambio || 4.0))).toFixed(2)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/40 font-normal">—</span>
+        )}
       </td>
+
+      {/* 7. Acción */}
+      <SeccionEgresoAcciones
+        item={item}
+        isPagado={isPagado}
+        isAdelantado={isAdelantado}
+        onToggleEstadoItem={onToggleEstadoItem}
+      />
     </tr>
   );
 }

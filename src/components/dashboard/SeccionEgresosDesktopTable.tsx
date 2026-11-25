@@ -72,7 +72,10 @@ export function SeccionEgresosDesktopTable({
               Estado
             </th>
             <th scope="col" className="py-2.5 px-3 text-right font-semibold text-foreground">
-              Monto
+              Soles (S/)
+            </th>
+            <th scope="col" className="py-2.5 px-3 text-right font-semibold text-foreground">
+              Dólares ($)
             </th>
             <th scope="col" className="py-2.5 px-3 text-right font-semibold text-foreground">
               Acción

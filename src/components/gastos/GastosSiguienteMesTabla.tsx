@@ -80,7 +80,8 @@ export function GastosSiguienteMesTabla({
                     <th scope="col" className="py-3 px-3.5 font-semibold">Categoría</th>
                     <th scope="col" className="py-3 px-3.5 text-center font-semibold">Fecha</th>
                     <th scope="col" className="py-3 px-3.5 text-center font-semibold">Cuota</th>
-                    <th scope="col" className="py-3 px-3.5 text-right font-semibold">Monto</th>
+                    <th scope="col" className="py-3 px-3.5 text-right font-semibold">Soles (S/)</th>
+                    <th scope="col" className="py-3 px-3.5 text-right font-semibold">Dólares ($)</th>
                     <th scope="col" className="py-3 px-3.5 text-center font-semibold">
                       <span className="sr-only">Acciones</span>
                     </th>
@@ -119,8 +120,25 @@ export function GastosSiguienteMesTabla({
                         <td className="py-3 px-3.5 text-center whitespace-nowrap text-muted-foreground text-xs">
                           {g.totalCuotas > 1 ? `Cuota ${g.cuotaActual}/${g.totalCuotas}` : '1 cuota'}
                         </td>
-                        <td className="py-3 px-3.5 text-right font-mono font-bold text-foreground whitespace-nowrap">
-                          {formatMoney(g.monto, moneda)}
+                        <td className="py-3 px-3.5 text-right font-mono whitespace-nowrap text-xs sm:text-sm">
+                          {g.monedaOriginal === 'USD' ? (
+                            <span className="text-muted-foreground/60 font-normal text-xs" title={`Equivalente al TC ${g.tipoCambio || 4.0}`}>
+                              ≈ {formatMoney(g.monto, moneda)}
+                            </span>
+                          ) : (
+                            <span className="font-semibold text-foreground">
+                              {formatMoney(g.monto, moneda)}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-3.5 text-right font-mono whitespace-nowrap text-xs sm:text-sm">
+                          {g.monedaOriginal === 'USD' ? (
+                            <span className="font-semibold text-foreground">
+                              ${(g.montoOriginal != null ? g.montoOriginal : (g.monto / (g.tipoCambio || 4.0))).toFixed(2)}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground/40 font-normal">—</span>
+                          )}
                         </td>
                         <td
                           className="py-3 px-3.5 text-center whitespace-nowrap"
