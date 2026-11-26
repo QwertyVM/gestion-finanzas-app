@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { formatPeriodoLabel } from '@/lib/utils';
 import { useFinanzas } from '@/context/FinanzasContext';
 
@@ -35,11 +35,10 @@ export function HeroPeriodoNav({
           onClick={irMesAnterior}
           onMouseEnter={prefetchMesAnterior}
           disabled={!puedeIrMesAnterior}
-          className={`transition ${
-            puedeIrMesAnterior
+          className={`transition ${puedeIrMesAnterior
               ? 'hover:text-foreground text-muted-foreground cursor-pointer'
               : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
-          }`}
+            }`}
           title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
         >
           <ChevronLeft className="w-3.5 h-3.5" />
@@ -59,10 +58,11 @@ export function HeroPeriodoNav({
       </div>
 
       {esMesEspecial && labelEspecial && (
-        <span className="text-xs font-semibold text-amber-600 dark:text-amber-400">
-          · {labelEspecial}
-        </span>
+          <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+            <Sparkles className="w-3 h-3 text-amber-500" />
+            <span>{labelEspecial}</span>
+          </span>
       )}
-    </div>
-  );
+        </div>
+      );
 }

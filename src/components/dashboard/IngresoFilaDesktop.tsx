@@ -47,8 +47,15 @@ export function IngresoFilaDesktop({
           ? 'bg-indigo-50 text-indigo-700 border-indigo-200/60 dark:bg-indigo-950/40 dark:text-indigo-300'
           : 'bg-muted text-muted-foreground border-border/60';
 
+  const gastos = ing.totalGastosAsignados || 0;
+  const resto = ing.disponible != null ? ing.disponible : Number((ing.monto - gastos).toFixed(2));
+  const pctGastado = ing.monto > 0 ? Math.min(100, Math.round((Math.max(0, ing.monto - resto) / ing.monto) * 100)) : 0;
+  const pctLibre = ing.monto > 0 ? Math.max(0, 100 - pctGastado) : 0;
+  const esDeficit = resto < 0;
+
   return (
     <tr className="hover:bg-muted/40 transition-colors">
+      {/* 1. Concepto */}
       <td className="py-2.5 px-3">
         <div
           onClick={() => onEditarIngreso?.(ing)}
@@ -64,16 +71,19 @@ export function IngresoFilaDesktop({
         )}
       </td>
 
+      {/* 2. Tipo / Origen */}
       <td className="py-2.5 px-3">
         <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${tipoBadgeClass}`}>
           {tipoLabel}
         </span>
       </td>
 
+      {/* 3. Fecha */}
       <td className="py-2.5 px-3 text-center text-muted-foreground whitespace-nowrap text-xs font-mono">
         {fechaLabel}
       </td>
 
+      {/* 4. Estado */}
       <td className="py-2.5 px-3 text-center whitespace-nowrap">
         <button
           type="button"
@@ -85,75 +95,94 @@ export function IngresoFilaDesktop({
           title="Click para alternar estado"
         >
           <span
-            className={`w-1.5 h-1.5 rounded-full ${ing.recibido ? 'bg-emerald-500' : 'bg-amber-500'
-              }`}
+            className={`w-1.5 h-1.5 rounded-full ${ing.recibido ? 'bg-emerald-500' : 'bg-amber-500'}`}
           />
           <span>{ing.recibido ? 'Recibido' : 'Por recibir'}</span>
         </button>
       </td>
 
+      {/* 5. Monto Total */}
       <td
         onClick={() => onEditarIngreso?.(ing)}
         className={`py-2.5 px-3 text-right font-mono font-semibold text-foreground whitespace-nowrap text-xs sm:text-sm tabular-nums ${onEditarIngreso ? 'cursor-pointer hover:text-indigo-600 transition' : ''}`}
         title="Click para editar monto"
       >
-        <div>{formatMoney(ing.monto, moneda)}</div>
-        {mostrarDesgloseAsignado && Boolean(ing.totalGastosAsignados && ing.totalGastosAsignados > 0) && (
-          <div className="flex flex-col items-end gap-0.5 mt-0.5 font-mono text-[10px]">
-            <span className="text-amber-600 dark:text-amber-400 font-medium" title="Monto de gastos asignados a este ingreso">
-              Gastos: {formatMoney(ing.totalGastosAsignados!, moneda)}
-            </span>
-            <span
-              className={`font-bold ${
-                (ing.disponible ?? (ing.monto - ing.totalGastosAsignados!)) >= 0
-                  ? 'text-emerald-600 dark:text-emerald-400'
-                  : 'text-rose-600 dark:text-rose-400'
-              }`}
-              title="Resto libre disponible que te queda"
-            >
-              Resto: {formatMoney(ing.disponible ?? (ing.monto - ing.totalGastosAsignados!), moneda)}
-            </span>
-          </div>
-        )}
-      </td>
+              {formatMoney(ing.monto, moneda)}
+            </td>
 
-      <td className="py-2.5 px-3 text-right whitespace-nowrap">
-        <div className="flex items-center justify-end gap-1">
-          <button
-            type="button"
-            onClick={() => onToggleRecibido(ing)}
-            className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition"
-            title={ing.recibido ? 'Marcar como por recibir' : 'Marcar como recibido'}
+            {/* 6. Gastos Asignados (solo si múltiple ingreso) */}
+            {mostrarDesgloseAsignado && (
+              <td className="py-2.5 px-3 text-right whitespace-nowrap">
+                <div className="font-mono text-xs sm:text-sm font-semibold text-foreground tabular-nums">
+                  {formatMoney(gastos, moneda)}
+                </div>
+                {ing.monto > 0 && (
+            <span className="text-[10px] text-muted-foreground font-mono">
+              {pctGastado}% asignado
+            </span>
+                )}
+              </td>
+            )}
+
+            {/* 7. Resto Libre (solo si múltiple ingreso) */}
+            {mostrarDesgloseAsignado && (
+        <td className="py-2.5 px-3 text-right whitespace-nowrap">
+          <div
+            className={`font-mono text-xs sm:text-sm font-bold tabular-nums ${
+              esDeficit ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'
+            }`}
           >
-            <CheckCircle2
-              className={`w-3.5 h-3.5 ${ing.recibido ? 'text-emerald-500' : 'text-muted-foreground'
-                }`}
-            />
-          </button>
+            {formatMoney(resto, moneda)}
+          </div>
+          <span
+            className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full inline-block ${
+              esDeficit
+                ? 'bg-rose-500/10 text-rose-600 dark:text-rose-400'
+                : 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'
+            }`}
+          >
+            {esDeficit ? 'Sobregiro' : `${pctLibre}% libre`}
+          </span>
+        </td>
+        )}
 
-          {(onEditarIngreso || (ing.tipo === 'SUELDO' && onEditarSueldo)) && (
+        {/* 8. Acción */}
+        <td className="py-2.5 px-3 text-right whitespace-nowrap">
+          <div className="flex items-center justify-end gap-1">
             <button
               type="button"
-              onClick={() => onEditarIngreso ? onEditarIngreso(ing) : onEditarSueldo?.(ing.monto)}
-              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-indigo-500 transition"
-              title="Modificar ingreso"
+              onClick={() => onToggleRecibido(ing)}
+              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition cursor-pointer"
+              title={ing.recibido ? 'Marcar como por recibir' : 'Marcar como recibido'}
             >
-              <Edit2 className="w-3.5 h-3.5" />
+              <CheckCircle2
+                className={`w-3.5 h-3.5 ${ing.recibido ? 'text-emerald-500' : 'text-muted-foreground'}`}
+              />
             </button>
-          )}
 
-          {ing.tipo !== 'SUELDO' && (
-            <button
-              type="button"
-              onClick={() => onEliminarIngreso(ing.id)}
-              className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-rose-500 transition"
-              title="Eliminar ingreso"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-      </td>
+            {(onEditarIngreso || (ing.tipo === 'SUELDO' && onEditarSueldo)) && (
+              <button
+                type="button"
+                onClick={() => onEditarIngreso ? onEditarIngreso(ing) : onEditarSueldo?.(ing.monto)}
+                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-indigo-500 transition cursor-pointer"
+                title="Modificar ingreso"
+              >
+                <Edit2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+
+            {ing.tipo !== 'SUELDO' && (
+              <button
+                type="button"
+                onClick={() => onEliminarIngreso(ing.id)}
+                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-rose-500 transition cursor-pointer"
+                title="Eliminar ingreso"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </td>
     </tr>
   );
 }

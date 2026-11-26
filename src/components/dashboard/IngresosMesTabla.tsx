@@ -1,10 +1,11 @@
 'use client';
 
 import React from 'react';
-import { Plus } from 'lucide-react';
+import Link from 'next/link';
+import { Plus, ArrowRight } from 'lucide-react';
+import { formatMoney } from '@/lib/utils';
 import { IngresoCardMobile, type IngresoItem } from './IngresoCardMobile';
 import { IngresoFilaDesktop } from './IngresoFilaDesktop';
-import { IngresosFuentesCards } from './IngresosFuentesCards';
 
 interface IngresosMesTablaProps {
   ingresos: IngresoItem[];
@@ -27,18 +28,27 @@ export function IngresosMesTabla({
   onEditarSueldo,
   onEditarIngreso,
 }: IngresosMesTablaProps) {
+  const esMultiple = ingresos.length > 1;
+
+  const totalGastosAsignados = ingresos.reduce((s, i) => s + (i.totalGastosAsignados || 0), 0);
+  const totalRestoLibre = ingresos.reduce(
+    (s, i) => s + (i.disponible != null ? i.disponible : (i.monto - (i.totalGastosAsignados || 0))),
+    0
+  );
+
   return (
     <div className="space-y-3">
+      {/* Cabecera de la sección */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold tracking-tight text-foreground">
-                Ingresos del Mes
-              </h2>
-                <span className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
-                  {ingresos.length} {ingresos.length === 1 ? 'fuente' : 'fuentes'}
-                </span>
-                {ingresos.length > 1 && (
+            <h2 className="text-sm font-semibold tracking-tight text-foreground">
+              Ingresos del Mes
+            </h2>
+            <span className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
+              {ingresos.length} {ingresos.length === 1 ? 'fuente' : 'fuentes'}
+            </span>
+            {esMultiple && (
               <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
                 Múltiples ingresos: Asignación activa
               </span>
@@ -49,78 +59,109 @@ export function IngresosMesTabla({
           </p>
         </div>
 
-        <button
-          onClick={() => openRecordModal('INGRESO')}
-          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border/70 text-foreground hover:bg-muted/60 text-xs font-medium transition active:scale-95 self-start sm:self-auto shadow-2xs cursor-pointer"
-        >
-          <Plus className="w-3.5 h-3.5 text-muted-foreground" />
-          <span>Registrar Ingreso</span>
-        </button>
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {esMultiple && (
+            <Link
+              href="/presupuesto-operativo"
+              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 hover:underline px-2 py-1 rounded-md transition"
+            >
+              <span>Planificar para vivir</span>
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          )}
+
+          <button
+            onClick={() => openRecordModal('INGRESO')}
+            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border/70 text-foreground hover:bg-muted/60 text-xs font-medium transition active:scale-95 shadow-2xs cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>Registrar Ingreso</span>
+          </button>
+        </div>
       </div>
 
-              {/* Cards de Remanente / Resto disponible por fuente (solo cuando hay múltiples fuentes) */}
-              {ingresos.length > 1 && (
-                <IngresosFuentesCards
-                  ingresos={ingresos}
-                  totalIngresos={totalIngresos}
+      {/* Contenedor de la tabla */}
+      <div className="bg-card border border-border/70 rounded-2xl overflow-hidden shadow-2xs">
+        {ingresos.length === 0 ? (
+          <div className="p-6 text-center text-xs text-muted-foreground">
+            No tienes ingresos registrados para este periodo.
+          </div>
+        ) : (
+          <>
+            {/* Vista Móvil: Tarjetas táctiles */}
+            <div className="md:hidden divide-y divide-border/40">
+              {ingresos.map((ing) => (
+                <IngresoCardMobile
+                  key={`m-${ing.id}`}
+                  ingreso={ing}
                   moneda={moneda}
+                  onToggleRecibido={onToggleRecibido}
+                  onEliminarIngreso={onEliminarIngreso}
+                  onEditarSueldo={onEditarSueldo}
+                  onEditarIngreso={onEditarIngreso}
                 />
-              )}
+              ))}
+            </div>
 
-                <div className="bg-card border border-border/70 rounded-2xl overflow-hidden shadow-2xs">
-                  {ingresos.length === 0 ? (
-                    <div className="p-6 text-center text-xs text-muted-foreground">
-                      No tienes ingresos registrados para este periodo.
-                    </div>
-                  ) : (
-                    <>
-                      {/* Vista Móvil: Tarjetas táctiles */}
-                      <div className="md:hidden divide-y divide-border/40">
-                        {ingresos.map((ing) => (
-                          <IngresoCardMobile
-                            key={`m-${ing.id}`}
-                            ingreso={ing}
-                            moneda={moneda}
-                            onToggleRecibido={onToggleRecibido}
-                            onEliminarIngreso={onEliminarIngreso}
-                            onEditarSueldo={onEditarSueldo}
-                            onEditarIngreso={onEditarIngreso}
-                          />
-                        ))}
-                      </div>
-
-                      {/* Vista Desktop: Tabla completa */}
-                      <div className="hidden md:block overflow-x-auto">
-                        <table className="w-full text-left text-sm border-collapse">
-                          <thead className="bg-muted/30 dark:bg-muted/15 text-muted-foreground text-[11px] font-semibold border-b border-border/60 uppercase tracking-wider">
-                            <tr>
-                              <th scope="col" className="py-2.5 px-3 font-semibold text-muted-foreground">Concepto</th>
-                              <th scope="col" className="py-2.5 px-3 font-semibold text-muted-foreground">Tipo / Origen</th>
-                              <th scope="col" className="py-2.5 px-3 text-center font-semibold text-muted-foreground">Fecha</th>
-                              <th scope="col" className="py-2.5 px-3 text-center font-semibold text-muted-foreground">Estado</th>
-                              <th scope="col" className="py-2.5 px-3 text-right font-semibold text-muted-foreground">Monto</th>
-                              <th scope="col" className="py-2.5 px-3 text-right font-semibold text-muted-foreground">Acción</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-border/40">
-                            {ingresos.map((ing) => (
-                              <IngresoFilaDesktop
-                                key={ing.id}
-                                ing={ing}
-                                moneda={moneda}
-                                mostrarDesgloseAsignado={ingresos.length > 1}
-                                onToggleRecibido={onToggleRecibido}
-                                onEliminarIngreso={onEliminarIngreso}
-                                onEditarSueldo={onEditarSueldo}
-                                onEditarIngreso={onEditarIngreso}
-                              />
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </>
-                  )}
-                </div>
-              </div>
-              );
+            {/* Vista Desktop: Tabla ejecutiva completa */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-sm border-collapse">
+                <thead className="bg-muted/30 dark:bg-muted/15 text-muted-foreground text-[11px] font-semibold border-b border-border/60 uppercase tracking-wider">
+                  <tr>
+                    <th scope="col" className="py-2.5 px-3 font-semibold text-muted-foreground">Concepto</th>
+                    <th scope="col" className="py-2.5 px-3 font-semibold text-muted-foreground">Tipo / Origen</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-semibold text-muted-foreground">Fecha</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-semibold text-muted-foreground">Estado</th>
+                    <th scope="col" className="py-2.5 px-3 text-right font-semibold text-muted-foreground">
+                      {esMultiple ? 'Ingreso Total' : 'Monto'}
+                    </th>
+                    {esMultiple && (
+                      <>
+                        <th scope="col" className="py-2.5 px-3 text-right font-semibold text-muted-foreground">Gastos Asignados</th>
+                        <th scope="col" className="py-2.5 px-3 text-right font-semibold text-muted-foreground">Resto Libre</th>
+                      </>
+                    )}
+                    <th scope="col" className="py-2.5 px-3 text-right font-semibold text-muted-foreground">Acción</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40">
+                  {ingresos.map((ing) => (
+                    <IngresoFilaDesktop
+                      key={ing.id}
+                      ing={ing}
+                      moneda={moneda}
+                      mostrarDesgloseAsignado={esMultiple}
+                      onToggleRecibido={onToggleRecibido}
+                      onEliminarIngreso={onEliminarIngreso}
+                      onEditarSueldo={onEditarSueldo}
+                      onEditarIngreso={onEditarIngreso}
+                    />
+                  ))}
+                </tbody>
+                {esMultiple && (
+                  <tfoot className="bg-muted/20 dark:bg-muted/10 border-t border-border/60 text-xs font-semibold">
+                    <tr>
+                      <td colSpan={4} className="py-2.5 px-3 text-muted-foreground text-xs font-medium">
+                        Total Consolidado ({ingresos.length} fuentes)
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono font-bold text-foreground tabular-nums">
+                        {formatMoney(totalIngresos, moneda)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono font-bold text-foreground tabular-nums">
+                        {formatMoney(totalGastosAsignados, moneda)}
+                      </td>
+                      <td className="py-2.5 px-3 text-right font-mono font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                        {formatMoney(totalRestoLibre, moneda)}
+                      </td>
+                      <td className="py-2.5 px-3" />
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
+          </>
+      )}
+    </div>
+    </div >
+  );
 }
