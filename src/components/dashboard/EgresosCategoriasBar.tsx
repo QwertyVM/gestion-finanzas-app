@@ -83,30 +83,33 @@ export function EgresosCategoriasBar({
           <button
             type="button"
             onClick={() => onSelectFiltroEgreso(filtroEgreso === 'FIJOS' ? 'TODOS' : 'FIJOS')}
-                    ? 'border-sky-400/80 bg-sky-50 dark:bg-sky-950/40 shadow-xs ring-2 ring-sky-500/20'
-                    : 'border-border/60 bg-card/60 hover:bg-muted/40'
-                }`}
-        >
-          <div className="flex items-center gap-1.5 text-sky-700 dark:text-sky-300 font-semibold text-xs">
-            <Home className="w-3.5 h-3.5 shrink-0 text-sky-500" />
-            <span>Costos Fijos</span>
-          </div>
-          <div className="font-mono font-bold text-foreground text-xs sm:text-sm mt-0.5">
-            {formatMoney(totales.fijos, moneda)}
-          </div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">
-            {totales.conteoFijos} fijos · {totales.porcentajeFijos}%
-          </div>
-        </button>
+            className={`p-2.5 rounded-xl border text-left transition-all active:scale-[0.98] cursor-pointer ${
+              filtroEgreso === 'FIJOS'
+                ? 'border-sky-400/80 bg-sky-50 dark:bg-sky-950/40 shadow-xs ring-2 ring-sky-500/20'
+                : 'border-border/60 bg-card/60 hover:bg-muted/40'
+            }`}
+          >
+            <div className="flex items-center gap-1.5 text-sky-700 dark:text-sky-300 font-semibold text-xs">
+              <Home className="w-3.5 h-3.5 shrink-0 text-sky-500" />
+              <span>Costos Fijos</span>
+            </div>
+            <div className="font-mono font-bold text-foreground text-xs sm:text-sm mt-0.5">
+              {formatMoney(totales.fijos, moneda)}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              {totales.conteoFijos} fijos · {totales.porcentajeFijos}%
+            </div>
+          </button>
 
-        <button
-          type="button"
-          onClick={() => onSelectFiltroEgreso(filtroEgreso === 'PRESTAMOS' ? 'TODOS' : 'PRESTAMOS')}
-            className = {`p-2.5 rounded-xl border text-left transition-all active:scale-[0.98] cursor-pointer ${filtroEgreso === 'PRESTAMOS'
-                  ? 'border-purple-400/80 bg-purple-50 dark:bg-purple-950/40 shadow-xs ring-2 ring-purple-500/20'
-                  : 'border-border/60 bg-card/60 hover:bg-muted/40'
-              }`}
-        >
+          <button
+            type="button"
+            onClick={() => onSelectFiltroEgreso(filtroEgreso === 'PRESTAMOS' ? 'TODOS' : 'PRESTAMOS')}
+            className={`p-2.5 rounded-xl border text-left transition-all active:scale-[0.98] cursor-pointer ${
+              filtroEgreso === 'PRESTAMOS'
+                ? 'border-purple-400/80 bg-purple-50 dark:bg-purple-950/40 shadow-xs ring-2 ring-purple-500/20'
+                : 'border-border/60 bg-card/60 hover:bg-muted/40'
+            }`}
+          >
             <div className="flex items-center gap-1.5 text-purple-700 dark:text-purple-300 font-semibold text-xs">
               <Landmark className="w-3.5 h-3.5 shrink-0 text-purple-500" />
               <span>Préstamos</span>
@@ -114,50 +117,53 @@ export function EgresosCategoriasBar({
             <div className="font-mono font-bold text-foreground text-xs sm:text-sm mt-0.5">
               {formatMoney(totales.prestamos, moneda)}
             </div>
-              <div className="text-[10px] text-muted-foreground mt-0.5">
-                {totales.conteoPrestamos} deudas · {totales.porcentajePrestamos}%
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onSelectFiltroEgreso(filtroEgreso === 'CUOTAS' ? 'TODOS' : 'CUOTAS')}
-                      ? 'border-indigo-400/80 bg-indigo-50 dark:bg-indigo-950/40 shadow-xs ring-2 ring-indigo-500/20'
-                      : 'border-border/60 bg-card/60 hover:bg-muted/40'
-                  }`}
-        >
-          <div className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300 font-semibold text-xs">
-            <Layers className="w-3.5 h-3.5 shrink-0 text-indigo-500" />
-            <span>Cuotas Tarjeta</span>
-          </div>
-          <div className="font-mono font-bold text-foreground text-xs sm:text-sm mt-0.5">
-            {formatMoney(totales.cuotas, moneda)}
-          </div>
-          <div className="text-[10px] text-muted-foreground mt-0.5">
-            {totales.conteoCuotas} compras · {totales.porcentajeCuotas}%
-          </div>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onSelectFiltroEgreso(filtroEgreso === 'VARIABLES' ? 'TODOS' : 'VARIABLES')}
-              className = {`p-2.5 rounded-xl border text-left transition-all active:scale-[0.98] cursor-pointer ${filtroEgreso === 'VARIABLES'
-                    ? 'border-teal-400/80 bg-teal-50 dark:bg-teal-950/40 shadow-xs ring-2 ring-teal-500/20'
-                    : 'border-border/60 bg-card/60 hover:bg-muted/40'
-                }`}
-        >
-              <div className="flex items-center gap-1.5 text-teal-700 dark:text-teal-300 font-semibold text-xs">
-                <Banknote className="w-3.5 h-3.5 shrink-0 text-teal-500" />
-                <span>Gastos Variables</span>
-              </div>
-              <div className="font-mono font-bold text-foreground text-xs sm:text-sm mt-0.5">
-                {formatMoney(totales.variables, moneda)}
-              </div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">
-                  {totales.conteoVariables} gastos · {totales.porcentajeVariables}%
-                </div>
-              </button>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              {totales.conteoPrestamos} deudas · {totales.porcentajePrestamos}%
             </div>
-          </div>
-          );
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onSelectFiltroEgreso(filtroEgreso === 'CUOTAS' ? 'TODOS' : 'CUOTAS')}
+            className={`p - 2.5 rounded - xl border text - left transition - all active: scale - [0.98] cursor - pointer ${
+  filtroEgreso === 'CUOTAS'
+    ? 'border-indigo-400/80 bg-indigo-50 dark:bg-indigo-950/40 shadow-xs ring-2 ring-indigo-500/20'
+    : 'border-border/60 bg-card/60 hover:bg-muted/40'
+} `}
+          >
+            <div className="flex items-center gap-1.5 text-indigo-700 dark:text-indigo-300 font-semibold text-xs">
+              <Layers className="w-3.5 h-3.5 shrink-0 text-indigo-500" />
+              <span>Cuotas Tarjeta</span>
+            </div>
+            <div className="font-mono font-bold text-foreground text-xs sm:text-sm mt-0.5">
+              {formatMoney(totales.cuotas, moneda)}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              {totales.conteoCuotas} compras · {totales.porcentajeCuotas}%
+            </div>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onSelectFiltroEgreso(filtroEgreso === 'VARIABLES' ? 'TODOS' : 'VARIABLES')}
+            className={`p - 2.5 rounded - xl border text - left transition - all active: scale - [0.98] cursor - pointer ${
+  filtroEgreso === 'VARIABLES'
+    ? 'border-teal-400/80 bg-teal-50 dark:bg-teal-950/40 shadow-xs ring-2 ring-teal-500/20'
+    : 'border-border/60 bg-card/60 hover:bg-muted/40'
+} `}
+          >
+            <div className="flex items-center gap-1.5 text-teal-700 dark:text-teal-300 font-semibold text-xs">
+              <Banknote className="w-3.5 h-3.5 shrink-0 text-teal-500" />
+              <span>Gastos Variables</span>
+            </div>
+            <div className="font-mono font-bold text-foreground text-xs sm:text-sm mt-0.5">
+              {formatMoney(totales.variables, moneda)}
+            </div>
+            <div className="text-[10px] text-muted-foreground mt-0.5">
+              {totales.conteoVariables} gastos · {totales.porcentajeVariables}%
+            </div>
+          </button>
+        </div>
+      </div>
+    );
 }
