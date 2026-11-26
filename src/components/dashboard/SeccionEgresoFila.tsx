@@ -77,98 +77,99 @@ export function SeccionEgresoFila({
       </td>
 
       {/* 2. Checkbox */}
-        <td className="py-2.5 px-1 text-center" onClick={(e) => e.stopPropagation()}>
-          <button
-            type="button"
-            onClick={() => onToggleSelectGasto(item.id, item.monto)}
-            className="text-muted-foreground hover:text-foreground transition p-0.5 inline-flex"
-            aria-label={isSelected ? `Deseleccionar ${item.concepto}` : `Seleccionar ${item.concepto}`}
-          >
-            {isSelected ? (
-              <CheckSquare className="w-3.5 h-3.5 text-foreground" />
-            ) : (
-              <Square className="w-3.5 h-3.5" />
-            )}
-          </button>
+      <td className="py-2.5 px-1 text-center" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          onClick={() => onToggleSelectGasto(item.id, item.monto)}
+          className="text-muted-foreground hover:text-foreground transition p-0.5 inline-flex"
+          aria-label={isSelected ? `Deseleccionar ${item.concepto}` : `Seleccionar ${item.concepto}`}
+        >
+          {isSelected ? (
+            <CheckSquare className="w-3.5 h-3.5 text-foreground" />
+          ) : (
+            <Square className="w-3.5 h-3.5" />
+          )}
+        </button>
+      </td>
+
+      {/* 3. Concepto & Detalle */}
+      <SeccionEgresoDetalleCell
+        item={item}
+        subtextoLimpio={subtextoLimpio}
+        ingresosMes={ingresosMes}
+        onAsignarIngreso={onAsignarIngreso}
+      />
+
+      {/* 4. Cuota */}
+      {showCuotaColumn && (
+        <td className="py-2.5 px-2 text-center whitespace-nowrap">
+          {item.cuotaActual ? (
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold font-mono border ${esPrestamo
+                  ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/40'
+                  : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/40'
+                }`}
+            >
+              Cuota {item.cuotaActual} de {cuotaTotal}
+            </span>
+          ) : (
+            <span className="text-muted-foreground text-xs">—</span>
+          )}
         </td>
-
-        {/* 3. Concepto & Detalle */}
-        <SeccionEgresoDetalleCell
-          item={item}
-          subtextoLimpio={subtextoLimpio}
-          ingresosMes={ingresosMes}
-          onAsignarIngreso={onAsignarIngreso}
-        />
-
-        {/* 4. Cuota */}
-        {showCuotaColumn && (
-            <td className="py-2.5 px-2 text-center whitespace-nowrap">
-              {item.cuotaActual ? (
-                <span
-                  className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold font-mono border ${esPrestamo
-                      ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/40'
-                      : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/40'
-                    }`}
-                >
-                  Cuota {item.cuotaActual} de {cuotaTotal}
-                </span>
-              ) : (
-                <span className="text-muted-foreground text-xs">—</span>
-              )}
-            </td>
       )}
 
-              {/* 5. Estado: Badge semántico uniforme NOVA */}
-              <td className="py-2.5 px-2 text-center whitespace-nowrap">
-                <span
-                          ? 'bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border-indigo-500/20'
-                          : isPagado
-                              ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/20'
-                              : 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/20'
-          }`}
+      {/* 5. Estado: Badge semántico uniforme NOVA */}
+      <td className="py-2.5 px-2 text-center whitespace-nowrap">
+        <span
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap border ${isAdelantado
+              ? 'bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border-indigo-500/20'
+              : isPagado
+                ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/20'
+                : 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/20'
+            }`}
         >
-                <span
-                  className={`w-1.5 h-1.5 rounded-full ${isAdelantado ? 'bg-indigo-500' : isPagado ? 'bg-emerald-500' : 'bg-amber-500'
-                    }`}
-                />
-                {isAdelantado ? 'Adelantado' : isPagado ? 'Pagado' : 'Pendiente'}
-              </span>
-            </td>
+          <span
+            className={`w-1.5 h-1.5 rounded-full ${isAdelantado ? 'bg-indigo-500' : isPagado ? 'bg-emerald-500' : 'bg-amber-500'
+              }`}
+          />
+          {isAdelantado ? 'Adelantado' : isPagado ? 'Pagado' : 'Pendiente'}
+        </span>
+      </td>
 
-            {/* 6. Soles (S/) */}
-            <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
-              {item.monedaOriginal === 'USD' ? (
-                  <span
-                    className="text-muted-foreground/60 font-normal text-xs"
-                    title={`Equivalente al TC ${item.tipoCambio || 4.0}`}
-                  >
-                    ≈ {formatMoney(item.monto, moneda)}
-                  </span>
-                  ) : (
-                    <span className="font-bold text-foreground">
-                      {formatMoney(item.monto, moneda)}
-                    </span>
+      {/* 6. Soles (S/) */}
+      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
+        {item.monedaOriginal === 'USD' ? (
+          <span
+            className="text-muted-foreground/60 font-normal text-xs"
+            title={`Equivalente al TC ${item.tipoCambio || 4.0}`}
+          >
+            ≈ {formatMoney(item.monto, moneda)}
+          </span>
+        ) : (
+          <span className="font-bold text-foreground">
+            {formatMoney(item.monto, moneda)}
+          </span>
         )}
-                  </td>
+      </td>
 
-                  {/* 7. Dólares ($) */}
-                  <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
-                    {item.monedaOriginal === 'USD' ? (
-                        <span className="font-bold text-foreground">
-                          ${(item.montoOriginal != null ? item.montoOriginal : item.monto / (item.tipoCambio || 4.0)).toFixed(2)}
-                        </span>
-                        ) : (
-                        <span className="text-muted-foreground/40 font-normal">—</span>
+      {/* 7. Dólares ($) */}
+      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
+        {item.monedaOriginal === 'USD' ? (
+          <span className="font-bold text-foreground">
+            ${(item.montoOriginal != null ? item.montoOriginal : item.monto / (item.tipoCambio || 4.0)).toFixed(2)}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/40 font-normal">—</span>
         )}
-                      </td>
+      </td>
 
-                    {/* 8. Acción */}
-                    <SeccionEgresoAcciones
-                      item={item}
-                      isPagado={isPagado}
-                      isAdelantado={isAdelantado}
-                      onToggleEstadoItem={onToggleEstadoItem}
-                    />
-                  </tr>
-                  );
+      {/* 8. Acción */}
+      <SeccionEgresoAcciones
+        item={item}
+        isPagado={isPagado}
+        isAdelantado={isAdelantado}
+        onToggleEstadoItem={onToggleEstadoItem}
+      />
+    </tr>
+  );
 }
