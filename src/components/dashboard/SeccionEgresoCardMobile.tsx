@@ -42,17 +42,17 @@ export function SeccionEgresoCardMobile({
   const cleanTag = item.tag ? item.tag.replace(/^#+/, '').trim() : null;
   const cat = item.categoria || '';
   const dotColorClass = cat.includes('50')
-      ? 'bg-sky-500 ring-2 ring-sky-500/20'
-      : cat.includes('30')
-          ? 'bg-emerald-500 ring-2 ring-emerald-500/20'
-          : cat.includes('20')
-        ?'bg-purple-500 ring-2 ring-purple-500/20'
+    ? 'bg-sky-500 ring-2 ring-sky-500/20'
+    : cat.includes('30')
+      ? 'bg-emerald-500 ring-2 ring-emerald-500/20'
+      : cat.includes('20')
+        ? 'bg-purple-500 ring-2 ring-purple-500/20'
         : 'bg-primary/60';
 
   const estadoBadgeClass = isAdelantado
-      ? 'bg-indigo-50/80 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/40'
-      : isPagado
-      ?'bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/40'
+    ? 'bg-indigo-50/80 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/40'
+    : isPagado
+      ? 'bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/40'
       : 'bg-amber-50/80 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/40';
 
   return (
@@ -82,111 +82,111 @@ export function SeccionEgresoCardMobile({
                 {limpiarConceptoCuota(item.concepto)}
               </h4>
               {cleanTag && (
-                  <span className="bg-muted/60 text-muted-foreground text-[10px] font-medium px-2 py-0.5 rounded-md border border-border/50 shrink-0 tracking-wide">
-                    #{cleanTag}
-                  </span>
+                <span className="bg-muted/60 text-muted-foreground text-[10px] font-medium px-2 py-0.5 rounded-md border border-border/50 shrink-0 tracking-wide">
+                  #{cleanTag}
+                </span>
               )}
-                </div>
+            </div>
 
             {/* Metadatos en Línea 2 */}
-              <div className="flex items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground mt-1 flex-wrap">
-                {cat && (
-                  <div className="inline-flex items-center gap-1 shrink-0">
-                    <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColorClass}`} />
-                    <span className="font-medium text-foreground/80">{cat}</span>
-                  </div>
-                )}
+            <div className="flex items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground mt-1 flex-wrap">
+              {cat && (
+                <div className="inline-flex items-center gap-1 shrink-0">
+                  <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColorClass}`} />
+                  <span className="font-medium text-foreground/80">{cat}</span>
+                </div>
+              )}
 
-                {item.cuotaActual ? (
-                  <>
-                    <span className="text-muted-foreground/30">•</span>
-                    <span
-                      className={`text-[10px] font-semibold font-mono px-1.5 py-0.5 rounded border shrink-0 ${esPrestamo
-                          ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200/80 dark:border-purple-800/40'
-                          : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/40'
-                        }`}
-                    >
-                      Cuota {item.cuotaActual}/{item.totalCuotas || item.cuotasTotales}
-                    </span>
-                  </>
-                ) : null}
+              {item.cuotaActual ? (
+                <>
+                  <span className="text-muted-foreground/30">•</span>
+                  <span
+                    className={`text-[10px] font-semibold font-mono px-1.5 py-0.5 rounded border shrink-0 ${esPrestamo
+                      ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200/80 dark:border-purple-800/40'
+                      : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/40'
+                      }`}
+                  >
+                    Cuota {item.cuotaActual}/{item.totalCuotas || item.cuotasTotales}
+                  </span>
+                </>
+              ) : null}
 
-                  { subtextoFiltradoMobile && (
-                    <>
-                      <span className="text-muted-foreground/30">•</span>
-                      <span className="truncate">{subtextoFiltradoMobile}</span>
-                    </>
-                  )}
+              {subtextoFiltradoMobile && (
+                <>
+                  <span className="text-muted-foreground/30">•</span>
+                  <span className="truncate">{subtextoFiltradoMobile}</span>
+                </>
+              )}
 
-                {ingresosMes && ingresosMes.length > 1 ? (
-                  <>
-                    <span className="text-muted-foreground/30">•</span>
-                    <SelectorIngresoPill
-                      ingresoId={item.ingresoId}
-                      ingresos={ingresosMes}
-                      onAsignar={(nuevoId) => onAsignarIngreso?.(item, nuevoId)}
-                    />
-                  </>
-                ) : item.ingresoConcepto ? (
-                  <>
-                    <span className="text-muted-foreground/30">•</span>
-                    <span className="inline-flex items-center gap-1 bg-secondary/70 border border-border/70 text-foreground text-[11px] font-medium px-2 py-0.5 rounded-lg shrink-0">
-                      <Wallet className="w-3 h-3 text-primary" />
-                      <span>{item.ingresoConcepto}</span>
-                    </span>
-                  </>
-                ) : null}
-              </div>
+              {ingresosMes && ingresosMes.length > 1 ? (
+                <>
+                  <span className="text-muted-foreground/30">•</span>
+                  <SelectorIngresoPill
+                    ingresoId={item.ingresoId}
+                    ingresos={ingresosMes}
+                    onAsignar={(nuevoId) => onAsignarIngreso?.(item, nuevoId)}
+                  />
+                </>
+              ) : item.ingresoConcepto ? (
+                <>
+                  <span className="text-muted-foreground/30">•</span>
+                  <span className="inline-flex items-center gap-1 bg-secondary/70 border border-border/70 text-foreground text-[11px] font-medium px-2 py-0.5 rounded-lg shrink-0">
+                    <Wallet className="w-3 h-3 text-primary" />
+                    <span>{item.ingresoConcepto}</span>
+                  </span>
+                </>
+              ) : null}
             </div>
           </div>
-
-          <div className="text-right shrink-0">
-            <span className="font-mono font-bold text-foreground text-sm tabular-nums block">
-              {formatMoney(item.monto, moneda)}
-            </span>
-            {item.monedaOriginal === 'USD' && item.montoOriginal && (
-              <span className="text-[10px] text-muted-foreground font-mono block">
-                ${item.montoOriginal.toFixed(2)} USD
-              </span>
-            )}
-          </div>
         </div>
 
-        {/* Fila 2: Estado Badge + Botones Rápidos Pagar / Adelantar */}
-        <div
-          className="flex items-center justify-between gap-2 pt-2 border-t border-border/40"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap border ${estadoBadgeClass}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${isAdelantado ? 'bg-indigo-500' : isPagado ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-            {isAdelantado ? 'Adelantado' : isPagado ? 'Pagado' : 'Pendiente'}
+        <div className="text-right shrink-0">
+          <span className="font-mono font-bold text-foreground text-sm tabular-nums block">
+            {formatMoney(item.monto, moneda)}
           </span>
-
-          <div className="flex items-center gap-1.5">
-            <button
-              type="button"
-              onClick={() => onToggleEstadoItem(item, isAdelantado ? 'PENDIENTE' : 'ADELANTADO')}
-            className={`h-7 px-2.5 rounded-lg text-[11px] font-medium transition cursor-pointer border active:scale-95 ${isAdelantado
-                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/50 font-semibold'
-                : 'text-muted-foreground/80 hover:text-foreground hover:bg-muted/60 border-transparent'
-                }`}
-            >
-              {isAdelantado ? 'Adelantado' : 'Adelantar'}
-            </button>
-
-            <button
-              type="button"
-              onClick={() => onToggleEstadoItem(item, isPagado ? 'PENDIENTE' : 'PAGADO')}
-            className={`h-7 px-3 rounded-lg text-[11px] transition inline-flex items-center gap-1 cursor-pointer active:scale-95 ${isPagado
-                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/40 hover:bg-emerald-100/60 font-semibold'
-                : 'bg-foreground/90 hover:bg-foreground text-background font-medium shadow-2xs hover:shadow-xs'
-                }`}
-            >
-              {isPagado && <Check className="w-3 h-3 stroke-[2.5]" />}
-              <span>{isPagado ? 'Pagado' : 'Pagar'}</span>
-            </button>
-          </div>
+          {item.monedaOriginal === 'USD' && item.montoOriginal && (
+            <span className="text-[10px] text-muted-foreground font-mono block">
+              ${item.montoOriginal.toFixed(2)} USD
+            </span>
+          )}
         </div>
       </div>
-      );
+
+      {/* Fila 2: Estado Badge + Botones Rápidos Pagar / Adelantar */}
+      <div
+        className="flex items-center justify-between gap-2 pt-2 border-t border-border/40"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap border ${estadoBadgeClass}`}>
+          <span className={`w-1.5 h-1.5 rounded-full ${isAdelantado ? 'bg-indigo-500' : isPagado ? 'bg-emerald-500' : 'bg-amber-500'}`} />
+          {isAdelantado ? 'Adelantado' : isPagado ? 'Pagado' : 'Pendiente'}
+        </span>
+
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => onToggleEstadoItem(item, isAdelantado ? 'PENDIENTE' : 'ADELANTADO')}
+            className={`h-7 px-2.5 rounded-lg text-[11px] font-medium transition cursor-pointer border active:scale-95 ${isAdelantado
+              ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/50 font-semibold'
+              : 'text-muted-foreground/80 hover:text-foreground hover:bg-muted/60 border-transparent'
+              }`}
+          >
+            {isAdelantado ? 'Adelantado' : 'Adelantar'}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => onToggleEstadoItem(item, isPagado ? 'PENDIENTE' : 'PAGADO')}
+              className={`h-7 px-3 rounded-lg text-[11px] font-semibold transition inline-flex items-center gap-1 cursor-pointer active:scale-95 ${isPagado
+              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/40 hover:bg-emerald-100/60'
+              : 'bg-primary text-primary-foreground hover:opacity-90 shadow-2xs'
+              }`}
+          >
+            {isPagado && <Check className="w-3 h-3 stroke-[2.5]" />}
+            <span>{isPagado ? 'Pagado' : 'Pagar'}</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
