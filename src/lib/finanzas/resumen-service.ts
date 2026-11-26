@@ -1110,10 +1110,20 @@ export async function getResumenMensual(periodo: string, usuarioOrId?: string | 
     const totalGastosAsignados = Number(
       asignados.reduce((sum, g) => sum + (g.monto || 0), 0).toFixed(2)
     );
+    const adelantoAsignado = Number(
+      asignados
+        .filter((g) => g.estado === 'ADELANTADO')
+        .reduce((sum, g) => sum + (g.monto || 0), 0)
+        .toFixed(2)
+    );
+    // Regla de Negocio: Todo compromiso ADELANTADO se pagó previamente con ahorros externos,
+    // por lo tanto NUNCA debe restar ni disminuir la proyección libre ni el saldo disponible.
+    const egresoEfectivo = Number((totalGastosAsignados - adelantoAsignado).toFixed(2));
     return {
       ...ing,
       totalGastosAsignados,
-      disponible: Number((ing.monto - totalGastosAsignados).toFixed(2)),
+      totalAdelantadoAsignado: adelantoAsignado,
+      disponible: Number((ing.monto - egresoEfectivo).toFixed(2)),
       gastosAsignadosCount: asignados.length,
     };
   });

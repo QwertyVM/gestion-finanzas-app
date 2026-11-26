@@ -50,8 +50,9 @@ export function IngresosFuentesCards({
         const config = getFuenteConfig(ing.tipo);
         const IconComponent = config.Icon;
         const gastos = ing.totalGastosAsignados || 0;
-        const resto = ing.disponible ?? Number((ing.monto - gastos).toFixed(2));
-        const pctGastado = ing.monto > 0 ? Math.min(100, Math.round((gastos / ing.monto) * 100)) : 0;
+        const resto = ing.disponible != null ? ing.disponible : Number((ing.monto - gastos).toFixed(2));
+        const gastoEfectivo = Math.max(0, ing.monto - resto);
+        const pctGastado = ing.monto > 0 ? Math.min(100, Math.round((gastoEfectivo / ing.monto) * 100)) : 0;
         const pctLibre = ing.monto > 0 ? Math.max(0, 100 - pctGastado) : 0;
         const esDeficit = resto < 0;
 

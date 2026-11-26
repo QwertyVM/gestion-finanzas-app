@@ -99,29 +99,42 @@ export function ResumenHeroKpis({
         </div>
 
         {/* Métricas clave en fila */}
-        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 pt-4">
-          <div className="p-3 sm:p-3.5 rounded-xl bg-muted/40 border border-border/40">
-            <span className="text-[11px] sm:text-xs text-muted-foreground block font-medium">Total Ingresos</span>
-            <span className="text-base sm:text-xl font-bold text-foreground font-mono mt-0.5 block truncate">
-              {formatMoney(totalIngresos, moneda)}
-            </span>
-            <span className="text-[10px] sm:text-xs text-muted-foreground">
-              {cantidadIngresos} {cantidadIngresos === 1 ? 'fuente' : 'fuentes'}
-            </span>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
+          <div className="p-3.5 sm:p-4 rounded-xl bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/15 flex items-start justify-between gap-3">
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">Total Ingresos</span>
+                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
+                  {cantidadIngresos} {cantidadIngresos === 1 ? 'fuente' : 'fuentes'}
+                </span>
+              </div>
+              <span className="text-xl sm:text-2xl font-bold text-foreground font-mono mt-1 block truncate">
+                {formatMoney(totalIngresos, moneda)}
+              </span>
+              <span className="text-[11px] text-muted-foreground mt-0.5 block">
+                Total programado para el periodo
+              </span>
+            </div>
           </div>
 
-          <div className="p-3 sm:p-3.5 rounded-xl bg-muted/40 border border-border/40">
-            <span className="text-[11px] sm:text-xs text-muted-foreground block font-medium">Total Egresos</span>
-            <span className="text-base sm:text-xl font-bold text-foreground font-mono mt-0.5 block truncate">
-              {formatMoney(totalEgresos, moneda)}
-            </span>
-            <div className="text-[10px] sm:text-xs text-muted-foreground flex items-center gap-1 sm:gap-1.5 flex-wrap mt-0.5">
-              <span>{formatMoney(totalPendiente, moneda)} pendientes</span>
-              {totalAdelantado > 0 && (
-                <span className="text-amber-600 dark:text-amber-400 font-semibold inline-flex items-center gap-0.5">
-                  · ⚡ {formatMoney(totalAdelantado, moneda)}
-                </span>
-              )}
+          <div className="p-3.5 sm:p-4 rounded-xl bg-muted/30 dark:bg-muted/15 border border-border/60 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-xs font-semibold text-foreground">Total Egresos</span>
+                {totalAdelantado > 0 && (
+                  <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+                    ⚡ {formatMoney(totalAdelantado, moneda)} adelantado
+                  </span>
+                )}
+              </div>
+              <span className="text-xl sm:text-2xl font-bold text-foreground font-mono mt-1 block truncate">
+                {formatMoney(totalEgresos, moneda)}
+              </span>
+            </div>
+            <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-2 flex-wrap pt-1 border-t border-border/30">
+              <span className="font-medium text-foreground/80">
+                Por pagar: <strong className="font-mono">{formatMoney(totalPendiente, moneda)}</strong>
+              </span>
             </div>
           </div>
         </div>

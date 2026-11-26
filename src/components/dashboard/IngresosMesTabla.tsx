@@ -58,8 +58,8 @@ export function IngresosMesTabla({
         </button>
       </div>
 
-      {/* Cards de Remanente / Resto disponible por fuente */}
-      {ingresos.length > 0 && (
+      {/* Cards de Remanente / Resto disponible por fuente (solo cuando hay múltiples fuentes) */}
+      {ingresos.length > 1 && (
         <IngresosFuentesCards
           ingresos={ingresos}
           totalIngresos={totalIngresos}
@@ -92,14 +92,14 @@ export function IngresosMesTabla({
             {/* Vista Desktop: Tabla completa */}
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-sm border-collapse">
-                <thead className="bg-muted/40 text-muted-foreground text-[11px] font-semibold border-b border-border/60 uppercase tracking-wider">
+                <thead className="bg-muted/30 dark:bg-muted/15 text-muted-foreground text-[11px] font-semibold border-b border-border/60 uppercase tracking-wider">
                   <tr>
-                    <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Concepto</th>
-                    <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Tipo / Origen</th>
-                    <th scope="col" className="py-2.5 px-3 text-center text-foreground font-semibold">Fecha</th>
-                    <th scope="col" className="py-2.5 px-3 text-center text-foreground font-semibold">Estado</th>
-                    <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Monto</th>
-                    <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Acción</th>
+                    <th scope="col" className="py-2.5 px-3 font-semibold text-muted-foreground">Concepto</th>
+                    <th scope="col" className="py-2.5 px-3 font-semibold text-muted-foreground">Tipo / Origen</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-semibold text-muted-foreground">Fecha</th>
+                    <th scope="col" className="py-2.5 px-3 text-center font-semibold text-muted-foreground">Estado</th>
+                    <th scope="col" className="py-2.5 px-3 text-right font-semibold text-muted-foreground">Monto</th>
+                    <th scope="col" className="py-2.5 px-3 text-right font-semibold text-muted-foreground">Acción</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/40">
@@ -108,6 +108,7 @@ export function IngresosMesTabla({
                       key={ing.id}
                       ing={ing}
                       moneda={moneda}
+                      mostrarDesgloseAsignado={ingresos.length > 1}
                       onToggleRecibido={onToggleRecibido}
                       onEliminarIngreso={onEliminarIngreso}
                       onEditarSueldo={onEditarSueldo}

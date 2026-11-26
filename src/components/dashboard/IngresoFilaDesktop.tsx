@@ -8,6 +8,7 @@ import type { IngresoItem } from './IngresoCardMobile';
 interface IngresoFilaDesktopProps {
   ing: IngresoItem;
   moneda: string;
+  mostrarDesgloseAsignado?: boolean;
   onToggleRecibido: (ingreso: IngresoItem) => void;
   onEliminarIngreso: (id: string) => void;
   onEditarSueldo?: (montoActual: number) => void;
@@ -17,6 +18,7 @@ interface IngresoFilaDesktopProps {
 export function IngresoFilaDesktop({
   ing,
   moneda,
+  mostrarDesgloseAsignado = false,
   onToggleRecibido,
   onEliminarIngreso,
   onEditarSueldo,
@@ -96,7 +98,7 @@ export function IngresoFilaDesktop({
         title="Click para editar monto"
       >
         <div>{formatMoney(ing.monto, moneda)}</div>
-        {Boolean(ing.totalGastosAsignados && ing.totalGastosAsignados > 0) && (
+        {mostrarDesgloseAsignado && Boolean(ing.totalGastosAsignados && ing.totalGastosAsignados > 0) && (
           <div className="flex flex-col items-end gap-0.5 mt-0.5 font-mono text-[10px]">
             <span className="text-amber-600 dark:text-amber-400 font-medium" title="Monto de gastos asignados a este ingreso">
               Gastos: {formatMoney(ing.totalGastosAsignados!, moneda)}
