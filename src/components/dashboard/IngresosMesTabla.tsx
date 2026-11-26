@@ -39,28 +39,23 @@ export function IngresosMesTabla({
   return (
     <div className="space-y-3">
       {/* Cabecera de la sección */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold tracking-tight text-foreground">
-              Ingresos del Mes
-            </h2>
-            <span className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
-              {ingresos.length} {ingresos.length === 1 ? 'fuente' : 'fuentes'}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <h2 className="text-sm font-semibold tracking-tight text-foreground">
+            Ingresos del Mes
+          </h2>
+          <span className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full font-mono">
+            {ingresos.length} {ingresos.length === 1 ? 'fuente' : 'fuentes'}
+          </span>
+          {esMultiple && (
+            <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+              Asignación activa
             </span>
-            {esMultiple && (
-              <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
-                Múltiples ingresos: Asignación activa
-              </span>
-            )}
-          </div>
-          <p className="text-[11px] text-muted-foreground mt-0.5">
-            Sueldo, gratificaciones y entradas programadas
-          </p>
+          )}
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
-          {esMultiple && (
+        {esMultiple && (
+          <div className="self-start sm:self-auto">
             <Link
               href="/presupuesto-operativo"
               className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 hover:underline px-2 py-1 rounded-md transition"
@@ -68,16 +63,8 @@ export function IngresosMesTabla({
               <span>Planificar para vivir</span>
               <ArrowRight className="w-3 h-3" />
             </Link>
-          )}
-
-          <button
-            onClick={() => openRecordModal('INGRESO')}
-            className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border/70 text-foreground hover:bg-muted/60 text-xs font-medium transition active:scale-95 shadow-2xs cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>Registrar Ingreso</span>
-          </button>
-        </div>
+          </div>
+        )}
       </div>
 
       {/* Contenedor de la tabla */}

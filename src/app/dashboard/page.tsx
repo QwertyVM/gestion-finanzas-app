@@ -1,10 +1,5 @@
-import { ExecutiveDashboardClient } from '@/components/dashboard/ExecutiveDashboardClient';
+import { redirect } from 'next/navigation';
 
-export const metadata = {
-  title: 'Dashboard Ejecutivo | FinanzApp',
-  description: 'Análisis visual, gráficos de distribución y métricas clave de tus finanzas personales.',
-};
-
-export default function DashboardPage() {
-  return <ExecutiveDashboardClient />;
+export default function DashboardRedirectPage() {
+  redirect('/');
 }

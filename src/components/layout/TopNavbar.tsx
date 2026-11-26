@@ -23,8 +23,8 @@ import { SidebarNavLinks } from './SidebarNavLinks';
 import { SidebarPeriodSelector } from './SidebarPeriodSelector';
 
 const mainNavLinks = [
-  { href: '/', label: 'Finanzas del Mes', icon: LayoutDashboard },
-  { href: '/dashboard', label: 'Dashboard & KPIs', icon: PieChart },
+  { href: '/', label: 'Dashboard', icon: LayoutDashboard },
+  { href: '/finanzas-mes', label: 'Finanzas del Mes', icon: Receipt },
   { href: '/gastos', label: 'Gastos & Compras', icon: Receipt },
   { href: '/fijos-y-prestamos', label: 'Fijos y Préstamos', icon: Landmark },
 ];
@@ -71,10 +71,10 @@ export function TopNavbar() {
             </Link>
 
             {/* Separador vertical sutil */}
-            <div className="h-5 w-px bg-border/60 hidden lg:block" />
+            <div className="h-5 w-px bg-border/60 hidden md:block" />
 
             {/* Pista de Navegación Segmentada (Sleek Segmented Tabs) */}
-            <nav className="hidden lg:flex items-center gap-0.5 p-1 rounded-xl bg-muted/50 dark:bg-muted/30 border border-border/50 shadow-2xs">
+            <nav className="hidden md:flex items-center gap-0.5 p-1 rounded-xl bg-muted/50 dark:bg-muted/30 border border-border/50 shadow-2xs">
               {mainNavLinks.map((link) => {
                 const isActive = pathname === link.href;
                 return (
@@ -108,9 +108,6 @@ export function TopNavbar() {
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
               <span className="hidden sm:inline">Nuevo Registro</span>
-              <kbd className="hidden md:inline-block px-1 py-0.2 text-[9px] bg-background/20 rounded font-mono font-normal">
-                N
-              </kbd>
             </button>
 
             {/* Selector de Tema Claro / Oscuro con Botón Armónico */}
@@ -132,7 +129,7 @@ export function TopNavbar() {
             <button
               type="button"
               onClick={() => setMobileOpen(true)}
-              className="lg:hidden p-1.5 rounded-lg text-foreground hover:bg-muted transition cursor-pointer"
+              className="md:hidden p-1.5 rounded-lg text-foreground hover:bg-muted transition cursor-pointer"
               aria-label="Abrir menú de navegación"
             >
               <Menu className="w-5 h-5" />

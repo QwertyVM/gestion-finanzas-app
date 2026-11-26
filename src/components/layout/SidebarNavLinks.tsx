@@ -25,13 +25,13 @@ const navSections = [
     links: [
       {
         href: '/',
-        label: 'Finanzas del Mes',
+        label: 'Dashboard',
         icon: LayoutDashboard,
       },
       {
-        href: '/dashboard',
-        label: 'Dashboard & KPIs',
-        icon: PieChart,
+        href: '/finanzas-mes',
+        label: 'Finanzas del Mes',
+        icon: Receipt,
       },
       {
         href: '/gastos',

@@ -19,13 +19,13 @@ export function MobileBottomNav() {
   const navItems = [
     {
       href: '/',
-      label: 'Mes',
+      label: 'Dashboard',
       icon: LayoutDashboard,
     },
     {
-      href: '/dashboard',
-      label: 'KPIs',
-      icon: PieChart,
+      href: '/finanzas-mes',
+      label: 'Finanzas',
+      icon: Receipt,
     },
     {
       href: '/gastos',

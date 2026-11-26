@@ -118,51 +118,62 @@ export function SeccionEgresoFila({
         </td>
       )}
 
-      {/* 5. Estado: Badge semántico uniforme pastel */}
-      <td className="py-2.5 px-2 text-center whitespace-nowrap">
-        <span
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap border ${isAdelantado
-              ? 'bg-indigo-50/80 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/40'
+      {/* 5. Estado: Badge semántico interactivo de 1 Clic */}
+      <td className="py-2.5 px-2 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          onClick={() => {
+            const nuevo = isPagado ? 'PENDIENTE' : 'PAGADO';
+            onToggleEstadoItem(item, nuevo);
+          }}
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap border transition-all active:scale-95 cursor-pointer hover:opacity-90 ${
+            isAdelantado
+              ? 'bg-indigo-50/90 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-300/80 dark:border-indigo-800/50'
               : isPagado
-                  ? 'bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/40'
-                  : 'bg-amber-50/80 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/40'
-            }`}
+              ? 'bg-emerald-50/90 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-300/80 dark:border-emerald-800/50'
+              : 'bg-amber-50/90 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-300/80 dark:border-amber-800/50'
+          }`}
+          title={isPagado ? 'Click para marcar como Pendiente' : 'Click para marcar como Pagado'}
         >
           <span
-            className={`w-1.5 h-1.5 rounded-full ${isAdelantado ? 'bg-indigo-500' : isPagado ? 'bg-emerald-500' : 'bg-amber-500'
-              }`}
+            className={`w-1.5 h-1.5 rounded-full ${
+              isAdelantado ? 'bg-indigo-500' : isPagado ? 'bg-emerald-500' : 'bg-amber-500'
+            }`}
           />
-          {isAdelantado ? 'Adelantado' : isPagado ? 'Pagado' : 'Pendiente'}
-        </span>
+          <span>{isAdelantado ? 'Adelantado' : isPagado ? 'Pagado' : 'Pendiente'}</span>
+        </button>
       </td>
 
       {/* 6. Soles (S/) */}
-      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
+      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono tabular-nums">
         {item.monedaOriginal === 'USD' ? (
           <span
-            className="text-muted-foreground/70 font-normal text-xs inline-flex items-center gap-1 justify-end"
+            className="text-muted-foreground/70 font-normal text-xs inline-flex items-center gap-0.5 justify-end"
             title={`Equivalente al TC ${item.tipoCambio || 4.0}`}
           >
             <span className="text-[10px] text-muted-foreground/50">≈</span>
             {formatMoney(item.monto, moneda)}
           </span>
         ) : (
-            <span className="font-semibold text-foreground">
-              {formatMoney(item.monto, moneda)}
-            </span>
+          <span className="font-bold text-foreground text-xs sm:text-sm">
+            {formatMoney(item.monto, moneda)}
+          </span>
         )}
-          </td>
+      </td>
 
-        {/* 7. Dólares ($) */}
-        <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
-          {item.monedaOriginal === 'USD' ? (
-            <span className="font-semibold text-foreground">
-              {formatMoney(item.montoOriginal != null ? item.montoOriginal : item.monto / (item.tipoCambio || 4.0), '$')}
-            </span>
-          ) : (
-            <span className="text-muted-foreground/30 font-normal">—</span>
-          )}
-        </td>
+      {/* 7. Dólares ($) */}
+      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono tabular-nums">
+        {item.monedaOriginal === 'USD' ? (
+          <span className="font-bold text-foreground text-xs sm:text-sm">
+            {formatMoney(
+              item.montoOriginal != null ? item.montoOriginal : item.monto / (item.tipoCambio || 4.0),
+              '$'
+            )}
+          </span>
+        ) : (
+          <span className="text-muted-foreground/30 font-normal text-xs">—</span>
+        )}
+      </td>
 
       {/* 8. Acción */}
           <SeccionEgresoAcciones

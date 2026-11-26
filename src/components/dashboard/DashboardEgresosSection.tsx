@@ -37,6 +37,7 @@ interface DashboardEgresosSectionProps {
   setDraggedId: (id: string | null) => void;
   setDragOverId: (id: string | null) => void;
   handleDrop: (targetId: string, e: React.DragEvent) => Promise<void>;
+  mostrarDistribucionCategorias?: boolean;
 }
 
 export function DashboardEgresosSection({
@@ -69,6 +70,7 @@ export function DashboardEgresosSection({
   setDraggedId,
   setDragOverId,
   handleDrop,
+  mostrarDistribucionCategorias = true,
 }: DashboardEgresosSectionProps) {
   return (
     <div className="space-y-4">
@@ -76,26 +78,18 @@ export function DashboardEgresosSection({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
-              <h2 className="text-sm font-semibold tracking-tight text-foreground">
-                Egresos & Compromisos
-              </h2>
-                <span className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full">
-                  {todosEgresos.length} compromisos · {formatMoney(totalEgresos, moneda)}
-                </span>
-              </div>
-                <p className="text-[11px] text-muted-foreground mt-0.5">
-                  Costos fijos, préstamos, tarjetas y gastos variables
-                </p>
-              </div>
-
-              <button
-                onClick={onAbrirModalRegistroGasto}
-                className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-border/70 text-foreground hover:bg-muted/60 text-xs font-medium transition active:scale-95 self-start sm:self-auto shadow-2xs cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5 text-muted-foreground" />
-                <span>Registrar Gasto</span>
-              </button>
+            <h2 className="text-sm font-semibold tracking-tight text-foreground">
+              Egresos & Compromisos
+            </h2>
+            <span className="text-[10px] font-semibold text-muted-foreground bg-muted/60 px-2 py-0.5 rounded-full font-mono">
+              {todosEgresos.length} compromisos · {formatMoney(totalEgresos, moneda)}
+            </span>
           </div>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Costos fijos, préstamos, tarjetas y gastos variables
+          </p>
+        </div>
+      </div>
 
           {/* Toolbar Unificada de Egresos */}
           <EgresosUnifiedToolbar
@@ -115,6 +109,7 @@ export function DashboardEgresosSection({
             onToggleSelectAll={onToggleSelectAll}
             hasItems={conteoEgresosFiltrados > 0}
             moneda={moneda}
+            mostrarDistribucionCategorias={mostrarDistribucionCategorias}
           />
 
           {/* Listado de Tablas por Sección o Empty State */}

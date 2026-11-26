@@ -21,6 +21,7 @@ interface EgresosUnifiedToolbarProps {
   onToggleSelectAll: () => void;
   hasItems: boolean;
   moneda: string;
+  mostrarDistribucionCategorias?: boolean;
 }
 
 export function EgresosUnifiedToolbar({
@@ -40,16 +41,19 @@ export function EgresosUnifiedToolbar({
   onToggleSelectAll,
   hasItems,
   moneda,
+  mostrarDistribucionCategorias = true,
 }: EgresosUnifiedToolbarProps) {
   return (
       <div className="bg-card border border-border/70 rounded-2xl p-4 shadow-xs space-y-3">
-        {/* 1. Categorías y distribución interactiva */}
-        <EgresosCategoriasBar
-          totales={totales}
-          filtroEgreso={filtroEgreso}
-          onSelectFiltroEgreso={onSelectFiltroEgreso}
-          moneda={moneda}
-        />
+        {/* 1. Categorías y distribución interactiva (opcional según vista) */}
+        {mostrarDistribucionCategorias && (
+          <EgresosCategoriasBar
+            totales={totales}
+            filtroEgreso={filtroEgreso}
+            onSelectFiltroEgreso={onSelectFiltroEgreso}
+            moneda={moneda}
+          />
+        )}
 
         {/* 2. Controles de estado, fuente y selección */}
         <EgresosControlesBar

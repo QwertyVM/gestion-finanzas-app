@@ -77,30 +77,30 @@ export function SeccionEgresosDesktopTable({
           <tr>
             <th
               scope="col"
-              className={`py-3 text-center ${showCuotaColumn ? 'w-[2%] pl-4' : 'w-[2.5%] pl-4'}`}
+              className={`py-3 text-center ${showCuotaColumn ? 'w-[3%] pl-4' : 'w-[3.5%] pl-4'}`}
             >
               <span className="sr-only">Mover</span>
             </th>
             <th
               scope="col"
-              className={`py-3 text-center ${showCuotaColumn ? 'w-[3%]' : 'w-[3.5%]'}`}
+              className={`py-3 text-center ${showCuotaColumn ? 'w-[3.5%]' : 'w-[4%]'}`}
             >
               <span className="sr-only">Seleccionar</span>
             </th>
             <th
               scope="col"
-              className={`py-3 px-3 font-semibold text-muted-foreground ${showCuotaColumn ? 'w-[35%]' : 'w-[42%]'}`}
+              className={`py-3 px-3 font-semibold text-muted-foreground ${showCuotaColumn ? 'w-[33%]' : 'w-[41%]'}`}
             >
               Concepto & Detalle
             </th>
             {showCuotaColumn && (
-              <th scope="col" className="py-3 px-2 text-center font-semibold text-muted-foreground w-[12%]">
+              <th scope="col" className="py-3 px-2 text-center font-semibold text-muted-foreground w-[11%]">
                 Cuota
               </th>
             )}
             <th
               scope="col"
-              className={`py-3 px-2 text-center font-semibold text-muted-foreground ${showCuotaColumn ? 'w-[11%]' : 'w-[13%]'}`}
+              className={`py-3 px-2 text-center font-semibold text-muted-foreground ${showCuotaColumn ? 'w-[13%]' : 'w-[14%]'}`}
             >
               Estado
             </th>
@@ -110,12 +110,15 @@ export function SeccionEgresosDesktopTable({
             >
               Soles (S/)
             </th>
-            <th scope="col" className="py-3 px-3 text-right font-semibold text-muted-foreground w-[10%]">
+            <th
+              scope="col"
+              className={`py-3 px-3 text-right font-semibold text-muted-foreground ${showCuotaColumn ? 'w-[11.5%]' : 'w-[11.5%]'}`}
+            >
               Dólares ($)
             </th>
             <th
               scope="col"
-              className={`py-3 text-right font-semibold text-muted-foreground pr-5 ${showCuotaColumn ? 'w-[15%]' : 'w-[16%]'}`}
+              className="py-3 text-right font-semibold text-muted-foreground pr-4 w-[13%]"
             >
               Acción
             </th>
@@ -147,7 +150,7 @@ export function SeccionEgresosDesktopTable({
         <tfoot className="bg-secondary/20 border-t border-border/80 text-xs">
           <tr>
             <td colSpan={leftColSpan} className="py-2.5 pl-4 pr-3 text-muted-foreground text-xs font-medium">
-              <span>Sumatoria independiente ({items.length} {items.length === 1 ? 'compromiso' : 'compromisos'})</span>
+              <span>Subtotal ({items.length} {items.length === 1 ? 'compromiso' : 'compromisos'})</span>
             </td>
             <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
               {formatMoney(subtotalSoles, moneda)}
@@ -155,21 +158,21 @@ export function SeccionEgresosDesktopTable({
             <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
               {subtotalUSD > 0 ? formatMoney(subtotalUSD, '$') : '—'}
             </td>
-            <td className="pr-5" />
+            <td className="pr-4" />
           </tr>
           {subtotalUSD > 0 && (
             <tr className="border-t border-border/40 bg-secondary/35">
-              <td colSpan={leftColSpan} className="py-2.5 pl-4 pr-3 text-muted-foreground text-xs font-medium">
+              <td colSpan={leftColSpan} className="py-2 pl-4 pr-3 text-muted-foreground text-xs font-medium">
                 <span className="text-foreground font-semibold">Total Consolidado en Soles</span>{' '}
-                <span className="text-muted-foreground/70 text-[11px] font-normal">(al tipo de cambio)</span>
+                <span className="text-muted-foreground/70 text-[10px] font-normal">(USD al TC)</span>
               </td>
-              <td className="py-2.5 px-3 text-right font-mono font-extrabold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
+              <td className="py-2 px-3 text-right font-mono font-extrabold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
                 {formatMoney(totalConsolidado, moneda)}
               </td>
-              <td className="py-2.5 px-3 text-right font-mono text-[11px] text-muted-foreground/70">
+              <td className="py-2 px-3 text-right font-mono text-[10px] text-muted-foreground/70">
                 USD incl.
               </td>
-              <td className="pr-5" />
+              <td className="pr-4" />
             </tr>
           )}
         </tfoot>

@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { GripVertical, CheckSquare, Square, Wallet } from 'lucide-react';
+import { GripVertical, CheckSquare, Square, Wallet, CheckCircle2, Clock, Sparkles, LayoutGrid } from 'lucide-react';
 
 interface EgresosControlesBarProps {
   filtroEstado: 'PENDIENTE' | 'ADELANTADO' | 'PAGADO' | 'TODOS';
@@ -35,98 +35,133 @@ export function EgresosControlesBar({
   const tieneMultiplesIngresos = ingresosMes.length > 1 && !!onSelectFiltroFuenteIngreso;
 
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-2.5 pt-1 border-t border-border/40">
-      {/* Selector de Estado */}
-      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-2.5 border-t border-border/50">
+      {/* Segmented Control Pill Bar para Filtro de Estado */}
+      <div className="inline-flex p-1 bg-muted/60 dark:bg-muted/40 rounded-xl border border-border/50 text-xs font-semibold overflow-x-auto no-scrollbar gap-1">
+        {/* PENDIENTES */}
         <button
           type="button"
           onClick={() => onSelectFiltroEstado('PENDIENTE')}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all active:scale-95 cursor-pointer border ${filtroEstado === 'PENDIENTE'
-              ? 'bg-amber-50 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300 border-amber-300/80 dark:border-amber-700/60 shadow-2xs'
-              : 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted border-transparent'
-            }`}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200 cursor-pointer ${
+            filtroEstado === 'PENDIENTE'
+              ? 'bg-background text-foreground shadow-2xs font-semibold'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${filtroEstado === 'PENDIENTE' ? 'bg-amber-500' : 'bg-muted-foreground/40'}`} />
-          <span>Pendientes ({conteoPendiente})</span>
+          <Clock className={`w-3.5 h-3.5 ${filtroEstado === 'PENDIENTE' ? 'text-amber-500' : 'text-muted-foreground/60'}`} />
+          <span>Pendientes</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+            filtroEstado === 'PENDIENTE' 
+              ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 font-mono font-bold' 
+              : 'bg-muted text-muted-foreground font-mono'
+          }`}>
+            {conteoPendiente}
+          </span>
         </button>
 
+        {/* ADELANTADOS */}
         <button
           type="button"
           onClick={() => onSelectFiltroEstado('ADELANTADO')}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all active:scale-95 cursor-pointer border ${filtroEstado === 'ADELANTADO'
-              ? 'bg-indigo-50 text-indigo-800 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-300/80 dark:border-indigo-700/60 shadow-2xs'
-              : 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted border-transparent'
-            }`}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200 cursor-pointer ${
+            filtroEstado === 'ADELANTADO'
+              ? 'bg-background text-foreground shadow-2xs font-semibold'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${filtroEstado === 'ADELANTADO' ? 'bg-indigo-500' : 'bg-muted-foreground/40'}`} />
-          <span>Adelantados ({conteoAdelantado})</span>
+          <Sparkles className={`w-3.5 h-3.5 ${filtroEstado === 'ADELANTADO' ? 'text-indigo-500' : 'text-muted-foreground/60'}`} />
+          <span>Adelantados</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+            filtroEstado === 'ADELANTADO' 
+              ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 font-mono font-bold' 
+              : 'bg-muted text-muted-foreground font-mono'
+          }`}>
+            {conteoAdelantado}
+          </span>
         </button>
 
+        {/* PAGADOS */}
         <button
           type="button"
           onClick={() => onSelectFiltroEstado('PAGADO')}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all active:scale-95 cursor-pointer border ${filtroEstado === 'PAGADO'
-              ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-300/80 dark:border-emerald-700/60 shadow-2xs'
-              : 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted border-transparent'
-            }`}
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200 cursor-pointer ${
+            filtroEstado === 'PAGADO'
+              ? 'bg-background text-foreground shadow-2xs font-semibold'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
         >
-          <span className={`w-1.5 h - 1.5 rounded - full ${filtroEstado === 'PAGADO' ? 'bg-emerald-500' : 'bg-muted-foreground/40'} `} />
-          <span>Pagados ({conteoPagado})</span>
+          <CheckCircle2 className={`w-3.5 h-3.5 ${filtroEstado === 'PAGADO' ? 'text-emerald-500' : 'text-muted-foreground/60'}`} />
+          <span>Pagados</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+            filtroEstado === 'PAGADO' 
+              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-mono font-bold' 
+              : 'bg-muted text-muted-foreground font-mono'
+          }`}>
+            {conteoPagado}
+          </span>
         </button>
 
+        {/* TODOS */}
         <button
           type="button"
           onClick={() => onSelectFiltroEstado('TODOS')}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all active:scale-95 cursor-pointer border ${filtroEstado === 'TODOS'
-            ? 'bg-foreground text-background border-foreground shadow-2xs'
-            : 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted border-transparent'
-            }`
-          }
+          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all duration-200 cursor-pointer ${
+            filtroEstado === 'TODOS'
+              ? 'bg-foreground text-background shadow-2xs font-semibold'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
         >
-          <span>Todos ({conteoTotal})</span>
-    </button>
-      </div >
+          <LayoutGrid className="w-3.5 h-3.5" />
+          <span>Todos</span>
+          <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+            filtroEstado === 'TODOS' ? 'bg-background/20 text-background' : 'bg-muted text-muted-foreground'
+          }`}>
+            {conteoTotal}
+          </span>
+        </button>
+      </div>
 
-{/* Controles de Lado Derecho: Fuente de Ingreso & Selección */ }
-<div className="flex items-center gap-2 flex-wrap self-end md:self-auto">
-  {tieneMultiplesIngresos && (
-    <div className="flex items-center gap-1 bg-muted/40 px-2.5 py-1 rounded-lg border border-border/50 text-xs">
-      <Wallet className="w-3.5 h-3.5 text-amber-500" />
-      <select
-        value={filtroFuenteIngreso}
-        onChange={(e) => onSelectFiltroFuenteIngreso?.(e.target.value)}
-        className="bg-transparent text-foreground text-xs font-medium focus:outline-none cursor-pointer"
-        title="Filtrar por fuente de pago asignada"
-      >
-        <option value="TODOS">Todas las fuentes</option>
-        {ingresosMes.map((ing) => (
-          <option key={ing.id} value={ing.id}>
-            {ing.concepto}
-          </option>
-        ))}
-      </select>
+      {/* Controles del Lado Derecho: Fuente de Ingreso & Selección */}
+      <div className="flex items-center gap-2 flex-wrap self-end md:self-auto">
+        {tieneMultiplesIngresos && (
+          <div className="flex items-center gap-1.5 bg-muted/50 px-2.5 py-1.5 rounded-xl border border-border/60 text-xs">
+            <Wallet className="w-3.5 h-3.5 text-amber-500" />
+            <select
+              value={filtroFuenteIngreso}
+              onChange={(e) => onSelectFiltroFuenteIngreso?.(e.target.value)}
+              className="bg-transparent text-foreground text-xs font-medium focus:outline-none cursor-pointer"
+              title="Filtrar por fuente de pago asignada"
+            >
+              <option value="TODOS">Todas las fuentes</option>
+              {ingresosMes.map((ing) => (
+                <option key={ing.id} value={ing.id}>
+                  {ing.concepto}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
+        <span className="hidden lg:inline-flex items-center gap-1.5 text-[11px] text-muted-foreground bg-muted/40 px-2.5 py-1.5 rounded-xl border border-border/50 font-medium">
+          <GripVertical className="w-3 h-3 text-muted-foreground/60" />
+          <span>Arrastra para ordenar</span>
+        </span>
+
+        {hasItems && (
+          <button
+            type="button"
+            onClick={onToggleSelectAll}
+            className={`text-xs font-medium flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all active:scale-95 cursor-pointer shadow-2xs ${
+              isAllSelected
+                ? 'bg-foreground text-background border-foreground font-semibold'
+                : 'bg-card text-muted-foreground hover:text-foreground border-border/80 hover:bg-muted/60'
+            }`}
+          >
+            {isAllSelected ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
+            <span>{isAllSelected ? 'Deseleccionar' : 'Seleccionar todo'}</span>
+          </button>
+        )}
+      </div>
     </div>
-  )}
-
-  <span className="hidden lg:inline-flex items-center gap-1 text-[11px] text-muted-foreground bg-muted/30 px-2 py-1 rounded-lg border border-border/40 font-medium">
-    <GripVertical className="w-3 h-3 text-muted-foreground/60" />
-    <span>Arrastra para reordenar</span>
-  </span>
-
-  { hasItems && (
-    <button
-      type="button"
-      onClick={onToggleSelectAll}
-      className={`text-xs font-medium flex items-center gap-1.5 px-2.5 py-1 rounded-lg border transition active:scale-95 cursor-pointer shadow-2xs ${isAllSelected
-          ? 'bg-foreground text-background border-foreground'
-          : 'bg-card text-muted-foreground hover:text-foreground border-border hover:bg-muted/60'
-        }`}
-    >
-      {isAllSelected ? <CheckSquare className="w-3.5 h-3.5" /> : <Square className="w-3.5 h-3.5" />}
-      <span>{isAllSelected ? 'Deseleccionar' : 'Seleccionar todo'}</span>
-    </button>
-  )}
-      </div >
-    </div >
   );
 }
