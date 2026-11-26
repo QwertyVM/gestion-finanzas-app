@@ -51,56 +51,57 @@ export function TopNavbar() {
 
   return (
     <>
-      <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/90 backdrop-blur-md transition-colors">
-        <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-15 flex items-center justify-between gap-4">
-          {/* 1. Izquierda: Brand + Enlaces Principales */}
-          <div className="flex items-center gap-6 min-w-0">
-            {/* Brand Logo */}
-            <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
-              <div className="w-8 h-8 rounded-xl bg-foreground text-background flex items-center justify-center font-bold text-sm tracking-tight transition-transform group-hover:scale-105 shadow-2xs">
-                <Wallet className="w-4 h-4" />
-              </div>
-              <div className="hidden sm:block">
-                <span className="font-bold text-sm tracking-tight text-foreground block leading-none">
-                  Finanzas
-                </span>
-                <span className="text-[10px] text-muted-foreground font-normal">
-                  Control Personal
-                </span>
-              </div>
-            </Link>
+            <header className="sticky top-0 z-40 w-full border-b border-border/70 bg-background/95 backdrop-blur-md transition-colors">
+              <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-4">
+                {/* 1. Izquierda: Brand + Enlaces en Pista Segmentada */}
+                <div className="flex items-center gap-4 sm:gap-6 min-w-0">
+                  {/* Brand Logo */}
+                  <Link href="/" className="flex items-center gap-2.5 shrink-0 group">
+                    <div className="w-8 h-8 rounded-xl bg-foreground text-background flex items-center justify-center font-bold text-sm tracking-tight transition-transform group-hover:scale-105 shadow-2xs">
+                      <Wallet className="w-4 h-4" />
+                    </div>
+                    <div className="hidden sm:block">
+                      <span className="font-bold text-sm tracking-tight text-foreground block leading-none">
+                        Finanzas
+                      </span>
+                      <span className="text-[10px] text-muted-foreground font-normal">
+                        Control Personal
+                      </span>
+                    </div>
+                  </Link>
 
-            {/* Enlaces de Navegación Horizontal (Desktop) */}
-            <nav className="hidden lg:flex items-center gap-1">
-              {mainNavLinks.map((link) => {
-                const isActive = pathname === link.href;
-                return (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-                      isActive
-                        ? 'bg-foreground text-background font-semibold shadow-2xs'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-                    }`}
+                    {/* Separador vertical sutil */}
+                    <div className="h-5 w-px bg-border/60 hidden lg:block" />
+
+                    {/* Pista de Navegación Segmentada (Sleek Segmented Tabs) */}
+                    <nav className="hidden lg:flex items-center gap-0.5 p-1 rounded-xl bg-muted/50 dark:bg-muted/30 border border-border/50 shadow-2xs">
+                      {mainNavLinks.map((link) => {
+                        const isActive = pathname === link.href;
+                        return (
+                          <Link
+                            key={link.href}
+                            href={link.href}
+                                    ? 'bg-background text-foreground font-semibold shadow-2xs border border-border/50'
+                                    : 'text-muted-foreground hover:text-foreground hover:bg-background/50 font-medium'
+                                }`}
                   >
                     {link.label}
                   </Link>
                 );
               })}
 
-              {/* Menú Dropdown de Planificación */}
+              {/* Menú Dropdown de Planificación Integrado en la Pista */}
               <TopNavDropdown pathname={pathname} />
             </nav>
           </div>
 
           {/* 2. Derecha: Botón Registro + Tema + Perfil + Hamburger móvil */}
-          <div className="flex items-center gap-2.5 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
             {/* Botón Nuevo Registro Rápido */}
             <button
               type="button"
               onClick={() => openRecordModal('GASTO')}
-              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 active:scale-95 transition shadow-2xs cursor-pointer"
+              className="inline-flex items-center gap-1.5 h-8 px-3 rounded-xl bg-foreground text-background font-medium text-xs hover:opacity-90 active:scale-95 transition shadow-2xs cursor-pointer"
               title="Registrar nuevo gasto (Tecla N)"
             >
               <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
@@ -110,16 +111,16 @@ export function TopNavbar() {
               </kbd>
             </button>
 
-            {/* Selector de Tema Claro / Oscuro */}
+            {/* Selector de Tema Claro / Oscuro con Botón Armónico */}
             <button
               type="button"
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/80 transition cursor-pointer"
+              className="w-8 h-8 rounded-xl flex items-center justify-center text-muted-foreground hover:text-foreground border border-border/70 hover:border-border hover:bg-muted/60 transition active:scale-95 cursor-pointer shadow-2xs bg-card/60"
               title="Cambiar tema"
               aria-label="Cambiar tema"
             >
-              <Sun className="w-4 h-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-              <Moon className="w-4 h-4 absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+              <Sun className="w-3.5 h-3.5 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+              <Moon className="w-3.5 h-3.5 absolute rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
             </button>
 
             {/* Menú de Usuario */}

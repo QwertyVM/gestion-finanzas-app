@@ -50,22 +50,21 @@ export function TopNavDropdown({ pathname }: TopNavDropdownProps) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
-          isPlanificacionActive
-            ? 'bg-foreground text-background font-semibold shadow-2xs'
-            : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-        }`}
+                ? 'bg-background text-foreground font-semibold shadow-2xs border border-border/50'
+                : 'text-muted-foreground hover:text-foreground hover:bg-background/50 font-medium'
+            }`}
       >
         <span>Planificación</span>
         <ChevronDown
           className={`w-3.5 h-3.5 transition-transform duration-200 ${
-            open ? '-rotate-180' : ''
-          }`}
+        open ? '-rotate-180' : ''
+      }`}
         />
-      </button>
+    </button>
 
-      {open && (
-        <div className="absolute top-full left-0 mt-1.5 w-60 rounded-xl bg-card border border-border/80 shadow-lg p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+      {
+    open && (
+        <div className="absolute top-full left-0 mt-2 w-64 rounded-2xl bg-card border border-border/80 shadow-lg p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
           <div className="space-y-0.5">
             {planificacionLinks.map((link) => {
               const Icon = link.icon;
@@ -76,17 +75,15 @@ export function TopNavDropdown({ pathname }: TopNavDropdownProps) {
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className={`flex items-start gap-2.5 p-2 rounded-lg text-xs transition ${
-                    isActive
-                      ? 'bg-muted text-foreground font-semibold'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                  }`}
+                        ? 'bg-muted text-foreground font-semibold'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                      }`}
                 >
-                  <div className="w-6 h-6 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
+                  <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
                     <Icon className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0">
-                    <div className="font-medium text-foreground">{link.label}</div>
+                    <div className="font-semibold text-foreground text-xs">{link.label}</div>
                     <div className="text-[10px] text-muted-foreground/80 truncate">
                       {link.desc}
                     </div>
