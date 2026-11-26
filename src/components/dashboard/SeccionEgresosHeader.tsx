@@ -54,113 +54,93 @@ export function SeccionEgresosHeader({
 
   return (
     <div
-      className="bg-muted/15 hover:bg-muted/25 border-b border-border/70 px-4 sm:px-5 py-3 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 cursor-pointer select-none transition-colors"
+      className="bg-card hover:bg-muted/20 border-b border-border/70 px-5 py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 cursor-pointer select-none transition-colors"
       onClick={onToggleColapsar}
     >
-      {/* Izquierda: Ícono pastel + Título + Badge + Subtítulo */}
+      {/* Izquierda: Identidad de Sección (Icono + Título + Conteo + Descripción) */}
       <div className="flex items-center gap-3 min-w-0">
         <div
-          className={`w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0 ${
-            seccion?.iconBg || 'bg-primary/10 text-primary'
-          }`}
+              }`}
         >
-          {IconComponent && <IconComponent className="w-4 h-4 sm:w-5 sm:h-5" />}
+          {IconComponent && <IconComponent className="w-4 h-4" />}
         </div>
         <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2">
             <h3 className="text-sm sm:text-base font-bold text-foreground tracking-tight truncate">
               {seccion?.titulo}
             </h3>
             <span
               className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border shrink-0 ${
-                seccion?.badgeBg || 'bg-muted/60'
-              } ${seccion?.badgeText || 'text-muted-foreground'} ${
-                seccion?.badgeBorder || 'border-border/60'
-              }`}
+          seccion?.badgeBg || 'bg-muted/60'
+        } ${seccion?.badgeText || 'text-muted-foreground'} ${
+          seccion?.badgeBorder || 'border-border/60'
+        }`}
             >
-              {count} {count === 1 ? 'item' : 'items'}
-            </span>
-          </div>
-          {seccion?.descripcion && (
-            <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate">
-              {seccion.descripcion}
-            </p>
+        {count} {count === 1 ? 'item' : 'items'}
+      </span>
+    </div>
+          {
+    seccion?.descripcion && (
+      <p className="text-[11px] sm:text-xs text-muted-foreground mt-0.5 truncate">
+        {seccion.descripcion}
+      </p>
+    )
+  }
+        </div >
+      </div >
+
+  {/* Derecha: Resumen Financiero Ejecutivo + Separador + Acciones */ }
+  <div
+    className="flex items-center gap-3.5 sm:gap-4 self-end sm:self-auto"
+    onClick={(e) => e.stopPropagation()}
+  >
+            {/* Bloque Financiero: Monto total destacado + desglose de divisas */}
+            <div className="text-right">
+              <div className="font-mono text-sm sm:text-base font-bold text-foreground tabular-nums tracking-tight">
+                {formatMoney(subtotal, moneda)}
+              </div>
+              {subtotalUSD > 0 ? (
+                <div className="text-[10px] sm:text-[11px] font-mono text-muted-foreground mt-0.5 whitespace-nowrap">
+                  <span>{formatMoney(subtotalSoles, moneda)}</span>
+                  <span className="text-muted-foreground/50 mx-1">+</span>
+                  <span className="text-sky-600 dark:text-sky-400 font-semibold">
+                    {formatMoney(subtotalUSD, '$')}
+                  </span>
+                </div>
+                ) : (
+                <span className="text-[10px] text-muted-foreground/75 block">
+                  Total sección
+                </span>
           )}
         </div>
-      </div>
 
-      {/* Derecha: + Agregar + Desglose limpio / Total + Chevron */}
-      <div
-        className="flex items-center gap-2.5 sm:gap-3 self-end sm:self-auto flex-wrap sm:flex-nowrap"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <button
-          type="button"
-          onClick={onAgregarItem}
-          className="inline-flex items-center gap-1.5 h-8 px-2.5 sm:px-3 rounded-lg border border-border/80 hover:border-foreground/30 bg-background/80 hover:bg-muted text-foreground text-xs font-medium transition active:scale-95 cursor-pointer shadow-2xs"
-          title={`Agregar a ${seccion?.titulo || 'sección'}`}
-        >
-          <Plus className="w-3.5 h-3.5 text-muted-foreground" />
-          <span>Agregar</span>
-        </button>
+        {/* Separador vertical sutil */}
+        <div className="h-6 w-px bg-border/60 hidden sm:block" />
 
-        {/* Desglose de totales: Si hay USD o solo Soles */}
-        {subtotalUSD > 0 ? (
-          <div className="flex items-center divide-x divide-border/60 bg-background/90 dark:bg-card/90 border border-border/70 rounded-xl px-3 py-1.5 shadow-2xs">
-            {/* Soles */}
-            <div className="pr-2.5 sm:pr-3 text-right">
-              <span className="text-[10px] font-semibold text-muted-foreground block tracking-tight">
-                Soles
-              </span>
-              <span className="font-mono text-xs font-semibold text-foreground tabular-nums">
-                {formatMoney(subtotalSoles, moneda)}
-              </span>
-            </div>
+        {/* Acciones directas */}
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={onAgregarItem}
+            className="inline-flex items-center gap-1.5 h-8 px-2.5 sm:px-3 rounded-lg border border-border/80 hover:border-foreground/30 hover:bg-muted/80 bg-background text-foreground text-xs font-medium transition active:scale-95 cursor-pointer shadow-2xs"
+            title={`Agregar compromiso a ${seccion?.titulo || 'esta sección'}`}
+          >
+            <Plus className="w-3.5 h-3.5 text-muted-foreground" />
+            <span>Agregar</span>
+          </button>
 
-            {/* Dólares */}
-            <div className="px-2.5 sm:px-3 text-right">
-              <span className="text-[10px] font-semibold text-sky-600 dark:text-sky-400 block tracking-tight">
-                Dólares
-              </span>
-              <span className="font-mono text-xs font-semibold text-foreground tabular-nums">
-                {formatMoney(subtotalUSD, '$')}
-              </span>
-            </div>
-
-            {/* Total Consolidado */}
-            <div className="pl-2.5 sm:pl-3 text-right">
-              <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block">
-                Total
-              </span>
-              <span className="font-mono text-xs sm:text-sm font-bold text-foreground tabular-nums">
-                {formatMoney(subtotal, moneda)}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="bg-background/90 dark:bg-card/90 border border-border/70 rounded-xl px-3 py-1.5 shadow-2xs text-right">
-            <span className="text-[10px] font-semibold text-muted-foreground block tracking-tight">
-              Total sección
-            </span>
-            <span className="font-mono text-xs sm:text-sm font-bold text-foreground tabular-nums">
-              {formatMoney(subtotal, moneda)}
-            </span>
-          </div>
-        )}
-
-        {/* Botón chevron colapsable */}
-        <button
-          type="button"
-          onClick={onToggleColapsar}
-          className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition cursor-pointer"
-          title={estaColapsada ? 'Expandir sección' : 'Colapsar sección'}
-        >
-          <ChevronDown
-            className={`w-4 h-4 transition-transform duration-200 ${
-              estaColapsada ? '-rotate-90 text-muted-foreground/60' : 'text-foreground'
-            }`}
-          />
-        </button>
+          <button
+            type="button"
+            onClick={onToggleColapsar}
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/80 transition cursor-pointer"
+            title={estaColapsada ? 'Expandir sección' : 'Colapsar sección'}
+          >
+            <ChevronDown
+              className={`w-4 h-4 transition-transform duration-200 ${estaColapsada ? '-rotate-90 text-muted-foreground/60' : 'text-foreground'
+                }`}
+            />
+          </button>
+        </div>
       </div>
     </div>
   );
