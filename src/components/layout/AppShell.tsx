@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { usePathname } from 'next/navigation';
-import { Sidebar } from './Sidebar';
+import { TopNavbar } from './TopNavbar';
 import { FloatingSumBar } from '../common/FloatingSumBar';
 import { DynamicRecordModal } from '../modals/DynamicRecordModal';
 import { MobileBottomNav } from './MobileBottomNav';
@@ -22,25 +22,25 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground antialiased selection:bg-foreground selection:text-background">
-      {/* Barra Lateral Navegación Desktop */}
-      <Sidebar />
+      <div className="min-h-screen bg-background text-foreground antialiased selection:bg-foreground selection:text-background flex flex-col">
+        {/* Barra de Navegación Horizontal Superior */}
+        <TopNavbar />
 
-      {/* Contenedor Principal */}
-      <div className="md:pl-60 flex flex-col min-h-screen transition-all min-w-0">
-          <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 pb-24 md:pb-32 min-w-0">
-            {children}
-          </main>
-      </div>
+          {/* Contenedor Principal Centrado y Panorámico */}
+          <div className="flex-1 flex flex-col min-h-0 w-full">
+            <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7 pb-24 md:pb-32 min-w-0">
+              {children}
+            </main>
+          </div>
 
-      {/* Barra de Sumatoria Flotante */}
-      <FloatingSumBar />
+          {/* Barra de Sumatoria Flotante */}
+          <FloatingSumBar />
 
-      {/* Barra de Navegación Inferior Móvil */}
-      <MobileBottomNav />
+          {/* Barra de Navegación Inferior Móvil */}
+          <MobileBottomNav />
 
-      {/* Modal Dinámico Global (Desktop + Mobile Sheet) */}
-      <DynamicRecordModal />
-    </div>
-  );
+          {/* Modal Dinámico Global (Desktop + Mobile Sheet) */}
+          <DynamicRecordModal />
+        </div>
+        );
 }
