@@ -63,71 +63,71 @@ export function SeccionEgresosTabla({
   const items = seccion?.itemsFiltrados || [];
 
   return (
-    <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-2xs transition-all">
-      {/* Header de Sección */}
-      <SeccionEgresosHeader
-        seccion={seccion}
-        estaColapsada={estaColapsada}
-        moneda={moneda}
-        onToggleColapsar={onToggleColapsar}
-        onAgregarItem={onAgregarItem}
-      />
+      <div className="bg-card border border-border rounded-2xl overflow-hidden shadow-xs transition-all">
+        {/* Header de Sección */}
+        <SeccionEgresosHeader
+          seccion={seccion}
+          estaColapsada={estaColapsada}
+          moneda={moneda}
+          onToggleColapsar={onToggleColapsar}
+          onAgregarItem={onAgregarItem}
+        />
 
-      {/* Contenido de la Sección */}
-      {!estaColapsada && (
-        items.length === 0 ? (
-          <div className="p-6 text-center text-xs text-muted-foreground bg-muted/10 space-y-2">
-            <p>No hay compromisos en {seccion?.titulo?.toLowerCase() || 'esta sección'} con el filtro seleccionado.</p>
-            <button
-              type="button"
-              onClick={onAgregarItem}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground text-background text-xs font-medium hover:opacity-90 transition active:scale-95 shadow-2xs"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Agregar primer compromiso</span>
-            </button>
-          </div>
-        ) : (
-          <>
-            {/* Móvil: Lista de tarjetas ergonómicas */}
-            <div className="md:hidden divide-y divide-border/40">
-              {items.map((item) => (
-                <SeccionEgresoCardMobile
-                  key={`m-${item.id}`}
-                  item={item}
-                  isSelected={selectedGastoIds.includes(item.id)}
-                  moneda={moneda}
-                  ingresosMes={ingresosMes}
-                  onAsignarIngreso={onAsignarIngreso}
-                  onSelectItem={onSelectItem}
-                  onToggleSelectGasto={onToggleSelectGasto}
-                  onToggleEstadoItem={onToggleEstadoItem}
-                />
-              ))}
+        {/* Contenido de la Sección */}
+        {!estaColapsada && (
+          items.length === 0 ? (
+            <div className="p-6 text-center text-xs text-muted-foreground bg-muted/10 space-y-2">
+              <p>No hay compromisos en {seccion?.titulo?.toLowerCase() || 'esta sección'} con el filtro seleccionado.</p>
+              <button
+                type="button"
+                onClick={onAgregarItem}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground text-background text-xs font-medium hover:opacity-90 transition active:scale-95 shadow-2xs"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Agregar primer compromiso</span>
+              </button>
             </div>
+          ) : (
+            <>
+              {/* Móvil: Lista de tarjetas ergonómicas */}
+              <div className="md:hidden divide-y divide-border/40">
+                {items.map((item) => (
+                  <SeccionEgresoCardMobile
+                    key={`m-${item.id}`}
+                    item={item}
+                    isSelected={selectedGastoIds.includes(item.id)}
+                    moneda={moneda}
+                    ingresosMes={ingresosMes}
+                    onAsignarIngreso={onAsignarIngreso}
+                    onSelectItem={onSelectItem}
+                    onToggleSelectGasto={onToggleSelectGasto}
+                    onToggleEstadoItem={onToggleEstadoItem}
+                  />
+                ))}
+              </div>
 
-            {/* Desktop: Tabla estructurada */}
-            <SeccionEgresosDesktopTable
-              items={items}
-              seccionId={seccion.id}
-              selectedGastoIds={selectedGastoIds}
-              moneda={moneda}
-              ingresosMes={ingresosMes}
-              onAsignarIngreso={onAsignarIngreso}
-              draggedId={draggedId}
-              dragOverId={dragOverId}
-              onSelectItem={onSelectItem}
-              onToggleSelectGasto={onToggleSelectGasto}
-              onToggleEstadoItem={onToggleEstadoItem}
-              onDragStart={onDragStart}
-              onDragOver={onDragOver}
-              onDragLeave={onDragLeave}
-              onDragEnd={onDragEnd}
-              onDrop={onDrop}
-            />
-          </>
-        )
-      )}
-    </div>
-  );
+              {/* Desktop: Tabla estructurada */}
+              <SeccionEgresosDesktopTable
+                items={items}
+                seccionId={seccion.id}
+                selectedGastoIds={selectedGastoIds}
+                moneda={moneda}
+                ingresosMes={ingresosMes}
+                onAsignarIngreso={onAsignarIngreso}
+                draggedId={draggedId}
+                dragOverId={dragOverId}
+                onSelectItem={onSelectItem}
+                onToggleSelectGasto={onToggleSelectGasto}
+                onToggleEstadoItem={onToggleEstadoItem}
+                onDragStart={onDragStart}
+                onDragOver={onDragOver}
+                onDragLeave={onDragLeave}
+                onDragEnd={onDragEnd}
+                onDrop={onDrop}
+              />
+            </>
+          )
+        )}
+      </div>
+      );
 }

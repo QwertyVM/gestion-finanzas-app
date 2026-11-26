@@ -10,11 +10,11 @@ interface SeccionEgresosHeaderProps {
     titulo: string;
     descripcion?: string;
     icono: React.ElementType;
-    headerBg: string;
-    iconBg: string;
-    badgeBg: string;
-    badgeText: string;
-    badgeBorder: string;
+    headerBg?: string;
+    iconBg?: string;
+    badgeBg?: string;
+    badgeText?: string;
+    badgeBorder?: string;
     filteredCount: number;
     subtotal: number;
     itemsFiltrados: any[];
@@ -54,108 +54,94 @@ export function SeccionEgresosHeader({
 
   return (
     <div
-      className={`px-3.5 py-2.5 flex items-center justify-between border-b border-border/60 ${seccion?.headerBg || 'bg-muted/10'} cursor-pointer select-none`}
+      className="bg-secondary/40 border-b border-border/80 px-5 py-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4 cursor-pointer select-none transition-colors"
       onClick={onToggleColapsar}
     >
-      <div className="flex items-center gap-2.5">
-        <div className={`p-1.5 rounded-lg ${seccion?.iconBg || 'bg-muted text-muted-foreground'}`}>
-          {IconComponent && <IconComponent className="w-4 h-4" />}
-        </div>
-        <div>
-          <div className="flex items-center gap-2">
-            <h3 className="font-semibold text-xs text-foreground uppercase tracking-wider">
-              {seccion?.titulo}
-            </h3>
-            <span
-              className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${seccion?.badgeBg || 'bg-muted'} ${seccion?.badgeText || 'text-muted-foreground'} ${seccion?.badgeBorder || 'border-border'}`}
-            >
-              {count} {count === 1 ? 'item' : 'items'}
-            </span>
-          </div>
-          {seccion?.descripcion && (
-            <p className="text-[11px] text-muted-foreground hidden sm:block">
-              {seccion.descripcion}
-            </p>
+          {/* Izquierda: Ícono en caja suave + Título + Badge + Subtítulo */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              {IconComponent && <IconComponent className="w-5 h-5" />}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold text-foreground">
+                    {seccion?.titulo}
+                  </h3>
+                    <span className="bg-accent text-accent-foreground text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+                      {count} {count === 1 ? 'item' : 'items'}
+                    </span>
+                  </div>
+                  {seccion?.descripcion && (
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {seccion.descripcion}
+                      </p>
           )}
-        </div>
+                    </div>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onAgregarItem();
-          }}
-          className="inline-flex items-center justify-center gap-1 px-2.5 py-1 rounded-md bg-background hover:bg-muted text-foreground border border-border/80 shadow-2xs transition active:scale-95 text-xs font-medium cursor-pointer"
-          title={`Agregar a ${seccion?.titulo || 'sección'}`}
-        >
-          <Plus className="w-3.5 h-3.5 text-foreground" />
-          <span className="hidden sm:inline text-[11px]">Agregar</span>
-        </button>
+                {/* Derecha: + Agregar + Bloque compacto de resumen + Chevron */}
+                <div
+                  className="flex items-center gap-3 self-end lg:self-auto flex-wrap sm:flex-nowrap"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    type="button"
+                    onClick={onAgregarItem}
+                    className="inline-flex items-center gap-1.5 h-9 px-3.5 rounded-xl border border-primary/30 text-primary hover:bg-primary/10 transition active:scale-95 text-xs font-semibold cursor-pointer shadow-2xs"
+                    title={`Agregar a ${seccion?.titulo || 'sección'}`}
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar</span>
+                  </button>
 
-        {subtotalUSD > 0 ? (
-          <div className="flex items-center gap-2 sm:gap-3 text-right">
-            {/* 1. Sumatoria independiente en Soles */}
-            <div className="hidden sm:block text-right">
-              <span className="text-[9px] uppercase tracking-wider text-muted-foreground block font-medium">
-                Soles (S/)
-              </span>
-              <span className="font-mono font-semibold text-xs text-foreground tabular-nums">
-                {formatMoney(subtotalSoles, moneda)}
-              </span>
-            </div>
+                      {/* Bloque compacto de resumen numérico */}
+                      <div className="flex items-center gap-2.5 bg-card/70 border border-border/70 px-3.5 py-1.5 rounded-xl shadow-2xs">
+                        {subtotalUSD > 0 && (
+                          <>
+                            <div className="text-right">
+                              <span className="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">
+                                Soles
+                              </span>
+                              <span className="font-mono font-semibold text-xs text-foreground tabular-nums">
+                                {formatMoney(subtotalSoles, moneda)}
+                              </span>
+                            </div>
+                            <span className="text-muted-foreground/30">•</span>
+                            <div className="text-right">
+                              <span className="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">
+                                Dólares
+                              </span>
+                              <span className="font-mono font-semibold text-xs text-foreground tabular-nums">
+                                ${subtotalUSD.toFixed(2)}
+                              </span>
+                            </div>
+                            <span className="text-muted-foreground/30">•</span>
+                          </>
+                        )}
 
-            {/* 2. Sumatoria independiente en Dólares */}
-            <div className="hidden sm:block text-right">
-              <span className="text-[9px] uppercase tracking-wider text-muted-foreground block font-medium">
-                Dólares ($)
-              </span>
-              <span className="font-mono font-semibold text-xs text-foreground tabular-nums">
-                ${subtotalUSD.toFixed(2)}
-              </span>
-            </div>
+                      <div className="text-right">
+                          <span className="text-[10px] uppercase tracking-wider text-muted-foreground block font-semibold">
+                            {subtotalUSD > 0 ? 'Total Consolidado' : 'Total Soles'}
+                          </span>
+                            <span className="font-mono text-sm font-extrabold text-foreground tabular-nums block">
+                              {formatMoney(subtotal, moneda)}
+                            </span>
+                          </div>
+                      </div>
 
-            {/* 3. Total en Soles */}
-            <div className="text-right sm:border-l sm:border-border/60 sm:pl-3">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground block font-bold">
-                Total Soles
-              </span>
-              <span className="font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums block">
-                {formatMoney(subtotal, moneda)}
-              </span>
-              <span className="text-[9.5px] text-muted-foreground font-mono block sm:hidden">
-                S/ {subtotalSoles.toFixed(2)} + ${subtotalUSD.toFixed(2)}
-              </span>
-            </div>
-          </div>
-        ) : (
-          <div className="text-right">
-            <span className="text-[10px] uppercase tracking-wider text-muted-foreground block font-medium">
-              Total Soles
-            </span>
-            <span className="font-mono font-bold text-xs text-foreground tabular-nums block">
-              {formatMoney(subtotal, moneda)}
-            </span>
-          </div>
-        )}
-
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleColapsar();
-          }}
-          className="p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 transition"
-          title={estaColapsada ? 'Expandir sección' : 'Colapsar sección'}
-        >
-          <ChevronDown
-            className={`w-4 h-4 transition-transform duration-200 ${
-              estaColapsada ? '-rotate-90' : ''
-            }`}
-          />
-        </button>
-      </div>
+                      {/* Botón chevron colapsable */}
+                      <button
+                        type="button"
+                        onClick={onToggleColapsar}
+                        className="h-8 w-8 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted/60 transition cursor-pointer"
+                        title={estaColapsada ? 'Expandir sección' : 'Colapsar sección'}
+                      >
+                        <ChevronDown
+                          className={`w-4 h-4 transition-transform duration-200 ${estaColapsada ? '-rotate-90' : ''
+                            }`}
+                        />
+                      </button>
+                    </div>
     </div>
-  );
+                );
 }

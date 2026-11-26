@@ -1,10 +1,9 @@
 'use client';
 
 import React from 'react';
-import { formatMoney, limpiarConceptoCuota } from '@/lib/utils';
+import { formatMoney } from '@/lib/utils';
 import { GripVertical, CheckSquare, Square } from 'lucide-react';
-import { SelectorIngresoPill } from './SelectorIngresoPill';
-import { CategoriaTagBadge } from '@/components/common/CategoriaTagBadge';
+import { SeccionEgresoDetalleCell } from './SeccionEgresoDetalleCell';
 import { SeccionEgresoAcciones } from './SeccionEgresoAcciones';
 
 interface SeccionEgresoFilaProps {
@@ -64,11 +63,13 @@ export function SeccionEgresoFila({
       onDragEnd={onDragEnd}
       onDrop={(e) => onDrop(item.id, e)}
       onClick={() => onSelectItem(item)}
-      className={`group transition-colors cursor-pointer hover:bg-muted/40 ${isSelected ? 'bg-muted/50' : ''} ${dragOverId === item.id ? 'border-t-2 border-t-primary bg-primary/10' : ''} ${draggedId === item.id ? 'opacity-40' : ''}`}
+      className={`group transition-colors cursor-pointer hover:bg-muted/40 ${isSelected ? 'bg-muted/50' : ''
+        } ${dragOverId === item.id ? 'border-t-2 border-t-primary bg-primary/10' : ''} ${draggedId === item.id ? 'opacity-40' : ''
+        }`}
     >
       {/* 1. Drag Handle */}
       <td
-        className="py-2.5 px-2 text-center cursor-grab active:cursor-grabbing text-muted-foreground/40 group-hover:text-muted-foreground transition w-7"
+        className="py-2.5 pl-4 pr-1 text-center cursor-grab active:cursor-grabbing text-muted-foreground/40 group-hover:text-muted-foreground transition"
         onClick={(e) => e.stopPropagation()}
         title="Arrastrar para ordenar"
       >
@@ -76,120 +77,98 @@ export function SeccionEgresoFila({
       </td>
 
       {/* 2. Checkbox */}
-      <td className="py-2.5 px-2 text-center w-8" onClick={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          onClick={() => onToggleSelectGasto(item.id, item.monto)}
-          className="text-muted-foreground hover:text-foreground transition p-0.5 inline-flex"
-          aria-label={isSelected ? `Deseleccionar ${item.concepto}` : `Seleccionar ${item.concepto}`}
-        >
-          {isSelected ? <CheckSquare className="w-3.5 h-3.5 text-foreground" /> : <Square className="w-3.5 h-3.5" />}
-        </button>
-      </td>
-
-      {/* 3. Concepto & Detalle */}
-      <td className="py-2.5 px-3">
-        <div className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[200px] md:max-w-xs" title={item.concepto}>
-          {limpiarConceptoCuota(item.concepto)}
-        </div>
-        <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-1 flex-wrap">
-          <CategoriaTagBadge
-            categoria={item.categoria}
-            tag={item.tag}
-            categoriaColor={item.categoriaColor}
-          />
-          {subtextoLimpio && (
-            <>
-              <span className="opacity-40">·</span>
-              <span className="truncate">{subtextoLimpio}</span>
-            </>
-          )}
-          {ingresosMes && ingresosMes.length > 1 ? (
-            <>
-              <span className="opacity-40">·</span>
-              <SelectorIngresoPill
-                ingresoId={item.ingresoId}
-                ingresos={ingresosMes}
-                onAsignar={(nuevoId) => onAsignarIngreso?.(item, nuevoId)}
-              />
-            </>
-          ) : item.ingresoConcepto ? (
-            <>
-              <span className="opacity-40">·</span>
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[10px] font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/20 shrink-0">
-                💰 {item.ingresoConcepto}
-              </span>
-            </>
-          ) : null}
-        </div>
-      </td>
-
-      {/* 4. Cuota */}
-      {showCuotaColumn && (
-        <td className="py-2.5 px-3 text-center whitespace-nowrap">
-          {item.cuotaActual ? (
-            <span
-              className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold font-mono border ${
-                esPrestamo
-                  ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/40'
-                  : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/40'
-              }`}
-            >
-              Cuota {item.cuotaActual} de {cuotaTotal}
-            </span>
-          ) : (
-            <span className="text-muted-foreground text-xs">—</span>
-          )}
+        <td className="py-2.5 px-1 text-center" onClick={(e) => e.stopPropagation()}>
+          <button
+            type="button"
+            onClick={() => onToggleSelectGasto(item.id, item.monto)}
+            className="text-muted-foreground hover:text-foreground transition p-0.5 inline-flex"
+            aria-label={isSelected ? `Deseleccionar ${item.concepto}` : `Seleccionar ${item.concepto}`}
+          >
+            {isSelected ? (
+              <CheckSquare className="w-3.5 h-3.5 text-foreground" />
+            ) : (
+              <Square className="w-3.5 h-3.5" />
+            )}
+          </button>
         </td>
+
+        {/* 3. Concepto & Detalle */}
+        <SeccionEgresoDetalleCell
+          item={item}
+          subtextoLimpio={subtextoLimpio}
+          ingresosMes={ingresosMes}
+          onAsignarIngreso={onAsignarIngreso}
+        />
+
+        {/* 4. Cuota */}
+        {showCuotaColumn && (
+            <td className="py-2.5 px-2 text-center whitespace-nowrap">
+              {item.cuotaActual ? (
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold font-mono border ${esPrestamo
+                      ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/40'
+                      : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/40'
+                    }`}
+                >
+                  Cuota {item.cuotaActual} de {cuotaTotal}
+                </span>
+              ) : (
+                <span className="text-muted-foreground text-xs">—</span>
+              )}
+            </td>
       )}
 
-      {/* 5. Estado */}
-      <td className="py-2.5 px-3 text-center whitespace-nowrap">
-        <span
-          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border ${
-            isAdelantado
-              ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/40'
-              : isPagado
-                ? 'bg-emerald-50/80 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40'
-                : 'bg-amber-50/80 text-amber-700 border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40'
+              {/* 5. Estado: Badge semántico uniforme NOVA */}
+              <td className="py-2.5 px-2 text-center whitespace-nowrap">
+                <span
+                          ? 'bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border-indigo-500/20'
+                          : isPagado
+                              ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/20'
+                              : 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/20'
           }`}
         >
-          <span className={`w-1.5 h-1.5 rounded-full ${isAdelantado ? 'bg-indigo-500' : isPagado ? 'bg-emerald-500' : 'bg-amber-500'}`} />
-          {isAdelantado ? 'Adelantado' : isPagado ? 'Pagado' : 'Pendiente'}
-        </span>
-      </td>
+                <span
+                  className={`w-1.5 h-1.5 rounded-full ${isAdelantado ? 'bg-indigo-500' : isPagado ? 'bg-emerald-500' : 'bg-amber-500'
+                    }`}
+                />
+                {isAdelantado ? 'Adelantado' : isPagado ? 'Pagado' : 'Pendiente'}
+              </span>
+            </td>
 
-      {/* 5. Soles (S/) */}
-      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
-        {item.monedaOriginal === 'USD' ? (
-          <span className="text-muted-foreground/60 font-normal text-xs" title={`Equivalente al TC ${item.tipoCambio || 4.0}`}>
-            ≈ {formatMoney(item.monto, moneda)}
-          </span>
-        ) : (
-          <span className="font-semibold text-foreground">
-            {formatMoney(item.monto, moneda)}
-          </span>
+            {/* 6. Soles (S/) */}
+            <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
+              {item.monedaOriginal === 'USD' ? (
+                  <span
+                    className="text-muted-foreground/60 font-normal text-xs"
+                    title={`Equivalente al TC ${item.tipoCambio || 4.0}`}
+                  >
+                    ≈ {formatMoney(item.monto, moneda)}
+                  </span>
+                  ) : (
+                    <span className="font-bold text-foreground">
+                      {formatMoney(item.monto, moneda)}
+                    </span>
         )}
-      </td>
+                  </td>
 
-      {/* 6. Dólares ($) */}
-      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
-        {item.monedaOriginal === 'USD' ? (
-          <span className="font-semibold text-foreground">
-            ${(item.montoOriginal != null ? item.montoOriginal : (item.monto / (item.tipoCambio || 4.0))).toFixed(2)}
-          </span>
-        ) : (
-          <span className="text-muted-foreground/40 font-normal">—</span>
+                  {/* 7. Dólares ($) */}
+                  <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
+                    {item.monedaOriginal === 'USD' ? (
+                        <span className="font-bold text-foreground">
+                          ${(item.montoOriginal != null ? item.montoOriginal : item.monto / (item.tipoCambio || 4.0)).toFixed(2)}
+                        </span>
+                        ) : (
+                        <span className="text-muted-foreground/40 font-normal">—</span>
         )}
-      </td>
+                      </td>
 
-      {/* 7. Acción */}
-      <SeccionEgresoAcciones
-        item={item}
-        isPagado={isPagado}
-        isAdelantado={isAdelantado}
-        onToggleEstadoItem={onToggleEstadoItem}
-      />
-    </tr>
-  );
+                    {/* 8. Acción */}
+                    <SeccionEgresoAcciones
+                      item={item}
+                      isPagado={isPagado}
+                      isAdelantado={isAdelantado}
+                      onToggleEstadoItem={onToggleEstadoItem}
+                    />
+                  </tr>
+                  );
 }
