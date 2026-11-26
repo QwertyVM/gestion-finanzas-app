@@ -22,9 +22,9 @@ export function SeccionEgresoAcciones({
         <button
           type="button"
           onClick={() => onToggleEstadoItem(item, isAdelantado ? 'PENDIENTE' : 'ADELANTADO')}
-          className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold transition cursor-pointer border ${isAdelantado
-              ? 'bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border-indigo-500/25 font-bold'
-              : 'text-muted-foreground hover:text-foreground hover:bg-secondary/80 border-transparent'
+          className={`h-7 px-2.5 rounded-lg text-[11px] font-medium transition cursor-pointer border active:scale-95 ${isAdelantado
+              ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/50 font-semibold'
+              : 'text-muted-foreground/80 hover:text-foreground hover:bg-muted/60 border-transparent'
             }`}
           title="Alternar Adelantado"
         >
@@ -34,11 +34,11 @@ export function SeccionEgresoAcciones({
         <button
           type="button"
           onClick={() => onToggleEstadoItem(item, isPagado ? 'PENDIENTE' : 'PAGADO')}
-          className={`h-7 px-3 rounded-lg text-[11px] font-semibold transition inline-flex items-center gap-1 cursor-pointer ${isPagado
-              ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25 hover:bg-emerald-500/20'
-              : 'bg-primary text-primary-foreground hover:opacity-90 shadow-2xs'
+          className={`h-7 px-3 rounded-lg text-[11px] transition inline-flex items-center gap-1 cursor-pointer active:scale-95 ${isPagado
+              ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/40 hover:bg-emerald-100/60 font-semibold'
+              : 'bg-foreground/90 hover:bg-foreground text-background font-medium shadow-2xs hover:shadow-xs'
             }`}
-          title="Alternar Pagado"
+          title={isPagado ? 'Marcar como pendiente' : 'Marcar como pagado'}
         >
           {isPagado && <Check className="w-3 h-3 stroke-[2.5]" />}
           <span>{isPagado ? 'Pagado' : 'Pagar'}</span>

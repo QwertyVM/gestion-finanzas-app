@@ -63,13 +63,13 @@ export function SeccionEgresoFila({
       onDragEnd={onDragEnd}
       onDrop={(e) => onDrop(item.id, e)}
       onClick={() => onSelectItem(item)}
-      className={`group transition-colors cursor-pointer hover:bg-muted/40 ${isSelected ? 'bg-muted/50' : ''
+      className={`group transition-colors cursor-pointer hover:bg-muted/30 dark:hover:bg-muted/20 ${isSelected ? 'bg-muted/50' : ''
         } ${dragOverId === item.id ? 'border-t-2 border-t-primary bg-primary/10' : ''} ${draggedId === item.id ? 'opacity-40' : ''
         }`}
     >
       {/* 1. Drag Handle */}
       <td
-        className="py-2.5 pl-4 pr-1 text-center cursor-grab active:cursor-grabbing text-muted-foreground/40 group-hover:text-muted-foreground transition"
+        className="py-2.5 pl-4 pr-1 text-center cursor-grab active:cursor-grabbing text-muted-foreground/30 group-hover:text-muted-foreground transition-colors"
         onClick={(e) => e.stopPropagation()}
         title="Arrastrar para ordenar"
       >
@@ -81,7 +81,7 @@ export function SeccionEgresoFila({
         <button
           type="button"
           onClick={() => onToggleSelectGasto(item.id, item.monto)}
-          className="text-muted-foreground hover:text-foreground transition p-0.5 inline-flex"
+          className="text-muted-foreground/60 hover:text-foreground transition p-0.5 inline-flex"
           aria-label={isSelected ? `Deseleccionar ${item.concepto}` : `Seleccionar ${item.concepto}`}
         >
           {isSelected ? (
@@ -106,26 +106,26 @@ export function SeccionEgresoFila({
           {item.cuotaActual ? (
             <span
               className={`inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold font-mono border ${esPrestamo
-                  ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200/60 dark:border-purple-800/40'
-                  : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/60 dark:border-indigo-800/40'
+                  ? 'bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200/80 dark:border-purple-800/40'
+                  : 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/40'
                 }`}
             >
               Cuota {item.cuotaActual} de {cuotaTotal}
             </span>
           ) : (
-            <span className="text-muted-foreground text-xs">—</span>
+            <span className="text-muted-foreground/40 text-xs">—</span>
           )}
         </td>
       )}
 
-      {/* 5. Estado: Badge semántico uniforme NOVA */}
+      {/* 5. Estado: Badge semántico uniforme pastel */}
       <td className="py-2.5 px-2 text-center whitespace-nowrap">
         <span
           className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold whitespace-nowrap border ${isAdelantado
-              ? 'bg-indigo-500/10 text-indigo-800 dark:text-indigo-300 border-indigo-500/20'
+              ? 'bg-indigo-50/80 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/40'
               : isPagado
-                ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300 border-emerald-500/20'
-                : 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/20'
+                  ? 'bg-emerald-50/80 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-200/80 dark:border-emerald-800/40'
+                  : 'bg-amber-50/80 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300 border-amber-200/80 dark:border-amber-800/40'
             }`}
         >
           <span
@@ -140,36 +140,37 @@ export function SeccionEgresoFila({
       <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
         {item.monedaOriginal === 'USD' ? (
           <span
-            className="text-muted-foreground/60 font-normal text-xs"
+            className="text-muted-foreground/70 font-normal text-xs inline-flex items-center gap-1 justify-end"
             title={`Equivalente al TC ${item.tipoCambio || 4.0}`}
           >
-            ≈ {formatMoney(item.monto, moneda)}
-          </span>
-        ) : (
-          <span className="font-bold text-foreground">
+            <span className="text-[10px] text-muted-foreground/50">≈</span>
             {formatMoney(item.monto, moneda)}
           </span>
+        ) : (
+            <span className="font-semibold text-foreground">
+              {formatMoney(item.monto, moneda)}
+            </span>
         )}
-      </td>
+          </td>
 
       {/* 7. Dólares ($) */}
-      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
-        {item.monedaOriginal === 'USD' ? (
-          <span className="font-bold text-foreground">
-            ${(item.montoOriginal != null ? item.montoOriginal : item.monto / (item.tipoCambio || 4.0)).toFixed(2)}
-          </span>
-        ) : (
-          <span className="text-muted-foreground/40 font-normal">—</span>
+        <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
+          {item.monedaOriginal === 'USD' ? (
+              <span className="font-semibold text-foreground">
+                ${(item.montoOriginal != null ? item.montoOriginal : item.monto / (item.tipoCambio || 4.0)).toFixed(2)}
+              </span>
+              ) : (
+              <span className="text-muted-foreground/30 font-normal">—</span>
         )}
-      </td>
+            </td>
 
       {/* 8. Acción */}
-      <SeccionEgresoAcciones
-        item={item}
-        isPagado={isPagado}
-        isAdelantado={isAdelantado}
-        onToggleEstadoItem={onToggleEstadoItem}
-      />
-    </tr>
-  );
+          <SeccionEgresoAcciones
+            item={item}
+            isPagado={isPagado}
+            isAdelantado={isAdelantado}
+            onToggleEstadoItem={onToggleEstadoItem}
+          />
+        </tr>
+        );
 }
