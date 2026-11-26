@@ -146,7 +146,7 @@ export function SeccionEgresoCardMobile({
           </span>
           {item.monedaOriginal === 'USD' && item.montoOriginal && (
             <span className="text-[10px] text-muted-foreground font-mono block">
-              ${item.montoOriginal.toFixed(2)} USD
+              {formatMoney(item.montoOriginal, '$')} USD
             </span>
           )}
         </div>

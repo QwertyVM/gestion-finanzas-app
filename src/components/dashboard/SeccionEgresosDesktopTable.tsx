@@ -153,7 +153,7 @@ export function SeccionEgresosDesktopTable({
               {formatMoney(subtotalSoles, moneda)}
             </td>
             <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
-              {subtotalUSD > 0 ? `$${subtotalUSD.toFixed(2)}` : '—'}
+              {subtotalUSD > 0 ? formatMoney(subtotalUSD, '$') : '—'}
             </td>
             <td className="pr-5" />
           </tr>

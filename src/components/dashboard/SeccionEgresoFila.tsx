@@ -153,16 +153,16 @@ export function SeccionEgresoFila({
         )}
           </td>
 
-      {/* 7. Dólares ($) */}
+        {/* 7. Dólares ($) */}
         <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
           {item.monedaOriginal === 'USD' ? (
-              <span className="font-semibold text-foreground">
-                ${(item.montoOriginal != null ? item.montoOriginal : item.monto / (item.tipoCambio || 4.0)).toFixed(2)}
-              </span>
-              ) : (
-              <span className="text-muted-foreground/30 font-normal">—</span>
-        )}
-            </td>
+            <span className="font-semibold text-foreground">
+              {formatMoney(item.montoOriginal != null ? item.montoOriginal : item.monto / (item.tipoCambio || 4.0), '$')}
+            </span>
+          ) : (
+            <span className="text-muted-foreground/30 font-normal">—</span>
+          )}
+        </td>
 
       {/* 8. Acción */}
           <SeccionEgresoAcciones
