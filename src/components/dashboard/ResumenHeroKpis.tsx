@@ -46,115 +46,118 @@ export function ResumenHeroKpis({
 
   return (
     <div className="space-y-4">
-      {/* HERO CARD: DINERO LIBRE & METRICAS */}
-      <div className="bg-card border border-border/80 rounded-xl p-5 sm:p-6 shadow-xs">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-border/60">
-          <div>
-            <HeroPeriodoNav
-              periodo={periodo}
-              irMesAnterior={irMesAnterior}
-              irMesSiguiente={irMesSiguiente}
-              puedeIrMesAnterior={puedeIrMesAnterior}
-              esMesEspecial={esMesEspecial}
-              labelEspecial={labelEspecial}
-            />
+            {/* TARJETA EJECUTIVA MAESTRA */}
+            <div className="bg-card border border-border/70 rounded-2xl p-5 sm:p-6 shadow-xs">
+              {/* Fila superior: Navegación de periodo + Acciones rápidas */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-5 border-b border-border/50">
+                <HeroPeriodoNav
+                  periodo={periodo}
+                  irMesAnterior={irMesAnterior}
+                  irMesSiguiente={irMesSiguiente}
+                  puedeIrMesAnterior={puedeIrMesAnterior}
+                  esMesEspecial={esMesEspecial}
+                  labelEspecial={labelEspecial}
+                />
 
-            <div className="flex items-baseline gap-2.5 sm:gap-3 flex-wrap">
-              <span className="text-2xl sm:text-4xl font-semibold tracking-tight text-foreground font-mono">
-                {formatMoney(disponibleNeto, moneda)}
-              </span>
-              <span
-                className={`text-xs px-2.5 py-0.5 rounded-full font-semibold border ${
-                  disponibleEsPositivo
-                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40'
-                    : 'bg-rose-50 text-rose-700 border-rose-200/60 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/40'
-                }`}
-              >
-                {disponibleEsPositivo ? 'Saldo libre' : 'Déficit'}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Dinero disponible tras cubrir compromisos del mes.
-            </p>
-          </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <button
+                    onClick={() => openRecordModal('INGRESO')}
+                    className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-95 shadow-2xs cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Ingreso</span>
+                  </button>
 
-          {/* Botones de Acción Rápida */}
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <button
-              onClick={() => openRecordModal('INGRESO')}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 sm:py-2 rounded-xl sm:rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-98 shadow-xs cursor-pointer"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>Ingreso</span>
-            </button>
-
-            <button
-              onClick={() => openRecordModal('GASTO')}
-              className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 sm:py-2 rounded-xl sm:rounded-lg bg-background hover:bg-muted text-foreground border border-border font-medium text-xs transition active:scale-98 shadow-xs cursor-pointer"
-            >
-              <Minus className="w-3.5 h-3.5 text-muted-foreground" />
-              <span>Gasto</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Métricas clave en fila */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
-          <div className="p-3.5 sm:p-4 rounded-xl bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/15 flex items-start justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-300">Total Ingresos</span>
-                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-1.5 py-0.5 rounded-full">
-                  {cantidadIngresos} {cantidadIngresos === 1 ? 'fuente' : 'fuentes'}
-                </span>
+                  <button
+                    onClick={() => openRecordModal('GASTO')}
+                    className="inline-flex items-center gap-1.5 h-8 px-3.5 rounded-lg bg-background hover:bg-muted text-foreground border border-border/80 font-medium text-xs transition active:scale-95 shadow-2xs cursor-pointer"
+                  >
+                    <Minus className="w-3.5 h-3.5 text-muted-foreground" />
+                    <span>Gasto</span>
+                  </button>
+                </div>
               </div>
-              <span className="text-xl sm:text-2xl font-bold text-foreground font-mono mt-1 block truncate">
-                {formatMoney(totalIngresos, moneda)}
-              </span>
-              <span className="text-[11px] text-muted-foreground mt-0.5 block">
-                Total programado para el periodo
-              </span>
-            </div>
-          </div>
 
-          <div className="p-3.5 sm:p-4 rounded-xl bg-muted/30 dark:bg-muted/15 border border-border/60 flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between gap-2">
-                <span className="text-xs font-semibold text-foreground">Total Egresos</span>
-                {totalAdelantado > 0 && (
-                  <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
-                    ⚡ {formatMoney(totalAdelantado, moneda)} adelantado
-                  </span>
-                )}
-              </div>
-              <span className="text-xl sm:text-2xl font-bold text-foreground font-mono mt-1 block truncate">
-                {formatMoney(totalEgresos, moneda)}
-              </span>
-            </div>
-            <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-2 flex-wrap pt-1 border-t border-border/30">
-              <span className="font-medium text-foreground/80">
-                Por pagar: <strong className="font-mono">{formatMoney(totalPendiente, moneda)}</strong>
-              </span>
-            </div>
-          </div>
-        </div>
+                      {/* Fila central: 3 Columnas Ejecutivas fluidas sin cajas anidadas */}
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-5 divide-y md:divide-y-0 md:divide-x divide-border/50">
+                        {/* 1. Saldo Libre (KPI Principal) */}
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-muted-foreground tracking-tight">
+                              Saldo Libre
+                            </span>
+                              <span
+                                className={`text-[10px] px-2 py-0.5 rounded-full font-semibold border ${disponibleEsPositivo
+                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-200/80 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40'
+                                    : 'bg-rose-50 text-rose-700 border-rose-200/80 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800/40'
+                                  }`}
+                              >
+                                {disponibleEsPositivo ? 'Disponible' : 'Déficit'}
+                              </span>
+                          </div>
+                          <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-mono tabular-nums">
+                            {formatMoney(disponibleNeto, moneda)}
+                          </div>
+                          <p className="text-[11px] text-muted-foreground">
+                            Dinero disponible tras compromisos del mes
+                          </p>
+                        </div>
 
-        {/* BARRA DE SALUD FINANCIERA */}
-        <HeroHealthBar salud={salud} />
-      </div>
+                              {/* 2. Total Ingresos */}
+                              <div className="space-y-1 pt-4 md:pt-0 md:pl-6">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs font-semibold text-muted-foreground tracking-tight">
+                                    Total Ingresos
+                                  </span>
+                                  <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                                    {cantidadIngresos} {cantidadIngresos === 1 ? 'fuente' : 'fuentes'}
+                                  </span>
+                                </div>
+                                    <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-mono tabular-nums">
+                                      {formatMoney(totalIngresos, moneda)}
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground">
+                                      Entradas programadas en el periodo
+                                    </p>
+                                </div>
 
-      {/* BANNER ESPECIAL DICIEMBRE */}
-      {periodo.endsWith('-12') && (
-        <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between text-xs">
-          <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-medium">
-            <Sparkles className="w-4 h-4 shrink-0" />
-            <span>Mes de Gratificación de Navidad: Ingresos extraordinarios proyectados.</span>
-          </div>
-          <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-            ¡Considerado en flujo!
-          </span>
-        </div>
-      )}
-    </div>
-  );
+                                {/* 3. Total Egresos */}
+                                <div className="space-y-1 pt-4 md:pt-0 md:pl-6">
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs font-semibold text-muted-foreground tracking-tight">
+                                      Total Egresos
+                                    </span>
+                                    {totalAdelantado > 0 && (
+                                      <span className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full inline-flex items-center gap-0.5">
+                                        ⚡ {formatMoney(totalAdelantado, moneda)} adelantado
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground font-mono tabular-nums">
+                                    {formatMoney(totalEgresos, moneda)}
+                                  </div>
+                                  <p className="text-[11px] text-muted-foreground">
+                                    Por liquidar: <strong className="text-foreground font-semibold font-mono">{formatMoney(totalPendiente, moneda)}</strong>
+                                  </p>
+                                </div>
+                              </div>
+
+                              {/* Fila inferior: Salud financiera sutil */}
+                              <HeroHealthBar salud={salud} />
+                          </div>
+
+                          {/* BANNER ESPECIAL DICIEMBRE */}
+                          {periodo.endsWith('-12') && (
+                            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between text-xs">
+                              <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 font-medium">
+                                <Sparkles className="w-4 h-4 shrink-0" />
+                                <span>Mes de Gratificación de Navidad: Ingresos extraordinarios proyectados.</span>
+                              </div>
+                              <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                                ¡Considerado en flujo!
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        );
 }

@@ -42,30 +42,30 @@ export function EgresosUnifiedToolbar({
   moneda,
 }: EgresosUnifiedToolbarProps) {
   return (
-    <div className="bg-card border border-border/80 rounded-xl p-3.5 shadow-xs space-y-3">
-      {/* 1. Categorías y distribución interactiva */}
-      <EgresosCategoriasBar
-        totales={totales}
-        filtroEgreso={filtroEgreso}
-        onSelectFiltroEgreso={onSelectFiltroEgreso}
-        moneda={moneda}
-      />
+      <div className="bg-card border border-border/70 rounded-2xl p-4 shadow-xs space-y-3">
+        {/* 1. Categorías y distribución interactiva */}
+        <EgresosCategoriasBar
+          totales={totales}
+          filtroEgreso={filtroEgreso}
+          onSelectFiltroEgreso={onSelectFiltroEgreso}
+          moneda={moneda}
+        />
 
-      {/* 2. Controles de estado, fuente y selección */}
-      <EgresosControlesBar
-        filtroEstado={filtroEstado}
-        onSelectFiltroEstado={onSelectFiltroEstado}
-        filtroFuenteIngreso={filtroFuenteIngreso}
-        onSelectFiltroFuenteIngreso={onSelectFiltroFuenteIngreso}
-        ingresosMes={ingresosMes}
-        conteoPendiente={conteoPendiente}
-        conteoAdelantado={conteoAdelantado}
-        conteoPagado={conteoPagado}
-        conteoTotal={conteoTotal}
-        isAllSelected={isAllSelected}
-        onToggleSelectAll={onToggleSelectAll}
-        hasItems={hasItems}
-      />
-    </div>
-  );
+        {/* 2. Controles de estado, fuente y selección */}
+        <EgresosControlesBar
+          filtroEstado={filtroEstado}
+          onSelectFiltroEstado={onSelectFiltroEstado}
+          filtroFuenteIngreso={filtroFuenteIngreso}
+          onSelectFiltroFuenteIngreso={onSelectFiltroFuenteIngreso}
+          ingresosMes={ingresosMes}
+          conteoPendiente={conteoPendiente}
+          conteoAdelantado={conteoAdelantado}
+          conteoPagado={conteoPagado}
+          conteoTotal={conteoTotal}
+          isAllSelected={isAllSelected}
+          onToggleSelectAll={onToggleSelectAll}
+          hasItems={hasItems}
+        />
+      </div>
+      );
 }
