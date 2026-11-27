@@ -2,7 +2,8 @@
 
 import React from 'react';
 import { TableSkeleton } from '@/components/common/Skeleton';
-import { Plus } from 'lucide-react';
+import { Plus, Landmark, Calendar, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
 import { useFijosManager } from './hooks/useFijosManager';
 import { FijosTabla } from './FijosTabla';
 import { FijosPrestamosSection } from './FijosPrestamosSection';
@@ -44,24 +45,51 @@ export function FijosClient() {
 
   return (
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200 pb-10">
-      {/* 0. CABECERA & HERO METRICS */}
+      {/* 0. SWITCHER CONTEXTUAL & CABECERA */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Switcher contextual entre Vista Mensual Operativa y Plantilla Base */}
+        <div className="flex items-center justify-between flex-wrap gap-2 pt-1">
+          <div className="inline-flex items-center p-1 rounded-xl bg-muted/50 border border-border/60 text-xs">
+            <Link
+              href="/finanzas-mes"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-muted-foreground hover:text-foreground transition-colors font-medium"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Finanzas del Mes</span>
+            </Link>
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-background text-foreground shadow-2xs font-semibold">
+              <RefreshCw className="w-3.5 h-3.5 text-primary" />
+              <span>Plantilla Concurrente (Base)</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Título y Acciones Primarias */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
                 Fijos y Préstamos
               </h1>
-              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
-                Plantilla Concurrente
+              <span className="text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                Plantilla Concurrente Maestra
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5 max-w-2xl">
-              Configuración de compromisos financieros base que se replican automáticamente en cada mes. Los ajustes de montos o pagos puntuales en un mes específico no modifican esta plantilla.
+              Compromisos fijos recurrentes que se replican automáticamente en cada mes. Los cambios o pagos que realices en un mes específico no afectarán estos valores base.
             </p>
           </div>
 
-          <div className="flex items-center gap-2 shrink-0">
+          {/* Acciones principales dobles */}
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            <button
+              onClick={() => setModalPrestamoOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border/80 bg-background hover:bg-muted/60 text-foreground font-medium text-xs transition active:scale-98 cursor-pointer shadow-2xs"
+            >
+              <Landmark className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+              <span>Nuevo Préstamo</span>
+            </button>
+
             <button
               onClick={() => setModalFijoOpen(true)}
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-98 cursor-pointer shadow-xs"
@@ -88,7 +116,7 @@ export function FijosClient() {
               Costos Fijos Mensuales
             </h2>
             <p className="text-xs text-muted-foreground">
-              Suscripciones, servicios, vivienda y gastos fijos recurrentes.
+              Suscripciones, servicios básicos, vivienda y egresos fijos periódicos.
             </p>
           </div>
         </div>

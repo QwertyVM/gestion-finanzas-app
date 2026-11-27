@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import { formatMoney } from '@/lib/utils';
 import { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
+import { Layers } from 'lucide-react';
 import { FijoFila } from './FijoFila';
 import { FijoCardMobile } from './FijoCardMobile';
 
@@ -51,10 +52,16 @@ export function FijosTabla({
 
   if (costosFijos.length === 0) {
     return (
-      <div className="p-8 text-center bg-card border border-border/80 rounded-xl">
-        <p className="text-xs text-muted-foreground">
-          No hay costos fijos registrados en la plantilla concurrente.
-        </p>
+      <div className="p-8 sm:p-12 text-center bg-card/60 border border-border/80 rounded-2xl space-y-3">
+        <div className="w-12 h-12 mx-auto rounded-full bg-primary/10 flex items-center justify-center text-primary">
+          <Layers className="w-6 h-6" />
+        </div>
+        <div className="space-y-1">
+          <h4 className="font-semibold text-sm text-foreground">Sin costos fijos en la plantilla</h4>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            Registra los gastos recurrentes (alquiler, streaming, servicios) que se proyectarán automáticamente cada mes.
+          </p>
+        </div>
       </div>
     );
   }

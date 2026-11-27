@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import { formatMoney } from '@/lib/utils';
 import { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
+import { Landmark } from 'lucide-react';
 import { PrestamoFila } from './PrestamoFila';
 import { PrestamoCardMobile } from './PrestamoCardMobile';
 
@@ -39,6 +40,22 @@ export function PrestamosTabla({
     () => prestamos.reduce((sum, p) => (p.aplicaEsteMes !== false && p.monedaOriginal === 'USD' ? sum + (p.montoOriginal != null ? p.montoOriginal : (p.montoCuota || 0) / (p.tipoCambio || 4.0)) : sum), 0),
     [prestamos]
   );
+
+  if (prestamos.length === 0) {
+    return (
+      <div className="p-8 sm:p-12 text-center bg-card/60 border border-border/80 rounded-2xl space-y-3">
+        <div className="w-12 h-12 mx-auto rounded-full bg-purple-50 text-purple-600 dark:bg-purple-950/40 dark:text-purple-300 flex items-center justify-center">
+          <Landmark className="w-6 h-6" />
+        </div>
+        <div className="space-y-1">
+          <h4 className="font-semibold text-sm text-foreground">Sin préstamos o créditos activos</h4>
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+            Registra préstamos bancarios, créditos vehiculares o personales para monitorear el progreso de amortización y las cuotas de cada mes.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-2xs">
