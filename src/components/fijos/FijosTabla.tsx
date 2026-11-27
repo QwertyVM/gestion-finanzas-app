@@ -96,8 +96,7 @@ export function FijosTabla({
             <tr>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Concepto</th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Categoría</th>
-              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Soles (S/)</th>
-              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Dólares ($)</th>
+              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Monto Base</th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Forma de Pago Base</th>
               <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Acciones</th>
             </tr>
@@ -121,16 +120,20 @@ export function FijosTabla({
           <tfoot className="bg-muted/20 border-t border-border/60 text-xs">
             <tr>
               <td colSpan={2} className="py-2.5 px-3 text-muted-foreground text-xs font-medium">
-                <span>{stats.total} costos fijos en plantilla concurrente</span>
+                <span>{stats.total} costos fijos base recurrentes</span>
               </td>
               <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
-                {formatMoney(totalMontoSoles, moneda)}
+                <div className="flex flex-col items-end">
+                  <span>{formatMoney(totalMonto, moneda)}</span>
+                  {totalMontoUSD > 0 && (
+                    <span className="text-[11px] font-normal text-muted-foreground">
+                      (incluye ${totalMontoUSD.toFixed(2)} USD)
+                    </span>
+                  )}
+                </div>
               </td>
-              <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
-                ${totalMontoUSD.toFixed(2)}
-              </td>
-              <td colSpan={2} className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums">
-                Total Base: {formatMoney(totalMonto, moneda)}
+              <td colSpan={2} className="py-2.5 px-3 text-right text-xs text-muted-foreground">
+                Total mensual consolidado
               </td>
             </tr>
           </tfoot>

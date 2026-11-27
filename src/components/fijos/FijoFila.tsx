@@ -59,12 +59,15 @@ export function FijoFila({
     });
   };
 
+  const isUSD = cf.monedaOriginal === 'USD';
+  const montoUSD = cf.montoOriginal != null ? cf.montoOriginal : (cf.monto / (cf.tipoCambio || 4.0));
+
   return (
     <tr
       onClick={handleRowClick}
       className="hover:bg-muted/40 transition-colors cursor-pointer group"
     >
-      {/* 1. Concepto */}
+      {/* 1. Concepto y Vigencia */}
       <td className="py-2.5 px-3">
         <div className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[220px] md:max-w-xs" title={cf.concepto}>
           {cf.concepto}
@@ -73,10 +76,15 @@ export function FijoFila({
           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-muted/60 text-muted-foreground font-normal">
             {cf.mesFin ? `Hasta ${formatPeriodoLabel(cf.mesFin)}` : 'Indefinido'}
           </span>
+          {cf.diaVencimiento && (
+            <span className="text-[10px] text-muted-foreground">
+              · Vence día {cf.diaVencimiento}
+            </span>
+          )}
         </div>
       </td>
 
-      {/* 2. Categoría */}
+      {/* 2. Categoría y Tag */}
       <td className="py-2.5 px-3 whitespace-nowrap text-xs">
         <CategoriaTagBadge
           categoria={cf.categoria}
@@ -85,32 +93,29 @@ export function FijoFila({
         />
       </td>
 
-      {/* 3. Soles (S/) */}
-      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
-        {cf.monedaOriginal === 'USD' ? (
-          <span className="text-muted-foreground/60 font-normal text-xs" title={`Equivalente al TC ${cf.tipoCambio || 4.0}`}>
-            ≈ {formatMoney(cf.monto, moneda)}
-          </span>
+      {/* 3. Monto Base Unificado (Soles / USD claros) */}
+      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono tabular-nums">
+        {isUSD ? (
+          <div>
+            <div className="font-semibold text-foreground text-xs sm:text-sm flex items-center justify-end gap-1">
+              <span>${montoUSD.toFixed(2)}</span>
+              <span className="text-[10px] font-sans font-medium px-1 py-0.2 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                USD
+              </span>
+            </div>
+            <div className="text-[11px] text-muted-foreground font-normal" title={`TC: ${cf.tipoCambio || 4.0}`}>
+              ≈ {formatMoney(cf.monto, moneda)}
+            </div>
+          </div>
         ) : (
-          <span className="font-semibold text-foreground">
+          <div className="font-semibold text-foreground text-xs sm:text-sm">
             {formatMoney(cf.monto, moneda)}
-          </span>
+          </div>
         )}
       </td>
 
-      {/* 4. Dólares ($) */}
-      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
-        {cf.monedaOriginal === 'USD' ? (
-          <span className="font-semibold text-foreground">
-            ${(cf.montoOriginal != null ? cf.montoOriginal : (cf.monto / (cf.tipoCambio || 4.0))).toFixed(2)}
-          </span>
-        ) : (
-          <span className="text-muted-foreground/40 font-normal">—</span>
-        )}
-      </td>
-
-      {/* 5. Forma de Pago Base */}
-      <td className="py-2.5 px-3 whitespace-nowrap">
+      {/* 4. Forma de Pago Base */}
+      <td className="py-2.5 px-3 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
         <FijoMetodoPagoSelector
           costoFijoId={cf.id}
           metodoPago={cf.metodoPago}
@@ -121,8 +126,8 @@ export function FijoFila({
         />
       </td>
 
-      {/* 6. Acciones */}
-      <td className="py-2.5 px-3 text-right">
+      {/* 5. Acciones */}
+      <td className="py-2.5 px-3 text-right" onClick={(e) => e.stopPropagation()}>
         <FijoAcciones
           id={cf.id}
           concepto={cf.concepto}

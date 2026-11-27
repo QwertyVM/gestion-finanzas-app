@@ -25,8 +25,6 @@ export function PrestamoFila({
   onEliminar,
 }: PrestamoFilaProps) {
   const progreso = Math.round(((p.cuotaActual || 1) / (p.cuotasTotales || 1)) * 100);
-  const isPagado = p.estado === 'PAGADO';
-  const isAdelantado = p.estado === 'ADELANTADO';
 
   const handleClick = () => {
     onSelect({
@@ -53,6 +51,9 @@ export function PrestamoFila({
     });
   };
 
+  const isUSD = p.monedaOriginal === 'USD';
+  const cuotaUSD = p.montoOriginal != null ? p.montoOriginal : (p.montoCuota / (p.tipoCambio || 4.0));
+
   return (
     <tr
       onClick={handleClick}
@@ -68,20 +69,23 @@ export function PrestamoFila({
             {p.concepto}
           </span>
         </div>
+        <div className="text-[10px] text-muted-foreground mt-0.5">
+          Día de pago {p.diaPago} de cada mes
+        </div>
       </td>
 
-      {/* 2. Cuota */}
+      {/* 2. Progreso de Amortización */}
       <td className="py-2.5 px-3">
         <div className="w-32 space-y-1">
           <div className="flex items-center justify-between text-[11px] text-muted-foreground">
             <span className="font-semibold text-foreground">
-              {p.aplicaEsteMes === false ? 'Fuera de rango' : `Cuota ${p.cuotaActual} de ${p.cuotasTotales}`}
+              Cuota {p.cuotaActual} de {p.cuotasTotales}
             </span>
             <span className="font-medium text-foreground">{progreso}%</span>
           </div>
-          <div className="w-full bg-muted rounded-full h-1.5 overflow-hidden">
+          <div className="w-full bg-muted/80 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-purple-600 h-full rounded-full transition-all"
+              className="bg-purple-600 dark:bg-purple-500 h-full rounded-full transition-all"
               style={{ width: `${Math.min(progreso, 100)}%` }}
             />
           </div>
@@ -90,64 +94,39 @@ export function PrestamoFila({
 
       {/* 3. TEA % */}
       <td className="py-2.5 px-3 text-center text-muted-foreground whitespace-nowrap text-xs font-mono">
-        {p.tasaInteresAnual}%
+        <span className="px-1.5 py-0.5 rounded bg-muted/50 font-medium">
+          {p.tasaInteresAnual}% TEA
+        </span>
       </td>
 
-      {/* 4. Soles (S/) */}
+      {/* 4. Cuota Base Unificada (Soles / USD) */}
       <td className="py-2.5 px-3 text-right font-mono text-xs sm:text-sm tabular-nums whitespace-nowrap">
-        {p.monedaOriginal === 'USD' ? (
-          <span className="text-muted-foreground/60 font-normal text-xs" title={`Equivalente al TC ${p.tipoCambio || 4.0}`}>
-            ≈ {formatMoney(p.montoCuota, moneda)}
-          </span>
+        {isUSD ? (
+          <div>
+            <div className="font-semibold text-foreground flex items-center justify-end gap-1">
+              <span>${cuotaUSD.toFixed(2)}</span>
+              <span className="text-[10px] font-sans font-medium px-1 py-0.2 rounded bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">
+                USD
+              </span>
+            </div>
+            <div className="text-[11px] text-muted-foreground font-normal">
+              ≈ {formatMoney(p.montoCuota, moneda)}
+            </div>
+          </div>
         ) : (
-          <span className="font-semibold text-foreground">
+          <div className="font-semibold text-foreground">
             {formatMoney(p.montoCuota, moneda)}
-          </span>
+          </div>
         )}
       </td>
 
-      {/* 5. Dólares ($) */}
-      <td className="py-2.5 px-3 text-right font-mono text-xs sm:text-sm tabular-nums whitespace-nowrap">
-        {p.monedaOriginal === 'USD' ? (
-          <span className="font-semibold text-foreground">
-            ${(p.montoOriginal != null ? p.montoOriginal : (p.montoCuota / (p.tipoCambio || 4.0))).toFixed(2)}
-          </span>
-        ) : (
-          <span className="text-muted-foreground/40 font-normal">—</span>
-        )}
-      </td>
-
-      {/* 5. Total */}
+      {/* 5. Total Préstamo */}
       <td className="py-2.5 px-3 text-right font-mono text-muted-foreground text-xs tabular-nums whitespace-nowrap">
         {p.montoTotal ? formatMoney(p.montoTotal, moneda) : '—'}
       </td>
 
-      {/* 6. Estado */}
-      <td className="py-2.5 px-3 text-center whitespace-nowrap">
-        {p.aplicaEsteMes === false ? (
-          <span className="text-[11px] text-muted-foreground">Fuera de periodo</span>
-        ) : (
-          <span
-            className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border ${
-              isAdelantado
-                ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/40'
-                : isPagado
-                  ? 'bg-emerald-50/80 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40'
-                  : 'bg-amber-50/80 text-amber-700 border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40'
-            }`}
-          >
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${
-                isAdelantado ? 'bg-indigo-500' : isPagado ? 'bg-emerald-500' : 'bg-amber-500'
-              }`}
-            />
-            {isAdelantado ? 'Adelantado' : isPagado ? 'Pagado' : 'Pendiente'}
-          </span>
-        )}
-      </td>
-
-      {/* 7. Acciones */}
-      <td className="py-2.5 px-3 text-right">
+      {/* 6. Acciones */}
+      <td className="py-2.5 px-3 text-right" onClick={(e) => e.stopPropagation()}>
         <PrestamoAcciones
           cuotaId={p.cuotaId}
           prestamoId={p.id}
