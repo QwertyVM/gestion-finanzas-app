@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { formatMoney, formatPeriodoLabel } from '@/lib/utils';
-import { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import { FijoMetodoPagoSelector } from './FijoMetodoPagoSelector';
 import { FijoAcciones } from './FijoAcciones';
 import { CategoriaTagBadge } from '@/components/common/CategoriaTagBadge';
@@ -12,10 +11,8 @@ interface FijoFilaProps {
   tarjetas: any[];
   moneda: string;
   isLoading: boolean;
-  onSelect: (item: DetalleItemData) => void;
-  onToggleEstado?: (id: string, nuevoEstado: string) => void;
-  onCambiarMetodoPago: (costoFijoId: string, nuevoMetodo: string, tarjetaId: string | null) => void;
   onEditarBase: (cf: any) => void;
+  onCambiarMetodoPago: (costoFijoId: string, nuevoMetodo: string, tarjetaId: string | null) => void;
   onEliminar: (id: string, concepto: string) => void;
 }
 
@@ -24,52 +21,22 @@ export function FijoFila({
   tarjetas,
   moneda,
   isLoading,
-  onSelect,
-  onToggleEstado,
-  onCambiarMetodoPago,
   onEditarBase,
+  onCambiarMetodoPago,
   onEliminar,
 }: FijoFilaProps) {
-  const handleRowClick = () => {
-    onSelect({
-      id: `fijo-${cf.id}`,
-      dbId: cf.id,
-      tipo: 'FIJO',
-      clasificacion: 'FIJO',
-      concepto: cf.concepto,
-      categoria: cf.categoria,
-      categoriaId: cf.categoriaId || null,
-      tag: cf.tag || null,
-      monto: cf.monto,
-      diaVencimiento: cf.diaVencimiento,
-      estado: cf.estado || 'PENDIENTE',
-      fechaPagoReal: cf.fechaPagoReal,
-      mesInicio: cf.mesInicio,
-      mesFin: cf.mesFin,
-      notas: cf.notas,
-      monedaOriginal: cf.monedaOriginal,
-      montoOriginal: cf.montoOriginal,
-      tipoCambio: cf.tipoCambio,
-      metodoPago: cf.metodoPago,
-      tarjetaId: cf.tarjetaId,
-      tarjetaNombre: cf.tarjetaNombre,
-      tarjetaBanco: cf.tarjetaBanco,
-      tarjetaColor: cf.tarjetaColor,
-      tarjetaUltimosCuatro: cf.tarjetaUltimosCuatro,
-    });
-  };
-
   const isUSD = cf.monedaOriginal === 'USD';
   const montoUSD = cf.montoOriginal != null ? cf.montoOriginal : (cf.monto / (cf.tipoCambio || 4.0));
 
   return (
     <tr
-      onClick={handleRowClick}
+      onClick={() => onEditarBase(cf)}
       className="hover:bg-muted/40 transition-colors cursor-pointer group"
+      title="Clic para editar costo fijo base"
     >
       {/* 1. Concepto y Vigencia */}
       <td className="py-2.5 px-3">
-        <div className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[220px] md:max-w-xs" title={cf.concepto}>
+        <div className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[220px] md:max-w-xs group-hover:text-primary transition-colors" title={cf.concepto}>
           {cf.concepto}
         </div>
         <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mt-0.5 flex-wrap">
@@ -133,7 +100,6 @@ export function FijoFila({
           concepto={cf.concepto}
           estado={cf.estado}
           isLoading={isLoading}
-          onToggleEstado={onToggleEstado ? (id, nuevo) => onToggleEstado(id, nuevo) : undefined}
           onEditar={() => onEditarBase(cf)}
           onEliminar={onEliminar}
         />

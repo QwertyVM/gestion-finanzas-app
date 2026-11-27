@@ -10,8 +10,7 @@ interface FijosPrestamosSectionProps {
   moneda: string;
   loadingAction: string | null;
   onOpenModalPrestamo: () => void;
-  onSelectDetalle: (item: DetalleItemData) => void;
-  onToggleEstado?: (cuotaId: string, nuevoEstado: string) => Promise<void> | void;
+  onSelectDetalle?: (item: any) => void;
   onEditarBase: (prestamo: any) => void;
   onEliminar: (id: string, concepto: string) => Promise<void>;
 }
@@ -21,8 +20,6 @@ export function FijosPrestamosSection({
   moneda,
   loadingAction,
   onOpenModalPrestamo,
-  onSelectDetalle,
-  onToggleEstado,
   onEditarBase,
   onEliminar,
 }: FijosPrestamosSectionProps) {
@@ -49,21 +46,13 @@ export function FijosPrestamosSection({
         </div>
       </div>
 
-      {prestamos.length === 0 ? (
-        <div className="p-8 text-center bg-card border border-border/80 rounded-xl">
-          <p className="text-xs text-muted-foreground">No hay préstamos activos registrados.</p>
-        </div>
-      ) : (
-        <PrestamosTabla
-          prestamos={prestamos}
-          moneda={moneda}
-          loadingAction={loadingAction}
-          onSelect={onSelectDetalle}
-          onToggleEstado={onToggleEstado}
-          onEditarBase={onEditarBase}
-          onEliminar={onEliminar}
-        />
-      )}
+      <PrestamosTabla
+        prestamos={prestamos}
+        moneda={moneda}
+        loadingAction={loadingAction}
+        onEditarBase={onEditarBase}
+        onEliminar={onEliminar}
+      />
     </div>
   );
 }

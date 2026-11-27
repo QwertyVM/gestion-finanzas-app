@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { formatMoney } from '@/lib/utils';
-import { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
-import { Layers } from 'lucide-react';
+import { Layers, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { FijoFila } from './FijoFila';
 import { FijoCardMobile } from './FijoCardMobile';
 
@@ -12,31 +11,52 @@ interface FijosTablaProps {
   tarjetas: any[];
   moneda: string;
   loadingAction: string | null;
-  onSelect: (item: DetalleItemData) => void;
-  onToggleEstado?: (id: string, nuevoEstado: string) => void;
+  onSelect?: (item: any) => void;
   onCambiarMetodoPago: (costoFijoId: string, nuevoMetodo: string, tarjetaId: string | null) => void;
   onEditarBase: (cf: any) => void;
   onEliminar: (id: string, concepto: string) => void;
 }
+
+type SortField = 'concepto' | 'dia' | 'monto';
+type SortOrder = 'asc' | 'desc';
 
 export function FijosTabla({
   costosFijos,
   tarjetas,
   moneda,
   loadingAction,
-  onSelect,
-  onToggleEstado,
   onCambiarMetodoPago,
   onEditarBase,
   onEliminar,
 }: FijosTablaProps) {
+  const [sortField, setSortField] = useState<SortField>('dia');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedFijos = useMemo(() => {
+    return [...costosFijos].sort((a, b) => {
+      let comp = 0;
+      if (sortField === 'concepto') {
+        comp = (a.concepto || '').localeCompare(b.concepto || '');
+      } else if (sortField === 'dia') {
+        comp = (a.diaVencimiento || 30) - (b.diaVencimiento || 30);
+      } else if (sortField === 'monto') {
+        comp = (a.monto || 0) - (b.monto || 0);
+      }
+      return sortOrder === 'asc' ? comp : -comp;
+    });
+  }, [costosFijos, sortField, sortOrder]);
+
   const totalMonto = useMemo(
     () => costosFijos.reduce((sum, cf) => sum + (cf.monto || 0), 0),
-    [costosFijos]
-  );
-
-  const totalMontoSoles = useMemo(
-    () => costosFijos.filter((cf) => cf.monedaOriginal !== 'USD').reduce((sum, cf) => sum + (cf.monto || 0), 0),
     [costosFijos]
   );
 
@@ -66,19 +86,29 @@ export function FijosTabla({
     );
   }
 
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="w-3 h-3 text-muted-foreground/50 ml-1 inline" />;
+    }
+    return sortOrder === 'asc' ? (
+      <ArrowUp className="w-3 h-3 text-primary ml-1 inline" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-primary ml-1 inline" />
+    );
+  };
+
   return (
     <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-2xs">
       {/* Vista Móvil: Tarjetas táctiles */}
       <div className="md:hidden divide-y divide-border/40">
-        {costosFijos.map((cf) => (
+        {sortedFijos.map((cf) => (
           <FijoCardMobile
             key={`m-fijo-${cf.id}`}
             cf={cf}
             tarjetas={tarjetas}
             moneda={moneda}
             isLoading={loadingAction === `fijo-${cf.id}`}
-            onSelect={onSelect}
-            onToggleEstado={onToggleEstado}
+            onSelect={() => onEditarBase(cf)}
             onCambiarMetodoPago={onCambiarMetodoPago}
             onEditarBase={onEditarBase}
             onEliminar={onEliminar}
@@ -99,34 +129,60 @@ export function FijosTabla({
       {/* Vista Desktop: Tabla completa optimizada */}
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left text-sm border-collapse">
-          <thead className="bg-muted/40 text-muted-foreground text-[11px] font-semibold border-b border-border/60 uppercase tracking-wider">
+          <thead className="bg-muted/40 text-muted-foreground text-[11px] font-semibold border-b border-border/60 uppercase tracking-wider select-none">
             <tr>
-              <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Concepto</th>
-              <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Categoría</th>
-              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Monto Base</th>
-              <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Forma de Pago Base</th>
-              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Acciones</th>
+              <th
+                scope="col"
+                onClick={() => handleSort('concepto')}
+                className="py-2.5 px-3 text-foreground font-semibold cursor-pointer hover:bg-muted/60 transition-colors"
+              >
+                <span>Concepto</span>
+                {renderSortIcon('concepto')}
+              </th>
+              <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">
+                Categoría
+              </th>
+              <th
+                scope="col"
+                onClick={() => handleSort('dia')}
+                className="py-2.5 px-3 text-foreground font-semibold cursor-pointer hover:bg-muted/60 transition-colors"
+              >
+                <span>Vencimiento</span>
+                {renderSortIcon('dia')}
+              </th>
+              <th
+                scope="col"
+                onClick={() => handleSort('monto')}
+                className="py-2.5 px-3 text-right text-foreground font-semibold cursor-pointer hover:bg-muted/60 transition-colors"
+              >
+                <span>Monto Base</span>
+                {renderSortIcon('monto')}
+              </th>
+              <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">
+                Forma de Pago Base
+              </th>
+              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">
+                Acciones
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40">
-            {costosFijos.map((cf) => (
+            {sortedFijos.map((cf) => (
               <FijoFila
                 key={cf.id}
                 cf={cf}
                 tarjetas={tarjetas}
                 moneda={moneda}
                 isLoading={loadingAction === `fijo-${cf.id}`}
-                onSelect={onSelect}
-                onToggleEstado={onToggleEstado}
-                onCambiarMetodoPago={onCambiarMetodoPago}
                 onEditarBase={onEditarBase}
+                onCambiarMetodoPago={onCambiarMetodoPago}
                 onEliminar={onEliminar}
               />
             ))}
           </tbody>
           <tfoot className="bg-muted/20 border-t border-border/60 text-xs">
             <tr>
-              <td colSpan={2} className="py-2.5 px-3 text-muted-foreground text-xs font-medium">
+              <td colSpan={3} className="py-2.5 px-3 text-muted-foreground text-xs font-medium">
                 <span>{stats.total} costos fijos base recurrentes</span>
               </td>
               <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">

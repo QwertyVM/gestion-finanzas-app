@@ -2,15 +2,12 @@
 
 import React from 'react';
 import { formatMoney } from '@/lib/utils';
-import { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 import { PrestamoAcciones } from './PrestamoAcciones';
 
 interface PrestamoFilaProps {
   p: any;
   moneda: string;
   isLoading: boolean;
-  onSelect: (item: DetalleItemData) => void;
-  onToggleEstado?: (cuotaId: string, nuevoEstado: string) => void;
   onEditarBase: (prestamo: any) => void;
   onEliminar: (id: string, concepto: string) => void;
 }
@@ -19,45 +16,18 @@ export function PrestamoFila({
   p,
   moneda,
   isLoading,
-  onSelect,
-  onToggleEstado,
   onEditarBase,
   onEliminar,
 }: PrestamoFilaProps) {
   const progreso = Math.round(((p.cuotaActual || 1) / (p.cuotasTotales || 1)) * 100);
-
-  const handleClick = () => {
-    onSelect({
-      id: `prestamo-${p.cuotaId}`,
-      dbId: p.cuotaId,
-      prestamoId: p.id,
-      tipo: 'PRESTAMO',
-      clasificacion: 'PRESTAMO_CUOTA',
-      concepto: `${p.banco} - ${p.concepto}`,
-      banco: p.banco,
-      nombrePrestamo: p.concepto,
-      categoria: 'Préstamo Bancario',
-      monto: p.montoCuota,
-      montoTotal: p.montoTotal,
-      tasaInteresAnual: p.tasaInteresAnual,
-      cuotaActual: p.cuotaActual,
-      cuotasTotales: p.cuotasTotales,
-      diaVencimiento: p.diaPago,
-      estado: p.estado,
-      fechaPagoReal: p.fechaPagoReal,
-      monedaOriginal: p.monedaOriginal,
-      montoOriginal: p.montoOriginal,
-      tipoCambio: p.tipoCambio,
-    });
-  };
-
   const isUSD = p.monedaOriginal === 'USD';
   const cuotaUSD = p.montoOriginal != null ? p.montoOriginal : (p.montoCuota / (p.tipoCambio || 4.0));
 
   return (
     <tr
-      onClick={handleClick}
+      onClick={() => onEditarBase(p)}
       className="hover:bg-muted/40 transition-colors cursor-pointer group"
+      title="Clic para editar condiciones base del préstamo"
     >
       {/* 1. Concepto y Banco */}
       <td className="py-2.5 px-3">
@@ -65,7 +35,7 @@ export function PrestamoFila({
           <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-purple-50 text-purple-700 dark:bg-purple-950/50 dark:text-purple-300 border border-purple-200/60 dark:border-purple-800/60">
             {p.banco}
           </span>
-          <span className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[200px]" title={p.concepto}>
+          <span className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[200px] group-hover:text-primary transition-colors" title={p.concepto}>
             {p.concepto}
           </span>
         </div>
@@ -128,13 +98,9 @@ export function PrestamoFila({
       {/* 6. Acciones */}
       <td className="py-2.5 px-3 text-right" onClick={(e) => e.stopPropagation()}>
         <PrestamoAcciones
-          cuotaId={p.cuotaId}
           prestamoId={p.id}
           conceptoCompleto={`${p.banco} - ${p.concepto}`}
-          estado={p.estado}
-          aplicaEsteMes={p.aplicaEsteMes !== false}
           isLoading={isLoading}
-          onToggleEstado={onToggleEstado}
           onEditarBase={() => onEditarBase(p)}
           onEliminar={onEliminar}
         />
