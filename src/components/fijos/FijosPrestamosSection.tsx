@@ -11,7 +11,7 @@ interface FijosPrestamosSectionProps {
   loadingAction: string | null;
   onOpenModalPrestamo: () => void;
   onSelectDetalle: (item: DetalleItemData) => void;
-  onToggleEstado: (cuotaId: string, nuevoEstado: string) => Promise<void>;
+  onToggleEstado?: (cuotaId: string, nuevoEstado: string) => Promise<void> | void;
   onEditarBase: (prestamo: any) => void;
   onEliminar: (id: string, concepto: string) => Promise<void>;
 }

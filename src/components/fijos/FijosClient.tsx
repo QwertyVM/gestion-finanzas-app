@@ -2,12 +2,10 @@
 
 import React from 'react';
 import { TableSkeleton } from '@/components/common/Skeleton';
-import { formatPeriodoLabel } from '@/lib/utils';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { useFijosManager } from './hooks/useFijosManager';
 import { FijosTabla } from './FijosTabla';
 import { FijosPrestamosSection } from './FijosPrestamosSection';
-import { CuotasTarjetaTabla } from './CuotasTarjetaTabla';
 import { FijosModals } from './FijosModals';
 
 export function FijosClient() {
@@ -16,11 +14,6 @@ export function FijosClient() {
     resumen,
     loading,
     refresh,
-    irMesAnterior,
-    irMesSiguiente,
-    puedeIrMesAnterior,
-    prefetchMesAnterior,
-    prefetchMesSiguiente,
     detalleItem,
     setDetalleItem,
     loadingAction,
@@ -37,66 +30,33 @@ export function FijosClient() {
     costosFijos,
     prestamos,
     tarjetas,
-    cuotasTarjeta,
-    totalCuotasTarjeta,
-    handleToggleEstadoFijo,
     handleCambiarMetodoPagoFijo,
     handleEliminarCostoFijo,
-    handleToggleEstadoCuota,
     handleEliminarPrestamo,
-    handleToggleEstadoGasto,
     handleGuardarMontoModal,
     handleCambiarMetodoPagoModal,
-    handleCambiarEstadoModal,
   } = useFijosManager();
 
-  if (loading && !resumen) {
+  if (loading && costosFijos.length === 0 && prestamos.length === 0) {
     return <TableSkeleton rows={8} />;
   }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-200">
-      {/* 1. SECCIÓN: COSTOS FIJOS DEL MES */}
+      {/* 1. SECCIÓN: COSTOS FIJOS (PLANTILLA CONCURRENTE) */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-semibold tracking-tight text-foreground">
-                Costos Fijos del Mes
+                Costos Fijos
               </h1>
-              <div className="inline-flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg text-xs">
-                <button
-                  type="button"
-                  onClick={irMesAnterior}
-                  onMouseEnter={prefetchMesAnterior}
-                  disabled={!puedeIrMesAnterior}
-                  className={`p-1 rounded transition ${
-                    puedeIrMesAnterior
-                      ? 'hover:text-foreground text-muted-foreground cursor-pointer'
-                      : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
-                  }`}
-                  title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
-                  aria-label="Mes anterior"
-                >
-                  <ChevronLeft className="w-3.5 h-3.5" />
-                </button>
-                <span className="text-xs font-semibold px-1 text-foreground capitalize">
-                  {formatPeriodoLabel(periodo)}
-                </span>
-                <button
-                  type="button"
-                  onClick={irMesSiguiente}
-                  onMouseEnter={prefetchMesSiguiente}
-                  className="p-1 hover:text-foreground text-muted-foreground rounded transition cursor-pointer"
-                  title="Mes siguiente"
-                  aria-label="Mes siguiente"
-                >
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
+              <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/20">
+                Plantilla Concurrente
+              </span>
             </div>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Gastos recurrentes y servicios fijos programados para este mes.
+              Definición base concurrente para todos los meses. Los cambios mensuales no alteran estos valores base.
             </p>
           </div>
 
@@ -117,7 +77,6 @@ export function FijosClient() {
           moneda={moneda}
           loadingAction={loadingAction}
           onSelect={setDetalleItem}
-          onToggleEstado={handleToggleEstadoFijo}
           onCambiarMetodoPago={handleCambiarMetodoPagoFijo}
           onEditarBase={(cf) => setEditandoCostoFijo(cf)}
           onEliminar={handleEliminarCostoFijo}
@@ -131,41 +90,9 @@ export function FijosClient() {
         loadingAction={loadingAction}
         onOpenModalPrestamo={() => setModalPrestamoOpen(true)}
         onSelectDetalle={setDetalleItem}
-        onToggleEstado={handleToggleEstadoCuota}
         onEditarBase={(p) => setEditandoPrestamo(p)}
         onEliminar={handleEliminarPrestamo}
       />
-
-      {/* 3. SECCIÓN: COMPRAS EN CUOTAS CON TARJETA */}
-      <div className="space-y-4 pt-4 border-t border-border/60">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold tracking-tight text-foreground">
-              Compras en Tarjeta en Cuotas
-            </h2>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              Compras diferidas a cuotas mensuales registradas en tus tarjetas de crédito.
-            </p>
-          </div>
-        </div>
-
-        {cuotasTarjeta.length === 0 ? (
-          <div className="p-8 text-center bg-card border border-border/80 rounded-xl">
-            <p className="text-xs text-muted-foreground">
-              No hay compras en cuotas con tarjeta registradas para este periodo.
-            </p>
-          </div>
-        ) : (
-          <CuotasTarjetaTabla
-            cuotasTarjeta={cuotasTarjeta}
-            totalCuotasTarjeta={totalCuotasTarjeta}
-            moneda={moneda}
-            loadingAction={loadingAction}
-            onSelect={setDetalleItem}
-            onToggleEstado={handleToggleEstadoGasto}
-          />
-        )}
-      </div>
 
       <FijosModals
         modalFijoOpen={modalFijoOpen}
@@ -183,7 +110,6 @@ export function FijosClient() {
         moneda={moneda}
         tarjetas={tarjetas}
         onSuccess={refresh}
-        onCambiarEstadoModal={handleCambiarEstadoModal}
         onGuardarMontoModal={handleGuardarMontoModal}
         onCambiarMetodoPagoModal={handleCambiarMetodoPagoModal}
       />

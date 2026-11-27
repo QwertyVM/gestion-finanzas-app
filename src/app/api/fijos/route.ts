@@ -3,6 +3,95 @@ import prisma from '@/lib/prisma';
 import { EstadoPago, MetodoPago } from '@prisma/client';
 import { getAuthenticatedUser } from '@/lib/auth';
 
+// GET: Obtener la lista base/concurrente maestra de Costos Fijos y Préstamos (genérica, sin filtrar por mes)
+export async function GET(request: NextRequest) {
+  try {
+    const user = await getAuthenticatedUser(request);
+    if (!user) return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
+
+    const [costosFijos, prestamos, tarjetas] = await Promise.all([
+      prisma.costoFijo.findMany({
+        where: { activo: true, usuarioId: user.id },
+        include: {
+          categoria: true,
+          tarjeta: true,
+        },
+        orderBy: [{ orden: 'asc' }, { diaVencimiento: 'asc' }],
+      }),
+      prisma.prestamo.findMany({
+        where: { activo: true, usuarioId: user.id },
+        include: {
+          cuotas: {
+            orderBy: { numeroCuota: 'asc' },
+          },
+        },
+        orderBy: [{ orden: 'asc' }, { diaPago: 'asc' }],
+      }),
+      prisma.tarjetaCredito.findMany({
+        where: { activa: true, usuarioId: user.id },
+        orderBy: { nombre: 'asc' },
+      }),
+    ]);
+
+    const formattedFijos = costosFijos.map((cf) => ({
+      id: cf.id,
+      concepto: cf.concepto,
+      monto: Number(cf.monto),
+      diaVencimiento: cf.diaVencimiento,
+      categoria: cf.categoria?.nombre || 'General',
+      categoriaId: cf.categoriaId || null,
+      categoriaColor: cf.categoria?.color || '#0284c7',
+      tag: cf.tag || null,
+      monedaOriginal: cf.monedaOriginal,
+      montoOriginal: cf.montoOriginal ? Number(cf.montoOriginal) : null,
+      tipoCambio: cf.tipoCambio ? Number(cf.tipoCambio) : 4.0,
+      metodoPago: cf.metodoPago,
+      tarjetaId: cf.tarjetaId || null,
+      tarjetaNombre: cf.tarjeta?.nombre || null,
+      tarjetaBanco: cf.tarjeta?.banco || null,
+      tarjetaColor: cf.tarjeta?.color || null,
+      mesInicio: cf.mesInicio,
+      mesFin: cf.mesFin,
+      activo: cf.activo,
+      orden: cf.orden ?? 0,
+    }));
+
+    const formattedPrestamos = prestamos.map((p) => {
+      const cuotasOrdenadas = [...p.cuotas].sort((a, b) => a.numeroCuota - b.numeroCuota);
+      const cuotaPendiente = cuotasOrdenadas.find((c) => c.estado !== EstadoPago.PAGADO) || cuotasOrdenadas[0];
+      return {
+        id: p.id,
+        cuotaId: cuotaPendiente?.id || p.id,
+        banco: p.banco,
+        concepto: p.concepto,
+        montoTotal: Number(p.montoTotal),
+        montoCuota: Number(p.montoCuota),
+        cuotaActual: cuotaPendiente ? cuotaPendiente.numeroCuota : 1,
+        cuotasTotales: p.cuotasTotales,
+        tasaInteresAnual: Number(p.tasaInteresAnual),
+        diaPago: p.diaPago,
+        estado: cuotaPendiente ? cuotaPendiente.estado : EstadoPago.PENDIENTE,
+        fechaPagoReal: cuotaPendiente?.fechaPagoReal ? cuotaPendiente.fechaPagoReal.toISOString() : null,
+        periodoInicio: cuotasOrdenadas[0]?.periodo || null,
+        periodoFin: cuotasOrdenadas[cuotasOrdenadas.length - 1]?.periodo || null,
+        monedaOriginal: p.monedaOriginal,
+        montoOriginal: p.montoOriginal ? Number(p.montoOriginal) : null,
+        tipoCambio: p.tipoCambio ? Number(p.tipoCambio) : 4.0,
+        orden: p.orden ?? 0,
+      };
+    });
+
+    return NextResponse.json({
+      success: true,
+      costosFijos: formattedFijos,
+      prestamos: formattedPrestamos,
+      tarjetas,
+    });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 // POST: Actualizar registro mensual específico (ej: cambiar monto de Octubre a S/ 220, concepto, categoría, estado o método de pago)
 export async function POST(request: NextRequest) {
   try {

@@ -10,7 +10,7 @@ interface PrestamoFilaProps {
   moneda: string;
   isLoading: boolean;
   onSelect: (item: DetalleItemData) => void;
-  onToggleEstado: (cuotaId: string, nuevoEstado: string) => void;
+  onToggleEstado?: (cuotaId: string, nuevoEstado: string) => void;
   onEditarBase: (prestamo: any) => void;
   onEliminar: (id: string, concepto: string) => void;
 }

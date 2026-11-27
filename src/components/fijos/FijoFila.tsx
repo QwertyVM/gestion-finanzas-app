@@ -13,7 +13,7 @@ interface FijoFilaProps {
   moneda: string;
   isLoading: boolean;
   onSelect: (item: DetalleItemData) => void;
-  onToggleEstado: (id: string, nuevoEstado: string) => void;
+  onToggleEstado?: (id: string, nuevoEstado: string) => void;
   onCambiarMetodoPago: (costoFijoId: string, nuevoMetodo: string, tarjetaId: string | null) => void;
   onEditarBase: (cf: any) => void;
   onEliminar: (id: string, concepto: string) => void;
@@ -42,7 +42,7 @@ export function FijoFila({
       tag: cf.tag || null,
       monto: cf.monto,
       diaVencimiento: cf.diaVencimiento,
-      estado: cf.estado,
+      estado: cf.estado || 'PENDIENTE',
       fechaPagoReal: cf.fechaPagoReal,
       mesInicio: cf.mesInicio,
       mesFin: cf.mesFin,
@@ -109,7 +109,7 @@ export function FijoFila({
         )}
       </td>
 
-      {/* 4. Forma de Pago */}
+      {/* 5. Forma de Pago Base */}
       <td className="py-2.5 px-3 whitespace-nowrap">
         <FijoMetodoPagoSelector
           costoFijoId={cf.id}
@@ -121,30 +121,6 @@ export function FijoFila({
         />
       </td>
 
-      {/* 5. Estado */}
-      <td className="py-2.5 px-3 text-center whitespace-nowrap">
-        <span
-          className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border ${
-            cf.estado === 'ADELANTADO'
-              ? 'bg-indigo-50/80 text-indigo-700 border-indigo-200/60 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800/40'
-              : cf.estado === 'PAGADO'
-                ? 'bg-emerald-50/80 text-emerald-700 border-emerald-200/60 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800/40'
-                : 'bg-amber-50/80 text-amber-700 border-amber-200/60 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800/40'
-          }`}
-        >
-          <span
-            className={`w-1.5 h-1.5 rounded-full ${
-              cf.estado === 'ADELANTADO'
-                ? 'bg-indigo-500'
-                : cf.estado === 'PAGADO'
-                  ? 'bg-emerald-500'
-                  : 'bg-amber-500'
-            }`}
-          />
-          {cf.estado === 'ADELANTADO' ? 'Adelantado' : cf.estado === 'PAGADO' ? 'Pagado' : 'Pendiente'}
-        </span>
-      </td>
-
       {/* 6. Acciones */}
       <td className="py-2.5 px-3 text-right">
         <FijoAcciones
@@ -152,7 +128,7 @@ export function FijoFila({
           concepto={cf.concepto}
           estado={cf.estado}
           isLoading={isLoading}
-          onToggleEstado={(id, nuevo) => onToggleEstado(id, nuevo)}
+          onToggleEstado={onToggleEstado ? (id, nuevo) => onToggleEstado(id, nuevo) : undefined}
           onEditar={() => onEditarBase(cf)}
           onEliminar={onEliminar}
         />

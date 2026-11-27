@@ -10,7 +10,7 @@ interface PrestamoCardMobileProps {
   moneda: string;
   isLoading: boolean;
   onSelect: (item: DetalleItemData) => void;
-  onToggleEstado: (cuotaId: string, nuevoEstado: string) => void;
+  onToggleEstado?: (cuotaId: string, nuevoEstado: string) => void;
   onEditarBase: (prestamo: any) => void;
   onEliminar: (id: string, concepto: string) => void;
 }
@@ -110,32 +110,36 @@ export function PrestamoCardMobile({
         </span>
 
         <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            disabled={isLoading}
-            onClick={() => onToggleEstado(p.cuotaId, isAdelantado ? 'PENDIENTE' : 'ADELANTADO')}
-            className={`h-7 px-2 rounded-lg text-[11px] transition font-medium ${
-              isAdelantado
-                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 font-semibold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-            }`}
-          >
-            {isAdelantado ? 'Adelantado' : 'Adelantar'}
-          </button>
+          {onToggleEstado && (
+            <>
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={() => onToggleEstado(p.cuotaId, isAdelantado ? 'PENDIENTE' : 'ADELANTADO')}
+                className={`h-7 px-2 rounded-lg text-[11px] transition font-medium ${
+                  isAdelantado
+                    ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 font-semibold'
+                    : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+                }`}
+              >
+                {isAdelantado ? 'Adelantado' : 'Adelantar'}
+              </button>
 
-          <button
-            type="button"
-            disabled={isLoading}
-            onClick={() => onToggleEstado(p.cuotaId, isPagado ? 'PENDIENTE' : 'PAGADO')}
-            className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold transition inline-flex items-center gap-1 ${
-              isPagado
-                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40'
-                : 'bg-foreground text-background hover:opacity-85 shadow-xs'
-            }`}
-          >
-            {isPagado && <Check className="w-3 h-3 stroke-[2.5]" />}
-            <span>{isPagado ? 'Pagado' : 'Pagar'}</span>
-          </button>
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={() => onToggleEstado(p.cuotaId, isPagado ? 'PENDIENTE' : 'PAGADO')}
+                className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold transition inline-flex items-center gap-1 ${
+                  isPagado
+                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40'
+                    : 'bg-foreground text-background hover:opacity-85 shadow-xs'
+                }`}
+              >
+                {isPagado && <Check className="w-3 h-3 stroke-[2.5]" />}
+                <span>{isPagado ? 'Pagado' : 'Pagar'}</span>
+              </button>
+            </>
+          )}
 
           <button
             type="button"

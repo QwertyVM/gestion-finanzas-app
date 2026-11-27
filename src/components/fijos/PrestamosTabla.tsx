@@ -11,7 +11,7 @@ interface PrestamosTablaProps {
   moneda: string;
   loadingAction: string | null;
   onSelect: (item: DetalleItemData) => void;
-  onToggleEstado: (cuotaId: string, nuevoEstado: string) => void;
+  onToggleEstado?: (cuotaId: string, nuevoEstado: string) => void;
   onEditarBase: (prestamo: any) => void;
   onEliminar: (id: string, concepto: string) => void;
 }

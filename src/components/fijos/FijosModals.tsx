@@ -23,7 +23,7 @@ interface FijosModalsProps {
   moneda: string;
   tarjetas: any[];
   onSuccess: () => Promise<void>;
-  onCambiarEstadoModal: (item: DetalleItemData, nuevoEstado: string) => Promise<void>;
+  onCambiarEstadoModal?: (item: DetalleItemData, nuevoEstado: string) => Promise<void>;
   onGuardarMontoModal: (item: DetalleItemData, nuevoMonto: number, monedaInfo?: MonedaDetalleInfo) => Promise<void>;
   onCambiarMetodoPagoModal: (item: DetalleItemData, nuevoMetodo: string, tarjetaId?: string | null, aplicarFuturos?: boolean) => Promise<void>;
 }

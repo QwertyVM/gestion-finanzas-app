@@ -10,7 +10,7 @@ interface PrestamoAccionesProps {
   estado: string;
   aplicaEsteMes: boolean;
   isLoading: boolean;
-  onToggleEstado: (cuotaId: string, nuevoEstado: string) => void;
+  onToggleEstado?: (cuotaId: string, nuevoEstado: string) => void;
   onEditarBase: () => void;
   onEliminar: (id: string, concepto: string) => void;
 }
@@ -34,7 +34,7 @@ export function PrestamoAcciones({
       className="flex items-center justify-end gap-1.5 whitespace-nowrap"
       onClick={(e) => e.stopPropagation()}
     >
-      {aplicaEsteMes && (
+      {aplicaEsteMes && onToggleEstado && (
         <>
           <button
             type="button"
