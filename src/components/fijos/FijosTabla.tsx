@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { formatMoney } from '@/lib/utils';
-import { Layers, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Layers, ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
 import { FijoFila } from './FijoFila';
 import { FijoCardMobile } from './FijoCardMobile';
 
@@ -31,6 +31,7 @@ export function FijosTabla({
 }: FijosTablaProps) {
   const [sortField, setSortField] = useState<SortField>('dia');
   const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  const [busqueda, setBusqueda] = useState('');
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -42,7 +43,17 @@ export function FijosTabla({
   };
 
   const sortedFijos = useMemo(() => {
-    return [...costosFijos].sort((a, b) => {
+    let list = [...costosFijos];
+    if (busqueda.trim()) {
+      const q = busqueda.toLowerCase().trim();
+      list = list.filter((cf) =>
+        (cf.concepto || '').toLowerCase().includes(q) ||
+        (cf.categoria || '').toLowerCase().includes(q) ||
+        (cf.tag || '').toLowerCase().includes(q)
+      );
+    }
+
+    return list.sort((a, b) => {
       let comp = 0;
       if (sortField === 'concepto') {
         comp = (a.concepto || '').localeCompare(b.concepto || '');
@@ -53,7 +64,7 @@ export function FijosTabla({
       }
       return sortOrder === 'asc' ? comp : -comp;
     });
-  }, [costosFijos, sortField, sortOrder]);
+  }, [costosFijos, busqueda, sortField, sortOrder]);
 
   const totalMonto = useMemo(
     () => costosFijos.reduce((sum, cf) => sum + (cf.monto || 0), 0),
@@ -98,7 +109,24 @@ export function FijosTabla({
   };
 
   return (
-    <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-2xs">
+    <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-2xs space-y-0">
+      {/* Barra de Filtro Rápido */}
+      <div className="p-2.5 sm:px-3 sm:py-2 border-b border-border/50 bg-muted/20 flex items-center justify-between gap-3 flex-wrap">
+        <div className="relative flex-1 max-w-xs">
+          <Search className="w-3.5 h-3.5 text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            placeholder="Buscar por concepto o categoría..."
+            value={busqueda}
+            onChange={(e) => setBusqueda(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 rounded-lg bg-background border border-border/60 text-xs text-foreground placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary"
+          />
+        </div>
+        <div className="text-[11px] text-muted-foreground font-medium">
+          Mostrando {sortedFijos.length} de {stats.total} fijos
+        </div>
+      </div>
+
       {/* Vista Móvil: Tarjetas táctiles */}
       <div className="md:hidden divide-y divide-border/40">
         {sortedFijos.map((cf) => (

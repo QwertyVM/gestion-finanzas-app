@@ -33,10 +33,10 @@ export function FijoPaymentMethodSelector({
           <button
             type="button"
             onClick={() => setMetodoPago('EFECTIVO_DEBITO')}
-            className={`py-1.5 px-2 rounded-xl font-bold border transition text-center cursor-pointer ${
+            className={`py-1.5 px-2 rounded-xl font-bold border transition text-center cursor-pointer text-xs ${
               metodoPago === 'EFECTIVO_DEBITO'
-                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500 shadow-xs'
-                : 'bg-secondary/40 text-muted-foreground border-border'
+                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800 shadow-xs'
+                : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/70'
             }`}
           >
             💵 Efectivo
@@ -44,10 +44,10 @@ export function FijoPaymentMethodSelector({
           <button
             type="button"
             onClick={() => setMetodoPago('TRANSFERENCIA')}
-            className={`py-1.5 px-2 rounded-xl font-bold border transition text-center cursor-pointer ${
+            className={`py-1.5 px-2 rounded-xl font-bold border transition text-center cursor-pointer text-xs ${
               metodoPago === 'TRANSFERENCIA'
-                ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500 shadow-xs'
-                : 'bg-secondary/40 text-muted-foreground border-border'
+                ? 'bg-cyan-50 text-cyan-700 dark:bg-cyan-950/40 dark:text-cyan-300 border-cyan-300 dark:border-cyan-800 shadow-xs'
+                : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/70'
             }`}
           >
             🏦 Transferencia
@@ -60,10 +60,10 @@ export function FijoPaymentMethodSelector({
                 setTarjetaId(tarjetas[0].id);
               }
             }}
-            className={`py-1.5 px-2 rounded-xl font-bold border transition text-center cursor-pointer ${
+            className={`py-1.5 px-2 rounded-xl font-bold border transition text-center cursor-pointer text-xs ${
               metodoPago === 'TARJETA_CREDITO'
-                ? 'bg-indigo-500/20 text-indigo-400 border-indigo-500 shadow-xs'
-                : 'bg-secondary/40 text-muted-foreground border-border'
+                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/40 dark:text-indigo-300 border-indigo-300 dark:border-indigo-800 shadow-xs'
+                : 'bg-secondary/40 text-muted-foreground border-border hover:bg-secondary/70'
             }`}
           >
             💳 Tarjeta
