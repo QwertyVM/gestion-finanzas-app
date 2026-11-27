@@ -35,6 +35,7 @@ export function ModalCrearFijo({
   const [tc, setTc] = useState(configTc.toString());
   const [mesInicio, setMesInicio] = useState(periodo);
   const [mesFin, setMesFin] = useState('');
+  const [diaVencimiento, setDiaVencimiento] = useState(30);
   const [metodoPago, setMetodoPago] = useState<'EFECTIVO_DEBITO' | 'TRANSFERENCIA' | 'TARJETA_CREDITO'>('EFECTIVO_DEBITO');
   const [tarjetaId, setTarjetaId] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
@@ -83,7 +84,7 @@ export function ModalCrearFijo({
           monedaOriginal: moneda,
           montoOriginal: montoOriginalFinal,
           tipoCambio: tcFinal,
-          diaVencimiento: 30,
+          diaVencimiento: diaVencimiento || 30,
           mesInicio,
           mesFin: mesFin || null,
           metodoPago,
@@ -146,6 +147,8 @@ export function ModalCrearFijo({
             setMesInicio={setMesInicio}
             mesFin={mesFin}
             setMesFin={setMesFin}
+            diaVencimiento={diaVencimiento}
+            setDiaVencimiento={setDiaVencimiento}
             metodoPago={metodoPago}
             setMetodoPago={setMetodoPago}
             tarjetaId={tarjetaId}

@@ -38,6 +38,7 @@ export function ModalEditarFijo({
   const [tc, setTc] = useState(configTc.toString());
   const [mesDesde, setMesDesde] = useState(periodo);
   const [mesFin, setMesFin] = useState('');
+  const [diaVencimiento, setDiaVencimiento] = useState(30);
   const [metodoPago, setMetodoPago] = useState<'EFECTIVO_DEBITO' | 'TRANSFERENCIA' | 'TARJETA_CREDITO'>('EFECTIVO_DEBITO');
   const [tarjetaId, setTarjetaId] = useState('');
   const [categoriaId, setCategoriaId] = useState('');
@@ -88,6 +89,7 @@ export function ModalEditarFijo({
 
       setMesDesde(mesInicioDefault);
       setMesFin(costoFijo.mesFin || '');
+      setDiaVencimiento(costoFijo.diaVencimiento || 30);
       setMetodoPago(targetMetodo);
       setTarjetaId(targetTarjetaId);
       setCategoriaId(costoFijo.categoriaId || '');
@@ -128,7 +130,7 @@ export function ModalEditarFijo({
           monedaOriginal: monedaItem,
           montoOriginal: montoOriginalFinal,
           tipoCambio: tcFinal,
-          diaVencimiento: 30,
+          diaVencimiento: diaVencimiento || 30,
           mesDesde,
           mesFin: mesFin || null,
           metodoPago,
@@ -182,6 +184,8 @@ export function ModalEditarFijo({
             setMesInicio={setMesDesde}
             mesFin={mesFin}
             setMesFin={setMesFin}
+            diaVencimiento={diaVencimiento}
+            setDiaVencimiento={setDiaVencimiento}
             metodoPago={metodoPago}
             setMetodoPago={setMetodoPago}
             tarjetaId={tarjetaId}

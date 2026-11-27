@@ -20,6 +20,7 @@ export function PrestamoFila({
   onEliminar,
 }: PrestamoFilaProps) {
   const progreso = Math.round(((p.cuotaActual || 1) / (p.cuotasTotales || 1)) * 100);
+  const esCompletado = progreso >= 100;
   const isUSD = p.monedaOriginal === 'USD';
   const cuotaUSD = p.montoOriginal != null ? p.montoOriginal : (p.montoCuota / (p.tipoCambio || 4.0));
 
@@ -38,6 +39,11 @@ export function PrestamoFila({
           <span className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[200px] group-hover:text-primary transition-colors" title={p.concepto}>
             {p.concepto}
           </span>
+          {esCompletado && (
+            <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300 border border-emerald-200/50">
+              Pagado 100%
+            </span>
+          )}
         </div>
         <div className="text-[10px] text-muted-foreground mt-0.5">
           Día de pago {p.diaPago} de cada mes
@@ -51,11 +57,17 @@ export function PrestamoFila({
             <span className="font-semibold text-foreground">
               Cuota {p.cuotaActual} de {p.cuotasTotales}
             </span>
-            <span className="font-medium text-foreground">{progreso}%</span>
+            <span className={`font-semibold ${esCompletado ? 'text-emerald-600 dark:text-emerald-400' : 'text-foreground'}`}>
+              {progreso}%
+            </span>
           </div>
           <div className="w-full bg-muted/80 rounded-full h-1.5 overflow-hidden">
             <div
-              className="bg-purple-600 dark:bg-purple-500 h-full rounded-full transition-all"
+              className={`h-full rounded-full transition-all ${
+                esCompletado
+                  ? 'bg-emerald-500 dark:bg-emerald-400'
+                  : 'bg-purple-600 dark:bg-purple-500'
+              }`}
               style={{ width: `${Math.min(progreso, 100)}%` }}
             />
           </div>

@@ -28,6 +28,8 @@ interface FijoFormFieldsProps {
   setMesInicio: (v: string) => void;
   mesFin: string;
   setMesFin: (v: string) => void;
+  diaVencimiento?: number;
+  setDiaVencimiento?: (v: number) => void;
   metodoPago: 'EFECTIVO_DEBITO' | 'TRANSFERENCIA' | 'TARJETA_CREDITO';
   setMetodoPago: (m: 'EFECTIVO_DEBITO' | 'TRANSFERENCIA' | 'TARJETA_CREDITO') => void;
   tarjetaId: string;
@@ -56,6 +58,8 @@ export function FijoFormFields({
   setMesInicio,
   mesFin,
   setMesFin,
+  diaVencimiento = 30,
+  setDiaVencimiento,
   metodoPago,
   setMetodoPago,
   tarjetaId,
@@ -95,7 +99,22 @@ export function FijoFormFields({
         configTc={configTc}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="space-y-1.5">
+          <label className="font-semibold text-foreground">
+            Día de Vencimiento:
+          </label>
+          <input
+            type="number"
+            min={1}
+            max={31}
+            value={diaVencimiento}
+            onChange={(e) => setDiaVencimiento ? setDiaVencimiento(Math.min(31, Math.max(1, parseInt(e.target.value) || 1))) : undefined}
+            placeholder="Ej: 15"
+            className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-sky-500 text-foreground text-xs font-mono font-medium"
+          />
+        </div>
+
         <div className="space-y-1.5">
           <label className="font-semibold text-foreground">
             Mes de Inicio:
