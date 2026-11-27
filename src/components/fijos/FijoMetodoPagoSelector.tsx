@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ChevronDown, CreditCard, Banknote, ArrowRightLeft } from 'lucide-react';
+import { ChevronDown, CreditCard, Banknote, ArrowRightLeft, Loader2 } from 'lucide-react';
 
 interface FijoMetodoPagoSelectorProps {
   costoFijoId: string;
@@ -60,15 +60,23 @@ export function FijoMetodoPagoSelector({
           ? 'opacity-50 border-border/40 bg-muted/20 text-muted-foreground'
           : 'border-border/60 bg-muted/30 group-hover/selector:bg-muted/60 group-hover/selector:border-border text-foreground/90'
       }`}>
-        {renderIcon()}
+        {disabled ? (
+          <Loader2 className="w-3 h-3 text-primary animate-spin shrink-0" />
+        ) : (
+          renderIcon()
+        )}
         <span className="truncate max-w-[120px] text-[11px]">
-          {metodoPago === 'TARJETA_CREDITO'
-            ? (tarjetaActual ? tarjetaActual.nombre : 'Tarjeta Crédito')
-            : metodoPago === 'TRANSFERENCIA'
-              ? 'Transferencia'
-              : 'Efectivo / Débito'}
+          {disabled
+            ? 'Actualizando...'
+            : metodoPago === 'TARJETA_CREDITO'
+              ? (tarjetaActual ? tarjetaActual.nombre : 'Tarjeta Crédito')
+              : metodoPago === 'TRANSFERENCIA'
+                ? 'Transferencia'
+                : 'Efectivo / Débito'}
         </span>
-        <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0 ml-0.5 opacity-60 group-hover/selector:opacity-100" />
+        {!disabled && (
+          <ChevronDown className="w-3 h-3 text-muted-foreground shrink-0 ml-0.5 opacity-60 group-hover/selector:opacity-100" />
+        )}
       </div>
 
       {/* Select nativo invisible por encima para accesibilidad y soporte móvil */}

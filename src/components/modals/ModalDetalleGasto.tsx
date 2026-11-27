@@ -104,12 +104,21 @@ export function ModalDetalleGasto({
             onGuardarMonto={d.handleGuardarMonto}
           />
 
-          <DetalleEstadoSelector
-            estado={item.estado}
-            fechaPagoReal={item.fechaPagoReal}
-            updating={d.updating}
-            onCambiarEstado={d.handleEstado}
-          />
+          {onCambiarEstado ? (
+            <DetalleEstadoSelector
+              estado={item.estado}
+              fechaPagoReal={item.fechaPagoReal}
+              updating={d.updating}
+              onCambiarEstado={d.handleEstado}
+            />
+          ) : (
+            <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60 flex items-center justify-between text-xs">
+              <span className="text-muted-foreground font-medium">Tipo de registro:</span>
+              <span className="font-semibold text-primary px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20 text-[11px]">
+                Plantilla Concurrente Base
+              </span>
+            </div>
+          )}
 
           {item.tipo !== 'PRESTAMO' && (item.totalCuotas || 1) <= 1 && d.clasificacionLocal !== 'CUOTA' && (
             <DetalleClasificacionSelector

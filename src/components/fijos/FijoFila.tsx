@@ -72,15 +72,15 @@ export function FijoFila({
         <div className="font-medium text-foreground text-xs sm:text-sm truncate max-w-[220px] md:max-w-xs" title={cf.concepto}>
           {cf.concepto}
         </div>
-        <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mt-0.5">
+        <div className="text-[10px] text-muted-foreground flex items-center gap-1.5 mt-0.5 flex-wrap">
+          {cf.diaVencimiento && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded font-mono font-medium text-[10px] bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300 border border-sky-200/50 dark:border-sky-800/50">
+              Día {cf.diaVencimiento}
+            </span>
+          )}
           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-muted/60 text-muted-foreground font-normal">
             {cf.mesFin ? `Hasta ${formatPeriodoLabel(cf.mesFin)}` : 'Indefinido'}
           </span>
-          {cf.diaVencimiento && (
-            <span className="text-[10px] text-muted-foreground">
-              · Vence día {cf.diaVencimiento}
-            </span>
-          )}
         </div>
       </td>
 
