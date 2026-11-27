@@ -111,8 +111,15 @@ export function PrestamosTabla({
           <span className="text-[11px] text-muted-foreground">
             {prestamos.length} {prestamos.length === 1 ? 'crédito activo' : 'créditos activos'}
           </span>
-          <div className="font-mono font-bold text-xs text-foreground tabular-nums">
-            {formatMoney(totalCuotasMes, moneda)}
+          <div className="text-right">
+            <span className="font-mono font-bold text-xs text-foreground tabular-nums block">
+              {formatMoney(totalCuotasMes, moneda)}
+            </span>
+            {totalCuotasUSD > 0 && (
+              <span className="text-[10px] text-muted-foreground font-mono block">
+                (incluye ${totalCuotasUSD.toFixed(2)} USD)
+              </span>
+            )}
           </div>
         </div>
       </div>

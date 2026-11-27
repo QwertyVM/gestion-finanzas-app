@@ -1,7 +1,6 @@
 'use client';
 
 import React from 'react';
-import { Plus } from 'lucide-react';
 import { PrestamosTabla } from './PrestamosTabla';
 import type { DetalleItemData } from '@/components/modals/ModalDetalleGasto';
 
@@ -31,18 +30,8 @@ export function FijosPrestamosSection({
             Préstamos Bancarios & Cuotas
           </h2>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Monitoreo de cuotas mensuales, progreso y amortización.
+            Monitoreo de cuotas mensuales, progreso de amortización y pasivos financieros.
           </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onOpenModalPrestamo}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-foreground text-background font-medium text-xs hover:opacity-90 transition active:scale-98 cursor-pointer shadow-xs"
-          >
-            <Plus className="w-3.5 h-3.5 shrink-0" />
-            <span>Agregar Préstamo</span>
-          </button>
         </div>
       </div>
 

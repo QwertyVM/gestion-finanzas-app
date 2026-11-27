@@ -51,7 +51,7 @@ export function FijosHeroMetrics({ costosFijos, prestamos, moneda }: FijosHeroMe
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
       {/* 1. Costos Fijos */}
-      <div className="bg-card/70 dark:bg-card/40 backdrop-blur-xs border border-border/70 rounded-xl p-3.5 flex flex-col justify-between shadow-2xs hover:border-border transition-colors">
+      <div className="bg-card/85 dark:bg-card/50 backdrop-blur-xs border border-border/80 dark:border-border/60 rounded-xl p-3.5 flex flex-col justify-between shadow-2xs hover:border-border transition-colors">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
             Costos Fijos Base
@@ -76,7 +76,7 @@ export function FijosHeroMetrics({ costosFijos, prestamos, moneda }: FijosHeroMe
       </div>
 
       {/* 2. Préstamos */}
-      <div className="bg-card/70 dark:bg-card/40 backdrop-blur-xs border border-border/70 rounded-xl p-3.5 flex flex-col justify-between shadow-2xs hover:border-border transition-colors">
+      <div className="bg-card/85 dark:bg-card/50 backdrop-blur-xs border border-border/80 dark:border-border/60 rounded-xl p-3.5 flex flex-col justify-between shadow-2xs hover:border-border transition-colors">
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
             Cuotas Préstamos Base
@@ -101,7 +101,7 @@ export function FijosHeroMetrics({ costosFijos, prestamos, moneda }: FijosHeroMe
       </div>
 
       {/* 3. Total Comprometido */}
-      <div className="bg-card/70 dark:bg-card/40 backdrop-blur-xs border border-border/70 rounded-xl p-3.5 flex flex-col justify-between shadow-2xs hover:border-border transition-colors relative overflow-hidden">
+      <div className="bg-card/85 dark:bg-card/50 backdrop-blur-xs border border-border/80 dark:border-border/60 rounded-xl p-3.5 flex flex-col justify-between shadow-2xs hover:border-border transition-colors relative overflow-hidden">
         <div className="absolute top-0 right-0 w-24 h-24 bg-primary/5 rounded-full blur-2xl pointer-events-none" />
         <div className="flex items-center justify-between">
           <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">

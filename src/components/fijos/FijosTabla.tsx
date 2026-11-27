@@ -120,8 +120,15 @@ export function FijosTabla({
           <div className="text-[11px] text-muted-foreground">
             <span>{stats.total} costos fijos base</span>
           </div>
-          <div className="font-mono font-bold text-xs text-foreground tabular-nums">
-            {formatMoney(totalMonto, moneda)}
+          <div className="text-right">
+            <span className="font-mono font-bold text-xs text-foreground tabular-nums block">
+              {formatMoney(totalMonto, moneda)}
+            </span>
+            {totalMontoUSD > 0 && (
+              <span className="text-[10px] text-muted-foreground font-mono block">
+                (incluye ${totalMontoUSD.toFixed(2)} USD)
+              </span>
+            )}
           </div>
         </div>
       </div>

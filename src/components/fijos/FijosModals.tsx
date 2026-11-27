@@ -6,6 +6,7 @@ import { ModalEditarFijo } from './modals/ModalEditarFijo';
 import { ModalCrearPrestamo } from './modals/ModalCrearPrestamo';
 import { ModalEditarPrestamo } from './modals/ModalEditarPrestamo';
 import { ModalDetalleGasto, type DetalleItemData, type MonedaDetalleInfo } from '@/components/modals/ModalDetalleGasto';
+import { ModalConfirmarEliminar } from './modals/ModalConfirmarEliminar';
 
 interface FijosModalsProps {
   modalFijoOpen: boolean;
@@ -22,6 +23,15 @@ interface FijosModalsProps {
   configTc: number;
   moneda: string;
   tarjetas: any[];
+  confirmarEliminar?: {
+    open: boolean;
+    tipo: 'FIJO' | 'PRESTAMO';
+    id: string;
+    concepto: string;
+  };
+  onCloseConfirmarEliminar?: () => void;
+  onEjecutarEliminar?: () => void;
+  loadingEliminar?: boolean;
   onSuccess: () => Promise<void>;
   onCambiarEstadoModal?: (item: DetalleItemData, nuevoEstado: string) => Promise<void>;
   onGuardarMontoModal: (item: DetalleItemData, nuevoMonto: number, monedaInfo?: MonedaDetalleInfo) => Promise<void>;
@@ -43,6 +53,10 @@ export function FijosModals({
   configTc,
   moneda,
   tarjetas,
+  confirmarEliminar,
+  onCloseConfirmarEliminar,
+  onEjecutarEliminar,
+  loadingEliminar,
   onSuccess,
   onCambiarEstadoModal,
   onGuardarMontoModal,
@@ -94,6 +108,26 @@ export function FijosModals({
         tarjetas={tarjetas}
         monedaSimbolo={moneda}
       />
+
+      {confirmarEliminar && onCloseConfirmarEliminar && onEjecutarEliminar && (
+        <ModalConfirmarEliminar
+          open={confirmarEliminar.open}
+          onClose={onCloseConfirmarEliminar}
+          onConfirm={onEjecutarEliminar}
+          titulo={
+            confirmarEliminar.tipo === 'FIJO'
+              ? '¿Eliminar Costo Fijo de la plantilla?'
+              : '¿Eliminar Préstamo de la plantilla?'
+          }
+          descripcion={
+            confirmarEliminar.tipo === 'FIJO'
+              ? 'Se removerá de la plantilla concurrente y dejará de proyectarse en los próximos meses. Los meses históricos anteriores permanecerán intactos.'
+              : 'Se removerá el crédito y sus cuotas asociadas de la plantilla concurrente.'
+          }
+          nombreItem={confirmarEliminar.concepto}
+          loading={loadingEliminar}
+        />
+      )}
     </>
   );
 }

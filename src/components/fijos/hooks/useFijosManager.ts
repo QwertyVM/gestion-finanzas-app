@@ -25,6 +25,14 @@ export function useFijosManager() {
   const [editandoCostoFijo, setEditandoCostoFijo] = useState<any | null>(null);
   const [editandoPrestamo, setEditandoPrestamo] = useState<any | null>(null);
 
+  // Modal confirmación eliminar
+  const [confirmarEliminar, setConfirmarEliminar] = useState<{
+    open: boolean;
+    tipo: 'FIJO' | 'PRESTAMO';
+    id: string;
+    concepto: string;
+  }>({ open: false, tipo: 'FIJO', id: '', concepto: '' });
+
   const configTc = resumen?.config?.tipoCambioUSD || 4.00;
   const moneda = resumen?.config?.monedaSimbolo || 'S/';
 
@@ -82,27 +90,40 @@ export function useFijosManager() {
   };
 
   const handleEliminarCostoFijo = async (id: string, concepto: string) => {
-    if (!confirm(`¿Eliminar definitivamente el costo fijo base "${concepto}"?`)) return;
-    try {
-      setLoadingAction(`del-fijo-${id}`);
-      const res = await fetch(`/api/fijos?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error al eliminar costo fijo');
-      toast.success(`Costo fijo base "${concepto}" eliminado`);
-      await refresh();
-    } catch (e: any) {
-      toast.error(e.message || 'Error al eliminar');
-    } finally {
-      setLoadingAction(null);
-    }
+    setConfirmarEliminar({
+      open: true,
+      tipo: 'FIJO',
+      id,
+      concepto,
+    });
   };
 
   const handleEliminarPrestamo = async (id: string, concepto: string) => {
-    if (!confirm(`¿Eliminar definitivamente el préstamo "${concepto}" y todas sus cuotas?`)) return;
+    setConfirmarEliminar({
+      open: true,
+      tipo: 'PRESTAMO',
+      id,
+      concepto,
+    });
+  };
+
+  const ejecutarEliminarConfirmado = async () => {
+    const { tipo, id, concepto } = confirmarEliminar;
+    if (!id) return;
+
     try {
-      setLoadingAction(`del-pres-${id}`);
-      const res = await fetch(`/api/prestamos?id=${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Error al eliminar préstamo');
-      toast.success(`Préstamo "${concepto}" eliminado`);
+      if (tipo === 'FIJO') {
+        setLoadingAction(`del-fijo-${id}`);
+        const res = await fetch(`/api/fijos?id=${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Error al eliminar costo fijo');
+        toast.success(`Costo fijo base "${concepto}" eliminado`);
+      } else {
+        setLoadingAction(`del-pres-${id}`);
+        const res = await fetch(`/api/prestamos?id=${id}`, { method: 'DELETE' });
+        if (!res.ok) throw new Error('Error al eliminar préstamo');
+        toast.success(`Préstamo "${concepto}" eliminado`);
+      }
+      setConfirmarEliminar({ open: false, tipo: 'FIJO', id: '', concepto: '' });
       await refresh();
     } catch (e: any) {
       toast.error(e.message || 'Error al eliminar');
@@ -216,6 +237,9 @@ export function useFijosManager() {
     handleCambiarMetodoPagoFijo,
     handleEliminarCostoFijo,
     handleEliminarPrestamo,
+    confirmarEliminar,
+    setConfirmarEliminar,
+    ejecutarEliminarConfirmado,
     handleGuardarMontoModal,
     handleCambiarMetodoPagoModal,
   };

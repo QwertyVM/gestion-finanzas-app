@@ -35,6 +35,9 @@ export function FijosClient() {
     handleCambiarMetodoPagoFijo,
     handleEliminarCostoFijo,
     handleEliminarPrestamo,
+    confirmarEliminar,
+    setConfirmarEliminar,
+    ejecutarEliminarConfirmado,
     handleGuardarMontoModal,
     handleCambiarMetodoPagoModal,
   } = useFijosManager();
@@ -159,6 +162,10 @@ export function FijosClient() {
         configTc={configTc}
         moneda={moneda}
         tarjetas={tarjetas}
+        confirmarEliminar={confirmarEliminar}
+        onCloseConfirmarEliminar={() => setConfirmarEliminar({ open: false, tipo: 'FIJO', id: '', concepto: '' })}
+        onEjecutarEliminar={ejecutarEliminarConfirmado}
+        loadingEliminar={Boolean(loadingAction && loadingAction.startsWith('del-'))}
         onSuccess={refresh}
         onGuardarMontoModal={handleGuardarMontoModal}
         onCambiarMetodoPagoModal={handleCambiarMetodoPagoModal}
