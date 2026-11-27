@@ -90,23 +90,14 @@ export function RecordDateAndStatus({
           </div>
         </div>
       ) : tipoActivo === 'GASTO' ? (
-        <div className="space-y-1.5">
-          <label className="text-xs font-medium text-foreground">Estado:</label>
-          <div className="grid grid-cols-3 gap-1 h-[34px]">
-            {(['PENDIENTE', 'ADELANTADO', 'PAGADO'] as const).map((est) => (
-              <button
-                key={est}
-                type="button"
-                onClick={() => setEstadoGasto(est)}
-                className={`rounded-xl text-xs font-medium border transition capitalize cursor-pointer ${
-                  estadoGasto === est
-                    ? 'bg-foreground text-background border-foreground font-semibold'
-                    : 'bg-background text-muted-foreground border-border hover:text-foreground'
-                }`}
-              >
-                {est.toLowerCase()}
-              </button>
-            ))}
+        <div className="space-y-1.5 flex flex-col justify-end">
+          <label className="text-xs font-medium text-foreground">Estado inicial:</label>
+          <div className="h-[34px] px-3 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-700 dark:text-amber-300 text-xs font-semibold flex items-center justify-between">
+            <span className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+              <span>Pendiente</span>
+            </span>
+            <span className="text-[10px] text-muted-foreground/70 font-normal">Por liquidar</span>
           </div>
         </div>
       ) : null}

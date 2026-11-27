@@ -62,8 +62,8 @@ export function RecordPaymentDetails({
         <label className="text-xs font-medium text-foreground">Tipo de Ingreso:</label>
         <div className="grid grid-cols-4 gap-1.5">
           {[
-            { id: 'EXTRA', label: 'Extra / Freelance' },
-            { id: 'SUELDO', label: 'Sueldo Base' },
+            { id: 'EXTRA', label: 'Extra' },
+            { id: 'SUELDO', label: 'Sueldo' },
             { id: 'GRATIFICACION', label: 'Grati' },
             { id: 'UTILIDADES', label: 'Utilidades' },
           ].map((t) => (
@@ -71,10 +71,10 @@ export function RecordPaymentDetails({
               key={t.id}
               type="button"
               onClick={() => setTipoIngreso(t.id as any)}
-              className={`py-2 px-1 rounded-xl text-xs font-medium border transition text-center truncate cursor-pointer ${
+              className={`py-1.5 px-1 rounded-xl text-xs font-medium border transition text-center truncate cursor-pointer ${
                 tipoIngreso === t.id
-                  ? 'bg-foreground text-background border-foreground font-semibold'
-                  : 'bg-background text-muted-foreground border-border hover:text-foreground'
+                  ? 'bg-foreground text-background border-foreground font-semibold shadow-xs'
+                  : 'bg-background text-muted-foreground border-border/80 hover:text-foreground'
               }`}
             >
               {t.label}
@@ -103,31 +103,41 @@ export function RecordPaymentDetails({
 
   const paymentButtons = [
     { id: 'TARJETA_CREDITO', label: 'Tarjeta', icon: CreditCard },
-    { id: 'EFECTIVO_DEBITO', label: 'Efectivo', icon: Banknote },
-    { id: 'TRANSFERENCIA', label: 'Transf.', icon: ArrowRightLeft },
+    { id: 'EFECTIVO_DEBITO', label: 'Efectivo / Débito', icon: Banknote },
+    { id: 'TRANSFERENCIA', label: 'Transferencia', icon: ArrowRightLeft },
   ] as const;
 
   return (
     <div className="space-y-2">
-      <label className="text-xs font-medium text-foreground">Método de Pago:</label>
-      <div className="grid grid-cols-3 gap-2">
+      <div className="flex items-center justify-between">
+        <label className="text-xs font-medium text-foreground">Forma de Pago:</label>
+        {metodoPago === 'TARJETA_CREDITO' && tarjetas.length > 0 && (
+          <span className="text-[10px] text-muted-foreground">
+            Corte: {tarjetas.find(t => t.id === tarjetaId)?.diaCorte || 10} de c/mes
+          </span>
+        )}
+      </div>
+
+      {/* Selector de Método Segmentado */}
+      <div className="grid grid-cols-3 gap-1.5 p-1 bg-muted/40 rounded-xl border border-border/70">
         {paymentButtons.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             type="button"
             onClick={() => setMetodoPago(id)}
-            className={`py-2 px-2 rounded-xl text-xs font-medium border flex items-center justify-center gap-1.5 transition cursor-pointer ${
+            className={`py-1.5 px-2 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition cursor-pointer ${
               metodoPago === id
-                ? 'bg-foreground text-background border-foreground font-semibold'
-                : 'bg-background text-muted-foreground border-border hover:text-foreground'
+                ? 'bg-background text-foreground border border-border/60 font-semibold shadow-2xs'
+                : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             <Icon className="w-3.5 h-3.5" />
-            <span>{label}</span>
+            <span className="truncate">{label}</span>
           </button>
         ))}
       </div>
 
+      {/* Si es Tarjeta de Crédito: Controles Compactos */}
       {metodoPago === 'TARJETA_CREDITO' && (
         <RecordCardFields
           tarjetas={tarjetas}

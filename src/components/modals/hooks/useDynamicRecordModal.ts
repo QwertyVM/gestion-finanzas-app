@@ -81,6 +81,9 @@ export function useDynamicRecordModal() {
         setTarjetaId(tarjetas[0].id);
       }
 
+      // Resetear estado inicial siempre a PENDIENTE
+      setEstadoGasto('PENDIENTE');
+
       if (recordModalOptions) {
         if (recordModalOptions.metodoPago) {
           setMetodoPago(recordModalOptions.metodoPago);

@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { Tag, ShieldCheck, Sparkles, PiggyBank } from 'lucide-react';
+import React, { useState } from 'react';
+import { Tag, ShieldCheck, Sparkles, PiggyBank, ChevronDown } from 'lucide-react';
 import type { CategoriaItem } from '../hooks/useDynamicRecordModal';
 import { MINITAGS_POR_CATEGORIA, TODOS_LOS_MINITAGS_SUGERIDOS } from '@/lib/categoria-service';
 
@@ -20,6 +20,8 @@ export function RecordCategoryChips({
   tag = '',
   onSelectTag,
 }: RecordCategoryChipsProps) {
+  const [mostrarTags, setMostrarTags] = useState(Boolean(tag));
+
   const selectedCat = categorias.find((c) => c.id === categoriaId);
   const sugerencias =
     (selectedCat && MINITAGS_POR_CATEGORIA[selectedCat.nombre]) ||
@@ -40,15 +42,23 @@ export function RecordCategoryChips({
   };
 
   return (
-    <div className="space-y-2.5">
-      {/* 1. Las 3 grandes categorías 50/30/20 */}
-      <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <label className="text-xs font-medium text-foreground">
-            Categoría 50/30/20:
-          </label>
-          <span className="text-[10px] text-muted-foreground">Recomendado</span>
-        </div>
+    <div className="space-y-2">
+      {/* 1. Selector de las 3 Categorías Fundamentales 50/30/20 */}
+      <div className="space-y-1.5">
+        <label className="text-xs font-medium text-foreground flex items-center justify-between">
+          <span>Categoría de Presupuesto:</span>
+          {onSelectTag && (
+            <button
+              type="button"
+              onClick={() => setMostrarTags(!mostrarTags)}
+              className="text-[11px] text-muted-foreground hover:text-foreground flex items-center gap-1 transition cursor-pointer"
+            >
+              <Tag className="w-3 h-3 text-muted-foreground/80" />
+              <span>{mostrarTags ? 'Ocultar etiqueta' : tag ? `#${tag}` : '+ Etiqueta'}</span>
+              <ChevronDown className={`w-3 h-3 transition-transform ${mostrarTags ? 'rotate-180' : ''}`} />
+            </button>
+          )}
+        </label>
 
         <div className="grid grid-cols-3 gap-2">
           {categorias.map((cat) => {
@@ -59,13 +69,13 @@ export function RecordCategoryChips({
                 key={cat.id}
                 type="button"
                 onClick={() => onSelectCategoria(cat)}
-                className={`p-2 rounded-xl text-xs font-medium border transition cursor-pointer ${
+                className={`py-2 px-2.5 rounded-xl text-xs font-semibold border transition-all active:scale-[0.98] cursor-pointer ${
                   isSelected
-                    ? 'bg-foreground text-background border-foreground font-semibold shadow-xs'
-                    : 'bg-background text-foreground/80 border-border hover:border-foreground/40 hover:bg-muted/30'
+                    ? 'bg-foreground text-background border-foreground shadow-xs'
+                    : 'bg-background text-muted-foreground border-border/80 hover:border-foreground/40 hover:text-foreground'
                 }`}
               >
-                <div className="flex items-center gap-1.5 font-semibold text-xs">
+                <div className="flex items-center justify-center gap-1.5">
                   {renderIcon(cat.nombre)}
                   <span className="truncate">{cat.nombre}</span>
                 </div>
@@ -75,55 +85,38 @@ export function RecordCategoryChips({
         </div>
       </div>
 
-    {/* 2. Minitag específico */ }
-  {
-    onSelectTag && (
-      <div className="p-2.5 rounded-xl bg-muted/30 border border-border/60 space-y-1.5">
-        <div className="flex items-center justify-between">
-          <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1">
-            <Tag className="w-3 h-3" />
-            <span>Minitag específico:</span>
-          </span>
-          {tag && (
-            <button
-              type="button"
-              onClick={() => onSelectTag('')}
-              className="text-[10px] text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              Limpiar
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-          {sugerencias.map((sug) => {
-            const isSelected = tag.toLowerCase() === sug.toLowerCase();
-            return (
-              <button
-                key={sug}
-                type="button"
-                onClick={() => onSelectTag(isSelected ? '' : sug)}
-                className={`px-2 py-0.5 rounded-lg text-[11px] font-medium border shrink-0 transition cursor-pointer ${isSelected
-                    ? 'bg-foreground text-background border-foreground font-semibold shadow-2xs'
-                    : 'bg-background text-muted-foreground border-border/70 hover:text-foreground hover:bg-muted/50'
+      {/* 2. Minitag opcional y desplegable */}
+      {mostrarTags && onSelectTag && (
+        <div className="p-2.5 rounded-xl bg-muted/30 border border-border/60 space-y-1.5 animate-in fade-in duration-150">
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+            {sugerencias.map((sug) => {
+              const isSelected = tag.toLowerCase() === sug.toLowerCase();
+              return (
+                <button
+                  key={sug}
+                  type="button"
+                  onClick={() => onSelectTag(isSelected ? '' : sug)}
+                  className={`px-2 py-0.5 rounded-lg text-[10px] font-medium border shrink-0 transition cursor-pointer ${
+                    isSelected
+                      ? 'bg-foreground text-background border-foreground font-semibold shadow-2xs'
+                      : 'bg-background text-muted-foreground border-border/70 hover:text-foreground'
                   }`}
-              >
-                #{sug}
-              </button>
-            );
-          })}
-        </div>
+                >
+                  #{sug}
+                </button>
+              );
+            })}
+          </div>
 
-        <input
-          type="text"
-          value={tag}
-          onChange={(e) => onSelectTag(e.target.value)}
-          placeholder="O escribe un minitag personalizado (ej: Supermercado, Alquiler...)"
-          className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border/70 text-foreground text-xs outline-none focus:border-foreground"
-        />
-      </div>
-    )
-  }
-    </div >
+          <input
+            type="text"
+            value={tag}
+            onChange={(e) => onSelectTag(e.target.value)}
+            placeholder="O escribe una etiqueta (ej: Supermercado, Almuerzo...)"
+            className="w-full px-2.5 py-1.5 rounded-lg bg-background border border-border/70 text-foreground text-xs outline-none focus:border-foreground placeholder:text-muted-foreground/50"
+          />
+        </div>
+      )}
+    </div>
   );
 }

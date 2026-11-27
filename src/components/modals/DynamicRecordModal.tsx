@@ -92,27 +92,16 @@ export function DynamicRecordModal() {
         />
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-4">
-          <RecordAmountSection
-            moneda={moneda}
-            setMoneda={setMoneda}
-            montoInput={montoInput}
-            setMontoInput={setMontoInput}
-            tipoCambioInput={tipoCambioInput}
-            setTipoCambioInput={setTipoCambioInput}
-            montoSoles={montoSoles}
-            amountInputRef={amountInputRef}
-            handleAddAmount={handleAddAmount}
-            handleClearAmount={handleClearAmount}
-          />
-
+          {/* 1. Descripción / Concepto (Primero para no olvidar el detalle) */}
           <div className="space-y-1.5">
-            <label className="text-xs font-medium text-foreground flex items-center justify-between">
-              <span>Descripción / Concepto:</span>
-              <span className="text-[10px] text-muted-foreground">Requerido</span>
+            <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+              <span>¿Qué compraste o gastaste? (Concepto):</span>
+              <span className="text-[10px] text-muted-foreground font-normal">Requerido</span>
             </label>
             <input
               type="text"
               required
+              autoFocus
               value={concepto}
               onChange={(e) => setConcepto(e.target.value)}
               placeholder={
@@ -128,6 +117,16 @@ export function DynamicRecordModal() {
             />
           </div>
 
+          {/* 2. Categoría de Presupuesto 50/30/20 y Etiqueta */}
+          <RecordCategoryChips
+            categorias={categorias}
+            categoriaId={categoriaId}
+            onSelectCategoria={handleSelectCategoria}
+            tag={tag}
+            onSelectTag={setTag}
+          />
+
+          {/* 3. Forma de Pago y Cuotas */}
           <RecordPaymentDetails
             tipoActivo={tipoActivo}
             tipoIngreso={tipoIngreso}
@@ -151,7 +150,8 @@ export function DynamicRecordModal() {
             previewTarjeta={previewTarjeta}
           />
 
-          {tipoActivo !== 'INGRESO' && (
+          {/* 4. Fuente de Ingreso Asignada (Sólo si existen MÚLTIPLES fuentes de ingreso) */}
+          {tipoActivo !== 'INGRESO' && ingresos.length > 1 && (
             <RecordIngresoAsignadoSelector
               ingresos={ingresos}
               ingresoId={ingresoId}
@@ -160,14 +160,7 @@ export function DynamicRecordModal() {
             />
           )}
 
-          <RecordCategoryChips
-            categorias={categorias}
-            categoriaId={categoriaId}
-            onSelectCategoria={handleSelectCategoria}
-            tag={tag}
-            onSelectTag={setTag}
-          />
-
+          {/* 5. Fecha y Estado Inicial */}
           <RecordDateAndStatus
             tipoActivo={tipoActivo}
             fecha={fecha}
@@ -179,6 +172,27 @@ export function DynamicRecordModal() {
             setEstadoGasto={setEstadoGasto}
           />
 
+          {/* 6. MONTO FINAL (Cierre del registro antes de guardar) */}
+          <div className="space-y-1.5 pt-1">
+            <label className="text-xs font-semibold text-foreground flex items-center justify-between">
+              <span>Monto total del egreso:</span>
+              <span className="text-[10px] text-muted-foreground font-normal">Final</span>
+            </label>
+            <RecordAmountSection
+              moneda={moneda}
+              setMoneda={setMoneda}
+              montoInput={montoInput}
+              setMontoInput={setMontoInput}
+              tipoCambioInput={tipoCambioInput}
+              setTipoCambioInput={setTipoCambioInput}
+              montoSoles={montoSoles}
+              amountInputRef={amountInputRef}
+              handleAddAmount={handleAddAmount}
+              handleClearAmount={handleClearAmount}
+            />
+          </div>
+
+          {/* 7. Notas opcionales y Botones de Guardado */}
           <RecordNotesAndFooter
             tipoActivo={tipoActivo}
             notas={notas}
