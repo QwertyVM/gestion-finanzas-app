@@ -28,6 +28,8 @@ interface PrestamoModalFormFieldsProps {
   setCuotaInicial: (v: string) => void;
   tea: string;
   setTea: (v: string) => void;
+  diaPago?: string;
+  setDiaPago?: (v: string) => void;
   periodoInicio: string;
   setPeriodoInicio: (v: string) => void;
 }
@@ -56,6 +58,8 @@ export function PrestamoModalFormFields({
   setCuotaInicial,
   tea,
   setTea,
+  diaPago = '25',
+  setDiaPago,
   periodoInicio,
   setPeriodoInicio,
 }: PrestamoModalFormFieldsProps) {
@@ -137,7 +141,23 @@ export function PrestamoModalFormFields({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="space-y-1.5">
+          <label className="font-semibold text-foreground">
+            Día de Pago del Mes:
+          </label>
+          <input
+            type="number"
+            min="1"
+            max="31"
+            required
+            value={diaPago}
+            onChange={(e) => setDiaPago ? setDiaPago(e.target.value) : undefined}
+            placeholder="Ej: 25"
+            className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground font-mono font-medium text-xs"
+          />
+        </div>
+
         <div className="space-y-1.5">
           <label className="font-semibold text-foreground">
             Tasa TEA (% anual):
@@ -148,13 +168,13 @@ export function PrestamoModalFormFields({
             required
             value={tea}
             onChange={(e) => setTea(e.target.value)}
-            className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground"
+            className="w-full px-3 py-2 rounded-xl bg-background border border-border outline-none focus:ring-2 focus:ring-purple-500 text-foreground text-xs"
           />
         </div>
 
         <div className="space-y-1.5">
           <label className="font-semibold text-foreground">
-            Mes en que empieza a pagar:
+            Mes primer pago:
           </label>
           <MonthYearPicker
             value={periodoInicio}

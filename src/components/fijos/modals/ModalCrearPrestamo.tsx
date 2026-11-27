@@ -31,6 +31,7 @@ export function ModalCrearPrestamo({
   const [cuotasTotales, setCuotasTotales] = useState('24');
   const [cuotaInicial, setCuotaInicial] = useState('1');
   const [tea, setTea] = useState('14.50');
+  const [diaPago, setDiaPago] = useState('25');
   const [periodoInicio, setPeriodoInicio] = useState(periodo);
   const [loading, setLoading] = useState(false);
 
@@ -75,7 +76,7 @@ export function ModalCrearPrestamo({
           tipoCambio: tcFinal,
           cuotasTotales: parseInt(cuotasTotales, 10) || 1,
           cuotaInicial: parseInt(cuotaInicial, 10) || 1,
-          diaPago: 30,
+          diaPago: Math.min(31, Math.max(1, parseInt(diaPago, 10) || 25)),
           tasaInteresAnual: parseFloat(tea) || 14.50,
           periodoInicio: periodoInicio || periodo,
         }),
@@ -138,6 +139,8 @@ export function ModalCrearPrestamo({
             setCuotaInicial={setCuotaInicial}
             tea={tea}
             setTea={setTea}
+            diaPago={diaPago}
+            setDiaPago={setDiaPago}
             periodoInicio={periodoInicio}
             setPeriodoInicio={setPeriodoInicio}
           />

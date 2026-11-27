@@ -32,6 +32,7 @@ export function ModalEditarPrestamo({
   const [totalUSD, setTotalUSD] = useState('');
   const [tc, setTc] = useState(configTc.toString());
   const [tea, setTea] = useState('14.50');
+  const [diaPago, setDiaPago] = useState('25');
   const [mesDesde, setMesDesde] = useState(periodo);
   const [loading, setLoading] = useState(false);
 
@@ -44,6 +45,7 @@ export function ModalEditarPrestamo({
       setCuotaActual(prestamo.cuotaActual ? prestamo.cuotaActual.toString() : '1');
       setMontoCuota(prestamo.montoCuota ? prestamo.montoCuota.toString() : '');
       setTea(prestamo.tasaInteresAnual ? prestamo.tasaInteresAnual.toString() : '14.50');
+      setDiaPago(prestamo.diaPago ? prestamo.diaPago.toString() : '25');
       setMesDesde(periodo);
 
       const isUsd = prestamo.monedaOriginal === 'USD' || (prestamo.concepto && prestamo.concepto.includes('$'));
@@ -98,7 +100,7 @@ export function ModalEditarPrestamo({
           cuotasTotales: parseInt(cuotasTotales, 10) || undefined,
           cuotaActual: parseInt(cuotaActual, 10) || undefined,
           montoCuota: cuotaSoles,
-          diaPago: 30,
+          diaPago: Math.min(31, Math.max(1, parseInt(diaPago, 10) || 25)),
           tasaInteresAnual: parseFloat(tea),
           mesDesde,
         }),
@@ -166,6 +168,8 @@ export function ModalEditarPrestamo({
             setCuotaInicial={setCuotaActual}
             tea={tea}
             setTea={setTea}
+            diaPago={diaPago}
+            setDiaPago={setDiaPago}
             periodoInicio={mesDesde}
             setPeriodoInicio={setMesDesde}
           />
