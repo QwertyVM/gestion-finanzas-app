@@ -31,6 +31,7 @@ interface ExecutiveGeneralChartsProps {
   datosFlujoAnual: FlujoAnualItem[];
   totalEgresos: number;
   moneda: string;
+  onSelectSlice?: (nombre: string) => void;
 }
 
 export function ExecutiveGeneralCharts({
@@ -38,6 +39,7 @@ export function ExecutiveGeneralCharts({
   datosFlujoAnual,
   totalEgresos,
   moneda,
+  onSelectSlice,
 }: ExecutiveGeneralChartsProps) {
   const CustomBarTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload || !payload.length) return null;
@@ -67,6 +69,7 @@ export function ExecutiveGeneralCharts({
         distribucionEgresos={distribucionEgresos}
         totalEgresos={totalEgresos}
         moneda={moneda}
+        onSelectSlice={onSelectSlice}
       />
 
       {/* FLUJO DE CAJA ANUAL */}

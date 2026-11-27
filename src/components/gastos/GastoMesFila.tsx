@@ -113,12 +113,17 @@ export function GastoMesFila({
         )}
       </td>
 
-      {/* 6. Soles (S/) */}
+      {/* 6. Monto consolidado */}
       <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
         {gasto.monedaOriginal === 'USD' ? (
-          <span className="text-muted-foreground/60 font-normal text-xs" title={`Equivalente al TC ${gasto.tipoCambio || 4.0}`}>
-            ≈ {formatMoney(gasto.monto, moneda)}
-          </span>
+          <div>
+            <div className="font-semibold text-foreground">
+              ${(gasto.montoOriginal != null ? gasto.montoOriginal : (gasto.monto / (gasto.tipoCambio || 4.0))).toFixed(2)} USD
+            </div>
+            <div className="text-[10px] text-muted-foreground/80 font-normal">
+              ≈ {formatMoney(gasto.monto, moneda)}
+            </div>
+          </div>
         ) : (
           <span className="font-semibold text-foreground">
             {formatMoney(gasto.monto, moneda)}
@@ -126,18 +131,7 @@ export function GastoMesFila({
         )}
       </td>
 
-      {/* 7. Dólares ($) */}
-      <td className="py-2.5 px-3 text-right whitespace-nowrap font-mono text-xs sm:text-sm tabular-nums">
-        {gasto.monedaOriginal === 'USD' ? (
-          <span className="font-semibold text-foreground">
-            ${(gasto.montoOriginal != null ? gasto.montoOriginal : (gasto.monto / (gasto.tipoCambio || 4.0))).toFixed(2)}
-          </span>
-        ) : (
-          <span className="text-muted-foreground/40 font-normal">—</span>
-        )}
-      </td>
-
-      {/* 8. Estado */}
+      {/* 7. Estado */}
       <td className="py-2.5 px-3 text-center whitespace-nowrap">
         <span
           className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border ${

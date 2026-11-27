@@ -38,6 +38,10 @@ interface DashboardEgresosSectionProps {
   setDragOverId: (id: string | null) => void;
   handleDrop: (targetId: string, e: React.DragEvent) => Promise<void>;
   mostrarDistribucionCategorias?: boolean;
+  busquedaTexto?: string;
+  onBuscarTexto?: (t: string) => void;
+  onToggleColapsarTodas?: (colapsar: boolean) => void;
+  estanTodasColapsadas?: boolean;
 }
 
 export function DashboardEgresosSection({
@@ -71,6 +75,10 @@ export function DashboardEgresosSection({
   setDragOverId,
   handleDrop,
   mostrarDistribucionCategorias = true,
+  busquedaTexto,
+  onBuscarTexto,
+  onToggleColapsarTodas,
+  estanTodasColapsadas,
 }: DashboardEgresosSectionProps) {
   return (
     <div className="space-y-4">
@@ -110,6 +118,10 @@ export function DashboardEgresosSection({
             hasItems={conteoEgresosFiltrados > 0}
             moneda={moneda}
             mostrarDistribucionCategorias={mostrarDistribucionCategorias}
+            busquedaTexto={busquedaTexto}
+            onBuscarTexto={onBuscarTexto}
+            onToggleColapsarTodas={onToggleColapsarTodas}
+            estanTodasColapsadas={estanTodasColapsadas}
           />
 
           {/* Listado de Tablas por Sección o Empty State */}
@@ -140,6 +152,7 @@ export function DashboardEgresosSection({
                   moneda={moneda}
                   draggedId={draggedId}
                   dragOverId={dragOverId}
+                  busquedaTexto={busquedaTexto}
                   onDragStart={(id, e) => {
                     e.dataTransfer.setData('text/plain', id);
                     e.dataTransfer.effectAllowed = 'move';

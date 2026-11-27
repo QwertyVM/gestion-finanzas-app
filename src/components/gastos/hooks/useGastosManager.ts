@@ -9,6 +9,11 @@ import { toast } from 'sonner';
 export function useGastosManager() {
   const {
     periodo,
+    irMesAnterior,
+    irMesSiguiente,
+    puedeIrMesAnterior,
+    prefetchMesAnterior,
+    prefetchMesSiguiente,
     resumen,
     loading,
     refresh,
@@ -22,6 +27,7 @@ export function useGastosManager() {
   const [comprasCuotas, setComprasCuotas] = useState<any[]>([]);
   const [loadingCuotas, setLoadingCuotas] = useState(false);
   const [compraDesplegada, setCompraDesplegada] = useState<string | null>(null);
+  const [compraParaEliminar, setCompraParaEliminar] = useState<any | null>(null);
   const [deletingCompraId, setDeletingCompraId] = useState<string | null>(null);
 
   const [gastoParaEliminar, setGastoParaEliminar] = useState<any | null>(null);
@@ -29,6 +35,7 @@ export function useGastosManager() {
   const [detalleGasto, setDetalleGasto] = useState<DetalleItemData | null>(null);
 
   const [filtroEstado, setFiltroEstado] = useState<string>('PENDIENTE');
+  const [filtroTarjeta, setFiltroTarjeta] = useState<string>('TODAS');
   const [busqueda, setBusqueda] = useState<string>('');
 
   const cargarComprasCuotas = useCallback(async () => {
@@ -115,6 +122,13 @@ export function useGastosManager() {
 
     return todos.filter((item) => {
       if (filtroEstado !== 'TODOS' && item.estado !== filtroEstado) return false;
+      if (filtroTarjeta !== 'TODAS') {
+        if (filtroTarjeta === 'DIRECTO') {
+          if (item.metodoPago === 'TARJETA_CREDITO') return false;
+        } else {
+          if (item.tarjetaNombre !== filtroTarjeta) return false;
+        }
+      }
       if (busqueda.trim()) {
         const term = busqueda.toLowerCase().trim();
         const matchConcepto = item.concepto?.toLowerCase().includes(term);
@@ -124,7 +138,7 @@ export function useGastosManager() {
       }
       return true;
     });
-  }, [resumen, filtroEstado, busqueda]);
+  }, [resumen, filtroEstado, filtroTarjeta, busqueda]);
 
   const handleCambiarEstadoItem = async (id: string, nuevoEstado: string) => {
     try {
@@ -142,7 +156,6 @@ export function useGastosManager() {
   };
 
   const handleEliminarGastoDirecto = async (id: string, conceptoTexto: string, eliminarTodaLaSerie = false) => {
-    if (!eliminarTodaLaSerie && !confirm(`¿Eliminar "${conceptoTexto}"?`)) return;
     try {
       setEliminandoGasto(true);
       const url = eliminarTodaLaSerie ? `/api/gastos?id=${id}&eliminarSerie=true` : `/api/gastos?id=${id}`;
@@ -161,13 +174,13 @@ export function useGastosManager() {
   };
 
   const handleEliminarCompraCuotasCompleta = async (compra: any) => {
-    if (!confirm(`¿Eliminar TODA la compra "${compra.conceptoBase}"?\n\nSe eliminarán las ${compra.totalRegistrosEnDB} cuotas de todos los meses.`)) return;
     try {
       setDeletingCompraId(compra.padreId);
       const res = await fetch(`/api/gastos/compras-cuotas?padreId=${compra.padreId}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Error al eliminar');
       const data = await res.json();
       toast.success(`"${compra.conceptoBase}" eliminada (${data.count} registros)`);
+      setCompraParaEliminar(null);
       await refresh();
       await cargarComprasCuotas();
     } catch (err: any) {
@@ -379,6 +392,11 @@ export function useGastosManager() {
 
   return {
     periodo,
+    irMesAnterior,
+    irMesSiguiente,
+    puedeIrMesAnterior,
+    prefetchMesAnterior,
+    prefetchMesSiguiente,
     resumen,
     loading,
     refresh,
@@ -392,6 +410,8 @@ export function useGastosManager() {
     loadingCuotas,
     compraDesplegada,
     setCompraDesplegada,
+    compraParaEliminar,
+    setCompraParaEliminar,
     deletingCompraId,
     gastoParaEliminar,
     setGastoParaEliminar,
@@ -400,6 +420,8 @@ export function useGastosManager() {
     setDetalleGasto,
     filtroEstado,
     setFiltroEstado,
+    filtroTarjeta,
+    setFiltroTarjeta,
     busqueda,
     setBusqueda,
     moneda,

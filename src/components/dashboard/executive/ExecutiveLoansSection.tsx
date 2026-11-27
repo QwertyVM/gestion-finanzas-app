@@ -70,6 +70,11 @@ export function ExecutiveLoansSection({ prestamosActivos, moneda }: ExecutiveLoa
                         {p.banco}
                       </span>
                       <span className="text-[10px] text-muted-foreground font-mono">Día {p.diaPago}</span>
+                      {p.monedaOriginal === 'USD' && p.montoOriginal && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-300/40">
+                          ${p.montoOriginal.toFixed(2)} USD
+                        </span>
+                      )}
                     </div>
                     <h4 className="font-semibold text-xs text-foreground truncate">{p.concepto}</h4>
                   </div>

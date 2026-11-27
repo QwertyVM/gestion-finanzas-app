@@ -13,6 +13,7 @@ export function FloatingSumBar() {
   const [loading, setLoading] = useState(false);
   const [menuCatOpen, setMenuCatOpen] = useState(false);
   const [menuIngresoOpen, setMenuIngresoOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [categorias, setCategorias] = useState<Array<{ id: string; nombre: string }>>([]);
 
   if (selectedGastoIds.length === 0) return null;
@@ -88,7 +89,7 @@ export function FloatingSumBar() {
   };
 
   return (
-    <div className="fixed bottom-20 md:bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[96vw] bg-zinc-950/95 text-zinc-100 backdrop-blur-md border border-zinc-800 shadow-2xl rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 sm:gap-4 transition-all animate-in fade-in slide-in-from-bottom-3">
+    <div className="fixed bottom-24 md:bottom-6 left-1/2 -translate-x-1/2 z-50 w-auto max-w-[96vw] bg-zinc-950/95 text-zinc-100 backdrop-blur-md border border-zinc-800 shadow-2xl rounded-2xl px-3 sm:px-4 py-2 sm:py-2.5 flex items-center gap-2 sm:gap-4 transition-all animate-in fade-in slide-in-from-bottom-3">
       {/* Información de Sumatoria */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 text-xs whitespace-nowrap">
         <span className="text-zinc-400 text-[11px] sm:text-xs">
@@ -151,19 +152,37 @@ export function FloatingSumBar() {
           onSelectIncome={handleAsignarIngresoMasivo}
         />
 
-        <button
-          onClick={() => {
-            if (confirm(`¿Eliminar los ${selectedGastoIds.length} gastos seleccionados?`)) {
-              executeMasivoAction({ action: 'eliminar' }, `${selectedGastoIds.length} gastos eliminados`);
-            }
-          }}
-          disabled={loading}
-          className="p-1 sm:p-1.5 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 rounded-lg text-xs transition disabled:opacity-50"
-          title="Eliminar seleccionados"
-          aria-label="Eliminar seleccionados"
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
+        {confirmDelete ? (
+          <div className="flex items-center gap-1.5 bg-rose-950/80 border border-rose-800/80 px-2 py-0.5 rounded-lg text-xs animate-in fade-in">
+            <span className="text-[11px] text-rose-200 font-medium">¿Eliminar {selectedGastoIds.length}?</span>
+            <button
+              onClick={() => {
+                setConfirmDelete(false);
+                executeMasivoAction({ action: 'eliminar' }, `${selectedGastoIds.length} gastos eliminados`);
+              }}
+              disabled={loading}
+              className="px-1.5 py-0.5 bg-rose-600 hover:bg-rose-500 text-white rounded text-[10px] font-bold transition cursor-pointer"
+            >
+              Sí
+            </button>
+            <button
+              onClick={() => setConfirmDelete(false)}
+              className="px-1.5 py-0.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 rounded text-[10px] transition cursor-pointer"
+            >
+              No
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => setConfirmDelete(true)}
+            disabled={loading}
+            className="p-1 sm:p-1.5 hover:bg-zinc-800 text-zinc-400 hover:text-rose-400 rounded-lg text-xs transition disabled:opacity-50 cursor-pointer"
+            title="Eliminar seleccionados"
+            aria-label="Eliminar seleccionados"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        )}
 
         <button
           onClick={clearSelection}

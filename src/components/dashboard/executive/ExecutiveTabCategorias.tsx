@@ -36,13 +36,16 @@ export function ExecutiveTabCategorias({
 }: ExecutiveTabCategoriasProps) {
   return (
     <div className="space-y-6">
+      {/* 1. KPIs Superiores */}
       <ExecutiveCategoriasKpis metricasMacro={metricasMacro} moneda={moneda} />
 
+      {/* 2. Alertas del Consultor */}
       <AlertasConsultorCategorias
         alertas={resumen.saludFinanciera?.alertasCategorias}
         moneda={moneda}
       />
 
+      {/* 3. Gráficos de Categorías */}
       <ExecutiveCategoriasCharts
         todasCategorias={todasCategorias}
         categoriaSeleccionadaId={categoriaSeleccionadaId}
@@ -50,23 +53,31 @@ export function ExecutiveTabCategorias({
         moneda={moneda}
       />
 
-      <ExecutiveCategoriasExplorer
-        categorias={categoriasFiltradas}
-        busqueda={busquedaCat}
-        onSearchChange={onSearchChange}
-        selectedCategoriaId={categoriaSeleccionadaId}
-        onSelectCategoria={onSelectCategoria}
-        moneda={moneda}
-      />
+      {/* 4. Layout en 2 Columnas para Explorador & Detalle (Reduce Scroll Vertical) */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        <div className={categoriaSeleccionada ? 'lg:col-span-7 space-y-6' : 'lg:col-span-12'}>
+          <ExecutiveCategoriasExplorer
+            categorias={categoriasFiltradas}
+            busqueda={busquedaCat}
+            onSearchChange={onSearchChange}
+            selectedCategoriaId={categoriaSeleccionadaId}
+            onSelectCategoria={onSelectCategoria}
+            moneda={moneda}
+          />
+        </div>
 
-      {categoriaSeleccionada && (
-        <ExecutiveCategoriaDetail
-          categoria={categoriaSeleccionada}
-          onClose={() => onSelectCategoria(null)}
-          moneda={moneda}
-        />
-      )}
+        {categoriaSeleccionada && (
+          <div className="lg:col-span-5 sticky top-20">
+            <ExecutiveCategoriaDetail
+              categoria={categoriaSeleccionada}
+              onClose={() => onSelectCategoria(null)}
+              moneda={moneda}
+            />
+          </div>
+        )}
+      </div>
 
+      {/* 5. Matriz Estratégica Completa */}
       <ExecutiveCategoriasMatrix
         categorias={todasCategorias}
         selectedCategoriaId={categoriaSeleccionadaId}

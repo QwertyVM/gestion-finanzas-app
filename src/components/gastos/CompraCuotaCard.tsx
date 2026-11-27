@@ -162,7 +162,7 @@ export function CompraCuotaCard({
           type="button"
           disabled={isDeleting}
           onClick={() => onEliminarCompraCompleta(compra)}
-          className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 py-1.5 px-2.5 rounded-md transition flex items-center gap-1 disabled:opacity-50"
+          className="text-xs font-semibold text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 py-1.5 px-2.5 rounded-lg transition flex items-center gap-1 disabled:opacity-50 cursor-pointer"
           title="Eliminar compra completa y sus cuotas"
         >
           <Trash2 className="w-3.5 h-3.5" />

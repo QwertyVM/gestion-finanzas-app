@@ -19,6 +19,7 @@ export function useEgresosFiltros({
   const [filtroEstado, setFiltroEstado] = useState<FiltroEstado>('PENDIENTE');
   const [filtroEgreso, setFiltroEgreso] = useState<FiltroEgreso>('TODOS');
   const [filtroFuenteIngreso, setFiltroFuenteIngreso] = useState<string>('TODOS');
+  const [busquedaTexto, setBusquedaTexto] = useState<string>('');
   const [seccionesColapsadas, setSeccionesColapsadas] = useState<Record<string, boolean>>({});
 
   const toggleColapsarSeccion = (seccionId: string) => {
@@ -26,6 +27,15 @@ export function useEgresosFiltros({
       ...prev,
       [seccionId]: !prev[seccionId],
     }));
+  };
+
+  const toggleColapsarTodas = (colapsar: boolean) => {
+    setSeccionesColapsadas({
+      FIJOS: colapsar,
+      PRESTAMOS: colapsar,
+      CUOTAS: colapsar,
+      VARIABLES: colapsar,
+    });
   };
 
   // Filtrado reactivo por Clasificación
@@ -39,23 +49,36 @@ export function useEgresosFiltros({
     });
   }, [listaActivaEgresos, filtroEgreso]);
 
-  // Filtrado reactivo por Estado y Fuente de Ingreso
+  // Filtrado reactivo por Estado, Fuente de Ingreso y Búsqueda por Texto
   const egresosFiltrados = useMemo(() => {
+    const q = busquedaTexto.trim().toLowerCase();
+
     return egresosPorClasificacion.filter((item) => {
       if (filtroEstado !== 'TODOS' && item.estado !== filtroEstado) return false;
 
       if (filtroFuenteIngreso !== 'TODOS') {
         const esFiltroSueldo = filtroFuenteIngreso === sueldoPrincipal?.id || filtroFuenteIngreso === 'SUELDO';
         if (esFiltroSueldo) {
-          return item.ingresoId === sueldoPrincipal?.id || !item.ingresoId;
+          if (item.ingresoId && item.ingresoId !== sueldoPrincipal?.id) return false;
         } else {
-          return item.ingresoId === filtroFuenteIngreso;
+          if (item.ingresoId !== filtroFuenteIngreso) return false;
+        }
+      }
+
+      if (q) {
+        const matchConcepto = item.concepto?.toLowerCase().includes(q);
+        const matchTag = item.tag?.toLowerCase().includes(q);
+        const matchCategoria = item.categoria?.toLowerCase().includes(q);
+        const matchTarjeta = item.tarjetaNombre?.toLowerCase().includes(q);
+        const matchBanco = item.banco?.toLowerCase().includes(q);
+        if (!matchConcepto && !matchTag && !matchCategoria && !matchTarjeta && !matchBanco) {
+          return false;
         }
       }
 
       return true;
     });
-  }, [egresosPorClasificacion, filtroEstado, filtroFuenteIngreso, sueldoPrincipal]);
+  }, [egresosPorClasificacion, filtroEstado, filtroFuenteIngreso, sueldoPrincipal, busquedaTexto]);
 
   // Secciones estructuradas sincronizadas con backend
   const seccionesCompromisos = useMemo(() => {
@@ -138,6 +161,8 @@ export function useEgresosFiltros({
       });
   }, [egresosFiltrados, filtroEgreso, seccionesColapsadas]);
 
+  const estanTodasColapsadas = seccionesCompromisos.length > 0 && seccionesCompromisos.every((s) => s.colapsada);
+
   return {
     filtroEstado,
     setFiltroEstado,
@@ -145,8 +170,12 @@ export function useEgresosFiltros({
     setFiltroEgreso,
     filtroFuenteIngreso,
     setFiltroFuenteIngreso,
+    busquedaTexto,
+    setBusquedaTexto,
     seccionesColapsadas,
     toggleColapsarSeccion,
+    toggleColapsarTodas,
+    estanTodasColapsadas,
     egresosFiltrados,
     seccionesCompromisos,
   };

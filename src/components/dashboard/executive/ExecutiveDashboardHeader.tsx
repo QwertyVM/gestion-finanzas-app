@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Link from 'next/link';
 import { formatPeriodoLabel } from '@/lib/utils';
 import {
   ChevronLeft,
@@ -8,6 +9,8 @@ import {
   BarChart3,
   Tag,
   Layers,
+  ArrowRight,
+  Sparkles,
 } from 'lucide-react';
 import type { TabView } from './hooks/useExecutiveData';
 
@@ -57,55 +60,73 @@ export function ExecutiveDashboardHeader({
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground flex items-center gap-2">
-            <span>Dashboard Financiero</span>
+          <div className="flex items-center gap-2 flex-wrap">
+            <h1 className="text-xl font-bold tracking-tight text-foreground">
+              Dashboard Financiero
+            </h1>
+            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-muted border border-border/60 text-muted-foreground capitalize">
+              {formatPeriodoLabel(periodo)}
+            </span>
             {nivelCompromiso && badgeCompromiso && (
               <span
-                className={`text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full border ${badgeCompromiso}`}
+                className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${badgeCompromiso}`}
                 title={`Nivel de compromiso: ${porcentajeComprometido}% de egresos fijos y deudas`}
               >
                 Compromiso {nivelCompromiso}
               </span>
             )}
-          </h1>
+            {esMesEspecial && labelEspecial && (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-800 dark:text-amber-200 bg-amber-500/15 border border-amber-500/30 px-2.5 py-0.5 rounded-full">
+                <Sparkles className="w-3 h-3 text-amber-500" />
+                <span>{labelEspecial}</span>
+              </span>
+            )}
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5">
             Inteligencia visual, análisis por categorías, tags y compromisos del mes.
           </p>
         </div>
 
-        {/* Selector de Mes */}
-        <div className="inline-flex items-center gap-1 bg-muted/60 p-1 rounded-lg text-xs font-medium self-start md:self-auto">
-          <button
-            type="button"
-            onClick={irMesAnterior}
-            onMouseEnter={prefetchMesAnterior}
-            disabled={!puedeIrMesAnterior}
-            className={`p-1 rounded transition ${
-              puedeIrMesAnterior
-                ? 'hover:text-foreground text-muted-foreground cursor-pointer'
-                : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
-            }`}
-            title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
-          >
-            <ChevronLeft className="w-3.5 h-3.5" />
-          </button>
-          <span className="capitalize px-2 text-foreground font-semibold">
-            {formatPeriodoLabel(periodo)}
-          </span>
-          <button
-            type="button"
-            onClick={irMesSiguiente}
-            onMouseEnter={prefetchMesSiguiente}
-            className="p-1 hover:text-foreground text-muted-foreground rounded transition cursor-pointer"
-            title="Mes siguiente"
-          >
-            <ChevronRight className="w-3.5 h-3.5" />
-          </button>
-          {esMesEspecial && (
-            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium ml-1">
-              · {labelEspecial}
+        {/* Acciones del lado derecho: Selector móvil o enlace a finanzas-mes en desktop */}
+        <div className="flex items-center gap-2 self-start md:self-auto">
+          {/* En Móvil: Selector de navegación temporal rápido */}
+          <div className="md:hidden inline-flex items-center gap-1 bg-muted/60 p-1 rounded-xl text-xs font-medium border border-border/50">
+            <button
+              type="button"
+              onClick={irMesAnterior}
+              onMouseEnter={prefetchMesAnterior}
+              disabled={!puedeIrMesAnterior}
+              className={`p-1.5 rounded-lg transition ${
+                puedeIrMesAnterior
+                  ? 'hover:text-foreground text-muted-foreground cursor-pointer'
+                  : 'text-muted-foreground/30 cursor-not-allowed opacity-40'
+              }`}
+              title={puedeIrMesAnterior ? 'Mes anterior' : 'Primer mes con registros'}
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <span className="capitalize px-2 text-foreground font-semibold">
+              {formatPeriodoLabel(periodo)}
             </span>
-          )}
+            <button
+              type="button"
+              onClick={irMesSiguiente}
+              onMouseEnter={prefetchMesSiguiente}
+              className="p-1.5 hover:text-foreground text-muted-foreground rounded-lg transition cursor-pointer"
+              title="Mes siguiente"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {/* En Desktop: Acceso rápido a gestionar los gastos del mes */}
+          <Link
+            href="/finanzas-mes"
+            className="hidden md:inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-foreground text-background font-semibold text-xs hover:opacity-90 transition active:scale-95 shadow-2xs cursor-pointer"
+          >
+            <span>Ver finanzas del mes</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
       </div>
 
@@ -116,7 +137,7 @@ export function ExecutiveDashboardHeader({
           onClick={() => onTabChange('general')}
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
             tabActiva === 'general'
-              ? 'bg-background text-foreground shadow-xs border border-border/80'
+              ? 'bg-background text-foreground shadow-2xs border border-border/80'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
           }`}
         >
@@ -129,7 +150,7 @@ export function ExecutiveDashboardHeader({
           onClick={() => onTabChange('categorias')}
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
             tabActiva === 'categorias'
-              ? 'bg-background text-foreground shadow-xs border border-border/80'
+              ? 'bg-background text-foreground shadow-2xs border border-border/80'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
           }`}
         >
@@ -145,7 +166,7 @@ export function ExecutiveDashboardHeader({
           onClick={() => onTabChange('tags')}
           className={`flex items-center gap-2 px-3.5 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition cursor-pointer ${
             tabActiva === 'tags'
-              ? 'bg-background text-foreground shadow-xs border border-border/80'
+              ? 'bg-background text-foreground shadow-2xs border border-border/80'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
           }`}
         >

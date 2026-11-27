@@ -21,6 +21,7 @@ interface ExecutiveTabGeneralProps {
   prestamosActivos: any[];
   distribucionEgresos: any[];
   datosFlujoAnual: any[];
+  onSelectSlice?: (nombre: string) => void;
 }
 
 export function ExecutiveTabGeneral({
@@ -35,6 +36,7 @@ export function ExecutiveTabGeneral({
   prestamosActivos,
   distribucionEgresos,
   datosFlujoAnual,
+  onSelectSlice,
 }: ExecutiveTabGeneralProps) {
   return (
     <div className="space-y-6">
@@ -66,6 +68,7 @@ export function ExecutiveTabGeneral({
         datosFlujoAnual={datosFlujoAnual}
         totalEgresos={totalEgresos}
         moneda={moneda}
+        onSelectSlice={onSelectSlice}
       />
 
       {/* 5. REGLA 50 / 30 / 20 */}

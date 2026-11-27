@@ -86,6 +86,16 @@ export function SeccionEgresoCardMobile({
                   #{cleanTag}
                 </span>
               )}
+              {item.esSinIntereses && (
+                <span className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0">
+                  0% Interés
+                </span>
+              )}
+              {item.tarjetaNombre && (
+                <span className="text-[10px] font-semibold text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded border border-border/50 shrink-0">
+                  {item.tarjetaNombre}
+                </span>
+              )}
             </div>
 
             {/* Metadatos en Línea 2 */}
@@ -166,7 +176,7 @@ export function SeccionEgresoCardMobile({
           <button
             type="button"
             onClick={() => onToggleEstadoItem(item, isAdelantado ? 'PENDIENTE' : 'ADELANTADO')}
-            className={`h-7 px-2.5 rounded-lg text-[11px] font-medium transition cursor-pointer border active:scale-95 ${isAdelantado
+            className={`min-h-[36px] px-3 rounded-lg text-xs font-medium transition cursor-pointer border active:scale-95 ${isAdelantado
               ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 border-indigo-200/80 dark:border-indigo-800/50 font-semibold'
               : 'text-muted-foreground/80 hover:text-foreground hover:bg-muted/60 border-transparent'
               }`}
@@ -177,12 +187,12 @@ export function SeccionEgresoCardMobile({
           <button
             type="button"
             onClick={() => onToggleEstadoItem(item, isPagado ? 'PENDIENTE' : 'PAGADO')}
-              className={`h-7 px-3 rounded-lg text-[11px] font-semibold transition inline-flex items-center gap-1 cursor-pointer active:scale-95 ${isPagado
+            className={`min-h-[36px] px-3.5 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1 cursor-pointer active:scale-95 ${isPagado
               ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/80 dark:border-emerald-800/40 hover:bg-emerald-100/60'
               : 'bg-primary text-primary-foreground hover:opacity-90 shadow-2xs'
               }`}
           >
-            {isPagado && <Check className="w-3 h-3 stroke-[2.5]" />}
+            {isPagado && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
             <span>{isPagado ? 'Pagado' : 'Pagar'}</span>
           </button>
         </div>

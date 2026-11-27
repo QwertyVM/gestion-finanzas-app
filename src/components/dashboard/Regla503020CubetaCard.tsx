@@ -28,22 +28,25 @@ export function Regla503020CubetaCard({
   const renderDesvio = (val: number) => {
     if (Math.abs(val) <= 2) {
       return (
-        <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-0.5">
+        <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full bg-emerald-500/10 border border-emerald-500/20">
           <Check className="w-3 h-3" /> En objetivo
         </span>
       );
     }
     const positivo = val > 0;
+    const esExcesoCritico = positivo && val > 5;
     return (
       <span
-        className={`text-[10px] font-semibold inline-flex items-center gap-0.5 ${
-          positivo
-            ? 'text-amber-600 dark:text-amber-400'
-            : 'text-rose-600 dark:text-rose-400'
+        className={`text-[10px] font-bold inline-flex items-center gap-0.5 px-1.5 py-0.2 rounded-full border ${
+          esExcesoCritico
+            ? 'bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30'
+            : positivo
+            ? 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+            : 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/20'
         }`}
       >
         {positivo ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
-        {positivo ? `+${val}%` : `${val}%`}
+        {positivo ? `+${val}% sobre meta` : `${val}% bajo meta`}
       </span>
     );
   };

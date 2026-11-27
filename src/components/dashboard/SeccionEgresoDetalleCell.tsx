@@ -50,6 +50,16 @@ export function SeccionEgresoDetalleCell({
               #{cleanTag}
             </span>
         )}
+        {item.esSinIntereses && (
+          <span className="bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20 text-[10px] font-bold px-1.5 py-0.5 rounded-md shrink-0">
+            0% Interés
+          </span>
+        )}
+        {item.tarjetaNombre && (
+          <span className="hidden lg:inline-flex items-center text-[10px] font-semibold text-muted-foreground bg-secondary/50 px-1.5 py-0.5 rounded border border-border/50 shrink-0">
+            {item.tarjetaNombre}
+          </span>
+        )}
           </div>
 
       {/* Línea 2: Dot sutil regla 50/30 + Metadatos operativos + Selector de cuenta */}

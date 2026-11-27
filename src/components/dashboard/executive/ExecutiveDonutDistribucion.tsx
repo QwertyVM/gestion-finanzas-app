@@ -15,36 +15,43 @@ interface ExecutiveDonutDistribucionProps {
   distribucionEgresos: DistribucionItem[];
   totalEgresos: number;
   moneda: string;
+  onSelectSlice?: (nombre: string) => void;
 }
 
 export function ExecutiveDonutDistribucion({
   distribucionEgresos,
   totalEgresos,
   moneda,
+  onSelectSlice,
 }: ExecutiveDonutDistribucionProps) {
   const CustomPieTooltip = ({ active, payload }: any) => {
     if (!active || !payload || !payload.length) return null;
     const data = payload[0];
     const porcentaje = totalEgresos > 0 ? Math.round((data.value / totalEgresos) * 100) : 0;
     return (
-      <div className="bg-popover text-popover-foreground border border-border shadow-lg rounded-xl p-2.5 text-xs min-w-[140px]">
+      <div className="bg-popover text-popover-foreground border border-border shadow-lg rounded-xl p-2.5 text-xs min-w-[150px]">
         <div className="flex items-center gap-1.5">
           <span
             className="w-2 h-2 rounded-full shrink-0"
             style={{ backgroundColor: data.payload.color || data.color }}
           />
-          <span className="font-medium text-foreground">{data.name}</span>
+          <span className="font-semibold text-foreground">{data.name}</span>
         </div>
         <div className="mt-1 flex items-baseline justify-between gap-2 text-[11px]">
           <span className="font-mono font-bold text-foreground">{formatMoney(data.value, moneda)}</span>
           <span className="text-muted-foreground font-medium">({porcentaje}%)</span>
         </div>
+        {onSelectSlice && (
+          <p className="text-[10px] text-muted-foreground/80 mt-1 border-t border-border/40 pt-1">
+            Clic para explorar categorías
+          </p>
+        )}
       </div>
     );
   };
 
   return (
-    <div className="lg:col-span-5 bg-card border border-border/80 rounded-xl p-5 shadow-xs space-y-4 flex flex-col justify-between">
+    <div className="lg:col-span-5 bg-card border border-border/80 rounded-2xl p-5 shadow-2xs space-y-4 flex flex-col justify-between">
       <div>
         <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Distribución de Egresos
@@ -65,9 +72,11 @@ export function ExecutiveDonutDistribucion({
               outerRadius={85}
               paddingAngle={3}
               dataKey="value"
+              onClick={(entry) => onSelectSlice?.(entry.name)}
+              className="cursor-pointer outline-none"
             >
               {distribucionEgresos.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
+                <Cell key={`cell-${index}`} fill={entry.color} className="transition-all hover:opacity-80 cursor-pointer" />
               ))}
             </Pie>
             <Tooltip content={<CustomPieTooltip />} />
@@ -97,16 +106,23 @@ export function ExecutiveDonutDistribucion({
         {distribucionEgresos.map((item) => {
           const porcentaje = totalEgresos > 0 ? Math.round((item.value / totalEgresos) * 100) : 0;
           return (
-            <div key={item.name} className="p-2 rounded-lg bg-muted/40 border border-border/40">
+            <div
+              key={item.name}
+              onClick={() => onSelectSlice?.(item.name)}
+              className={`p-2 rounded-xl bg-muted/40 hover:bg-muted/70 border border-border/40 transition active:scale-95 ${
+                onSelectSlice ? 'cursor-pointer' : ''
+              }`}
+              title="Filtrar por esta clasificación"
+            >
               <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                 <span className={`w-1.5 h-1.5 rounded-full ${item.dot}`} />
-                <span className="truncate">{item.name}</span>
+                <span className="truncate font-medium text-foreground/80">{item.name}</span>
               </div>
               <div className="flex items-baseline justify-between mt-1">
-                <span className="font-mono font-medium text-foreground text-xs">
+                <span className="font-mono font-semibold text-foreground text-xs">
                   {formatMoney(item.value, moneda)}
                 </span>
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[10px] text-muted-foreground font-mono">
                   {porcentaje}%
                 </span>
               </div>

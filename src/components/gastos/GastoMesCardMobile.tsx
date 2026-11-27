@@ -32,6 +32,7 @@ export function GastoMesCardMobile({
   const esCuota = (gasto.totalCuotas || 1) > 1;
   const isPagado = gasto.estado === 'PAGADO';
   const isAdelantado = gasto.estado === 'ADELANTADO';
+  const [confirmando, setConfirmando] = React.useState(false);
 
   return (
     <div
@@ -131,45 +132,74 @@ export function GastoMesCardMobile({
           )}
         </div>
 
-        <div className="flex items-center gap-1.5">
-          <button
-            type="button"
-            onClick={() =>
-              onCambiarEstadoItem(gasto.id, isAdelantado ? 'PENDIENTE' : 'ADELANTADO')
-            }
-            className={`h-7 px-2 rounded-lg text-[11px] transition font-medium ${
-              isAdelantado
-                ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 font-semibold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
-            }`}
-          >
-            {isAdelantado ? 'Adelantado' : 'Adelantar'}
-          </button>
+        {confirmando ? (
+          <div className="inline-flex items-center gap-1.5 bg-rose-50 dark:bg-rose-950/60 border border-rose-200 dark:border-rose-900/50 rounded-lg px-2 py-1 text-xs animate-in fade-in zoom-in-95 duration-150">
+            <span className="font-semibold text-rose-700 dark:text-rose-300">¿Borrar?</span>
+            <button
+              type="button"
+              onClick={() => {
+                setConfirmando(false);
+                onClickTrash(gasto);
+              }}
+              className="px-2 py-0.5 rounded bg-rose-600 text-white font-bold hover:bg-rose-700 transition"
+            >
+              Sí
+            </button>
+            <button
+              type="button"
+              onClick={() => setConfirmando(false)}
+              className="p-1 text-muted-foreground hover:text-foreground rounded transition"
+            >
+              No
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() =>
+                onCambiarEstadoItem(gasto.id, isAdelantado ? 'PENDIENTE' : 'ADELANTADO')
+              }
+              className={`min-h-[34px] px-2.5 rounded-lg text-xs transition font-medium cursor-pointer ${
+                isAdelantado
+                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300 font-semibold'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-muted/60'
+              }`}
+            >
+              {isAdelantado ? 'Adelantado' : 'Adelantar'}
+            </button>
 
-          <button
-            type="button"
-            onClick={() =>
-              onCambiarEstadoItem(gasto.id, isPagado ? 'PENDIENTE' : 'PAGADO')
-            }
-            className={`h-7 px-2.5 rounded-lg text-[11px] font-semibold transition inline-flex items-center gap-1 ${
-              isPagado
-                ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40'
-                : 'bg-foreground text-background hover:opacity-85 shadow-xs'
-            }`}
-          >
-            {isPagado && <Check className="w-3 h-3 stroke-[2.5]" />}
-            <span>{isPagado ? 'Pagado' : 'Pagar'}</span>
-          </button>
+            <button
+              type="button"
+              onClick={() =>
+                onCambiarEstadoItem(gasto.id, isPagado ? 'PENDIENTE' : 'PAGADO')
+              }
+              className={`min-h-[34px] px-3 rounded-lg text-xs font-semibold transition inline-flex items-center gap-1 cursor-pointer ${
+                isPagado
+                  ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200/50 dark:border-emerald-800/40'
+                  : 'bg-foreground text-background hover:opacity-85 shadow-xs'
+              }`}
+            >
+              {isPagado && <Check className="w-3.5 h-3.5 stroke-[2.5]" />}
+              <span>{isPagado ? 'Pagado' : 'Pagar'}</span>
+            </button>
 
-          <button
-            type="button"
-            onClick={() => onClickTrash(gasto)}
-            className="p-1 rounded-md text-muted-foreground hover:text-rose-500 transition"
-            title="Eliminar gasto"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-        </div>
+            <button
+              type="button"
+              onClick={() => {
+                if (esCuota) {
+                  onClickTrash(gasto);
+                } else {
+                  setConfirmando(true);
+                }
+              }}
+              className="min-h-[34px] min-w-[34px] flex items-center justify-center rounded-lg text-muted-foreground hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition cursor-pointer"
+              title="Eliminar gasto"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

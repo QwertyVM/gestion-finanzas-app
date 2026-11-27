@@ -58,10 +58,10 @@ export function IngresosMesTabla({
           <div className="self-start sm:self-auto">
             <Link
               href="/presupuesto-operativo"
-              className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 hover:underline px-2 py-1 rounded-md transition"
+              className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-800 dark:text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 px-3 py-1.5 rounded-xl shadow-2xs transition active:scale-95"
             >
               <span>Planificar para vivir</span>
-              <ArrowRight className="w-3 h-3" />
+              <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           </div>
         )}
@@ -100,13 +100,12 @@ export function IngresosMesTabla({
                     <th scope="col" className="py-2.5 px-3 text-center font-semibold text-muted-foreground">Fecha</th>
                     <th scope="col" className="py-2.5 px-3 text-center font-semibold text-muted-foreground">Estado</th>
                     <th scope="col" className="py-2.5 px-3 text-right font-semibold text-muted-foreground">
-                      {esMultiple ? 'Ingreso Total' : 'Monto'}
+                      Monto
                     </th>
                     {esMultiple && (
-                      <>
-                        <th scope="col" className="py-2.5 px-3 text-right font-semibold text-muted-foreground">Gastos Asignados</th>
-                        <th scope="col" className="py-2.5 px-3 text-right font-semibold text-muted-foreground">Resto Libre</th>
-                      </>
+                      <th scope="col" className="py-2.5 px-3 font-semibold text-muted-foreground min-w-[190px]">
+                        Asignación & Liquidez
+                      </th>
                     )}
                     <th scope="col" className="py-2.5 px-3 text-right font-semibold text-muted-foreground">Acción</th>
                   </tr>

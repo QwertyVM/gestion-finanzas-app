@@ -50,6 +50,7 @@ export function ExecutiveCategoriasExplorer({
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         {categorias.map((c) => {
           const esSeleccionada = c.id === selectedCategoriaId;
+          const esGastoCero = c.totalMonto === 0;
           return (
             <div
               key={c.id}
@@ -57,6 +58,8 @@ export function ExecutiveCategoriasExplorer({
               className={`rounded-xl p-4 border transition-all cursor-pointer flex flex-col justify-between gap-3 ${
                 esSeleccionada
                   ? 'border-primary ring-2 ring-primary/20 bg-primary/5 dark:bg-primary/10'
+                  : esGastoCero
+                  ? 'border-border/40 bg-muted/20 opacity-60 hover:opacity-100 hover:border-border'
                   : 'border-border/80 bg-background hover:border-border hover:shadow-xs'
               }`}
             >

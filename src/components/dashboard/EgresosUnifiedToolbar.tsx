@@ -22,6 +22,10 @@ interface EgresosUnifiedToolbarProps {
   hasItems: boolean;
   moneda: string;
   mostrarDistribucionCategorias?: boolean;
+  busquedaTexto?: string;
+  onBuscarTexto?: (t: string) => void;
+  onToggleColapsarTodas?: (colapsar: boolean) => void;
+  estanTodasColapsadas?: boolean;
 }
 
 export function EgresosUnifiedToolbar({
@@ -41,35 +45,43 @@ export function EgresosUnifiedToolbar({
   onToggleSelectAll,
   hasItems,
   moneda,
-  mostrarDistribucionCategorias = true,
+  mostrarDistribucionCategorias = false,
+  busquedaTexto,
+  onBuscarTexto,
+  onToggleColapsarTodas,
+  estanTodasColapsadas,
 }: EgresosUnifiedToolbarProps) {
   return (
-      <div className="bg-card border border-border/70 rounded-2xl p-4 shadow-xs space-y-3">
-        {/* 1. Categorías y distribución interactiva (opcional según vista) */}
-        {mostrarDistribucionCategorias && (
-          <EgresosCategoriasBar
-            totales={totales}
-            filtroEgreso={filtroEgreso}
-            onSelectFiltroEgreso={onSelectFiltroEgreso}
-            moneda={moneda}
-          />
-        )}
-
-        {/* 2. Controles de estado, fuente y selección */}
-        <EgresosControlesBar
-          filtroEstado={filtroEstado}
-          onSelectFiltroEstado={onSelectFiltroEstado}
-          filtroFuenteIngreso={filtroFuenteIngreso}
-          onSelectFiltroFuenteIngreso={onSelectFiltroFuenteIngreso}
-          ingresosMes={ingresosMes}
-          conteoPendiente={conteoPendiente}
-          conteoAdelantado={conteoAdelantado}
-          conteoPagado={conteoPagado}
-          conteoTotal={conteoTotal}
-          isAllSelected={isAllSelected}
-          onToggleSelectAll={onToggleSelectAll}
-          hasItems={hasItems}
+    <div className="bg-card border border-border/70 rounded-2xl p-3 sm:p-3.5 shadow-2xs space-y-2.5">
+      {/* 1. Categorías y distribución interactiva (si está habilitado) */}
+      {mostrarDistribucionCategorias && (
+        <EgresosCategoriasBar
+          totales={totales}
+          filtroEgreso={filtroEgreso}
+          onSelectFiltroEgreso={onSelectFiltroEgreso}
+          moneda={moneda}
         />
-      </div>
-      );
+      )}
+
+      {/* 2. Controles de estado, búsqueda, fuente y selección */}
+      <EgresosControlesBar
+        filtroEstado={filtroEstado}
+        onSelectFiltroEstado={onSelectFiltroEstado}
+        filtroFuenteIngreso={filtroFuenteIngreso}
+        onSelectFiltroFuenteIngreso={onSelectFiltroFuenteIngreso}
+        ingresosMes={ingresosMes}
+        conteoPendiente={conteoPendiente}
+        conteoAdelantado={conteoAdelantado}
+        conteoPagado={conteoPagado}
+        conteoTotal={conteoTotal}
+        isAllSelected={isAllSelected}
+        onToggleSelectAll={onToggleSelectAll}
+        hasItems={hasItems}
+        busquedaTexto={busquedaTexto}
+        onBuscarTexto={onBuscarTexto}
+        onToggleColapsarTodas={onToggleColapsarTodas}
+        estanTodasColapsadas={estanTodasColapsadas}
+      />
+    </div>
+  );
 }

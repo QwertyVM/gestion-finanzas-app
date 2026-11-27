@@ -1,8 +1,8 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { formatMoney } from '@/lib/utils';
-import { Sparkles, ArrowRight, Wallet, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Sparkles, Wallet, CheckCircle2 } from 'lucide-react';
 
 interface GraficoLiquidezMesProps {
   totalIngresos: number;
@@ -10,6 +10,7 @@ interface GraficoLiquidezMesProps {
   totalAdelantado?: number;
   disponibleNeto: number;
   moneda: string;
+  onFiltrarCompromisos?: () => void;
 }
 
 export function GraficoLiquidezMes({
@@ -18,7 +19,10 @@ export function GraficoLiquidezMes({
   totalAdelantado = 0,
   disponibleNeto,
   moneda,
+  onFiltrarCompromisos,
 }: GraficoLiquidezMesProps) {
+  const [activeTooltip, setActiveTooltip] = useState<'egresos' | 'libre' | null>(null);
+
   // Regla de Negocio:
   // Egresos que realmente consumen el ingreso del mes (sin considerar lo pagado con ahorros previos / ADELANTADO)
   const egresosEfectivosDelMes = Math.max(0, totalEgresos - totalAdelantado);
@@ -34,7 +38,7 @@ export function GraficoLiquidezMes({
   const pctRemanente = Math.max(0, 100 - pctComprometido);
 
   return (
-    <div className="bg-card border border-border/80 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3.5">
+    <div className="bg-card border border-border/80 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3.5">
       {/* 1. Header con métricas de síntesis */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
         <div className="flex items-center gap-2">
@@ -46,7 +50,7 @@ export function GraficoLiquidezMes({
               Balance de Liquidez del Mes
             </span>
             <span className="text-[11px] text-muted-foreground">
-              Ingresos vs. Egresos netos (sin restar lo adelantado)
+              Ingresos vs. Egresos netos (sin restar lo pagado por adelantado)
             </span>
           </div>
         </div>
@@ -75,53 +79,90 @@ export function GraficoLiquidezMes({
         </div>
       </div>
 
-      {/* 2. Barra Visual Proporcional Continua */}
-      <div className="space-y-1.5">
-        <div className="h-3.5 w-full bg-muted/60 dark:bg-muted/40 rounded-full overflow-hidden flex p-0.5 gap-1 border border-border/50 shadow-inner">
+      {/* 2. Barra Visual Proporcional Continua con Micro-Tooltip Flotante */}
+      <div className="space-y-1.5 relative">
+        <div className="h-4 w-full bg-muted/60 dark:bg-muted/40 rounded-full overflow-hidden flex p-0.5 gap-1 border border-border/50 shadow-inner relative">
           {/* Segmento Egresos que consumen sueldo */}
           <div
             style={{ width: `${pctComprometido}%` }}
-            className={`h-full rounded-full transition-all duration-500 relative group cursor-pointer ${
-              pctComprometido > 90
-                ? 'bg-rose-500'
+            onClick={onFiltrarCompromisos}
+            onMouseEnter={() => setActiveTooltip('egresos')}
+            onMouseLeave={() => setActiveTooltip(null)}
+            className={`h-full rounded-full transition-all duration-300 cursor-pointer active:scale-98 ${
+              esDeficit
+                ? 'bg-rose-500 bg-[repeating-linear-gradient(45deg,transparent,transparent_6px,rgba(255,255,255,0.25)_6px,rgba(255,255,255,0.25)_12px)] animate-pulse'
+                : pctComprometido > 90
+                ? 'bg-rose-500/90 dark:bg-rose-500/80 hover:brightness-110'
                 : pctComprometido > 75
-                ? 'bg-amber-500'
-                : 'bg-sky-500 dark:bg-sky-400'
+                ? 'bg-amber-500/90 dark:bg-amber-500/80 hover:brightness-110'
+                : 'bg-sky-500/90 dark:bg-sky-400/90 hover:brightness-110'
             }`}
-            title={`Compromisos del mes: ${formatMoney(egresosEfectivosDelMes, moneda)} (${pctComprometido}%)`}
           />
 
           {/* Segmento Cuánto queda libre */}
           {!esDeficit && pctRemanente > 0 && (
             <div
               style={{ width: `${pctRemanente}%` }}
-              className="h-full rounded-full bg-emerald-500 dark:bg-emerald-400 transition-all duration-500 cursor-pointer"
-              title={`Margen Libre Disponible: ${formatMoney(remanenteReal, moneda)} (${pctRemanente}%)`}
+              onMouseEnter={() => setActiveTooltip('libre')}
+              onMouseLeave={() => setActiveTooltip(null)}
+              className="h-full rounded-full bg-emerald-500/90 dark:bg-emerald-400/90 transition-all duration-300 hover:brightness-110 cursor-pointer"
             />
           )}
         </div>
+
+        {/* Micro-tooltip flotante interactivo */}
+        {activeTooltip && (
+          <div
+            className={`absolute top-full mt-1.5 z-20 text-[11px] font-medium py-1 px-2.5 rounded-lg shadow-md border backdrop-blur-md transition-opacity pointer-events-none ${
+              activeTooltip === 'egresos'
+                ? 'left-4 bg-background text-foreground border-border'
+                : 'right-4 bg-background text-foreground border-border'
+            }`}
+          >
+            {activeTooltip === 'egresos' ? (
+              <span className="flex items-center gap-1.5">
+                <span>
+                  💳 Compromisos del mes:{' '}
+                  <strong className="font-mono text-sky-600 dark:text-sky-400">
+                    {formatMoney(egresosEfectivosDelMes, moneda)}
+                  </strong>{' '}
+                  ({pctComprometido}%)
+                </span>
+                <span className="text-[10px] text-muted-foreground/80 font-normal">· Clic para ver pendientes</span>
+              </span>
+            ) : (
+              <span>
+                🌱 Margen Libre Disponible:{' '}
+                <strong className="font-mono text-emerald-600 dark:text-emerald-400">
+                  {formatMoney(remanenteReal, moneda)}
+                </strong>{' '}
+                ({pctRemanente}%)
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 3. Leyenda Gráfica y Desglose Explícito */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs">
         {/* Total Ingresos */}
-        <div className="flex items-center justify-between sm:justify-start gap-2 bg-muted/20 px-2.5 py-1.5 rounded-lg border border-border/40">
-          <span className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
-            <span className="w-2 h-2 rounded-full bg-foreground shrink-0" />
+        <div className="flex items-center justify-between sm:justify-start gap-2 bg-emerald-50/40 dark:bg-emerald-950/20 px-2.5 py-1.5 rounded-lg border border-emerald-200/50 dark:border-emerald-800/30">
+          <span className="flex items-center gap-1.5 text-emerald-800 dark:text-emerald-300 text-[11px] font-medium">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
             Total Ingresos:
           </span>
-          <span className="font-mono font-semibold text-foreground tabular-nums">
+          <span className="font-mono font-semibold text-emerald-900 dark:text-emerald-200 tabular-nums">
             {formatMoney(totalIngresos, moneda)}
           </span>
         </div>
 
         {/* Egresos del Mes (descontado adelantado) */}
-        <div className="flex items-center justify-between sm:justify-start gap-2 bg-muted/20 px-2.5 py-1.5 rounded-lg border border-border/40">
-          <span className="flex items-center gap-1.5 text-muted-foreground text-[11px]">
+        <div className="flex items-center justify-between sm:justify-start gap-2 bg-sky-50/40 dark:bg-sky-950/20 px-2.5 py-1.5 rounded-lg border border-sky-200/50 dark:border-sky-800/30">
+          <span className="flex items-center gap-1.5 text-sky-800 dark:text-sky-300 text-[11px] font-medium">
             <span className="w-2 h-2 rounded-full bg-sky-500 shrink-0" />
             Egresos del Mes:
           </span>
-          <span className="font-mono font-semibold text-foreground tabular-nums">
+          <span className="font-mono font-semibold text-sky-900 dark:text-sky-200 tabular-nums">
             {formatMoney(egresosEfectivosDelMes, moneda)}
           </span>
         </div>

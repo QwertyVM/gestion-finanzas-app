@@ -88,6 +88,10 @@ export function ExecutiveDashboardClient() {
           prestamosActivos={prestamosActivos}
           deudaTotalConsolidada={deudaTotalConsolidada}
           moneda={moneda}
+          onSelectSlice={(nombre) => {
+            setBusquedaCat(nombre.replace(/compras|gastos/gi, '').trim());
+            setTabActiva('categorias');
+          }}
         />
       )}
 

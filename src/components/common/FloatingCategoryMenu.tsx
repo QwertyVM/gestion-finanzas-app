@@ -31,7 +31,7 @@ export function FloatingCategoryMenu({
       </button>
 
       {open && (
-        <div className="absolute bottom-full mb-2 left-0 sm:left-auto sm:right-0 bg-zinc-900 border border-zinc-700 shadow-xl rounded-xl p-1.5 min-w-[200px] z-50 text-xs space-y-1 animate-in fade-in zoom-in-95">
+        <div className="absolute bottom-full mb-2 left-0 sm:left-auto sm:right-0 bg-zinc-900 border border-zinc-700 shadow-xl rounded-xl p-1.5 min-w-[200px] max-h-60 overflow-y-auto no-scrollbar z-50 text-xs space-y-1 animate-in fade-in zoom-in-95">
           <span className="text-[10px] uppercase font-semibold text-zinc-400 px-2 py-0.5 block">
             Asignar Categoría:
           </span>

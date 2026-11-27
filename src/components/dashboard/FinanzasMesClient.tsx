@@ -63,6 +63,7 @@ export function FinanzasMesClient() {
         totalAdelantado={d.resumen.totalAdelantado}
         disponibleNeto={d.disponibleNeto}
         moneda={d.moneda}
+        onFiltrarCompromisos={() => d.setFiltroEstado('PENDIENTE')}
       />
 
       {/* 3. INGRESOS DEL MES (REGISTRO Y GESTIÓN DE ENTRADAS) */}
@@ -112,6 +113,10 @@ export function FinanzasMesClient() {
         setDragOverId={d.setDragOverId}
         handleDrop={d.handleDrop}
         mostrarDistribucionCategorias={false}
+        busquedaTexto={d.busquedaTexto}
+        onBuscarTexto={d.setBusquedaTexto}
+        onToggleColapsarTodas={d.toggleColapsarTodas}
+        estanTodasColapsadas={d.estanTodasColapsadas}
       />
 
       {/* 4. MODALES DEL DASHBOARD */}

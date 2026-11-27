@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { formatMoney, formatPeriodoLabel } from '@/lib/utils';
 import { GastoMesFila } from './GastoMesFila';
 import { GastoMesCardMobile } from './GastoMesCardMobile';
+import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface GastosMesTablaProps {
   gastos: any[];
@@ -17,6 +18,9 @@ interface GastosMesTablaProps {
   onClickTrash: (gasto: any) => void;
 }
 
+type SortField = 'concepto' | 'categoria' | 'fecha' | 'monto' | 'estado';
+type SortOrder = 'asc' | 'desc';
+
 export function GastosMesTabla({
   gastos,
   selectedGastoIds,
@@ -28,13 +32,47 @@ export function GastosMesTabla({
   onCambiarEstadoItem,
   onClickTrash,
 }: GastosMesTablaProps) {
+  const [sortField, setSortField] = useState<SortField | null>(null);
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortOrder === 'asc') setSortOrder('desc');
+      else {
+        setSortField(null);
+        setSortOrder('asc');
+      }
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const sortedGastos = useMemo(() => {
+    if (!sortField) return gastos;
+    return [...gastos].sort((a, b) => {
+      let valA: any = a[sortField];
+      let valB: any = b[sortField];
+
+      if (sortField === 'fecha') {
+        valA = new Date(a.fechaGasto).getTime();
+        valB = new Date(b.fechaGasto).getTime();
+      } else if (sortField === 'monto') {
+        valA = a.monto || 0;
+        valB = b.monto || 0;
+      } else if (typeof valA === 'string') {
+        valA = valA.toLowerCase();
+        valB = (valB || '').toLowerCase();
+      }
+
+      if (valA < valB) return sortOrder === 'asc' ? -1 : 1;
+      if (valA > valB) return sortOrder === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [gastos, sortField, sortOrder]);
+
   const totalMonto = useMemo(
     () => gastos.reduce((sum, g) => sum + (g.monto || 0), 0),
-    [gastos]
-  );
-
-  const totalMontoSoles = useMemo(
-    () => gastos.filter((g) => g.monedaOriginal !== 'USD').reduce((sum, g) => sum + (g.monto || 0), 0),
     [gastos]
   );
 
@@ -63,11 +101,22 @@ export function GastosMesTabla({
     );
   }
 
+  const renderSortIcon = (field: SortField) => {
+    if (sortField !== field) {
+      return <ArrowUpDown className="w-3 h-3 opacity-40 ml-1 inline-block" />;
+    }
+    return sortOrder === 'asc' ? (
+      <ArrowUp className="w-3 h-3 text-foreground ml-1 inline-block" />
+    ) : (
+      <ArrowDown className="w-3 h-3 text-foreground ml-1 inline-block" />
+    );
+  };
+
   return (
     <div className="bg-card border border-border/80 rounded-xl overflow-hidden shadow-2xs">
       {/* Vista Móvil: Tarjetas táctiles */}
       <div className="md:hidden divide-y divide-border/40">
-        {gastos.map((gasto) => (
+        {sortedGastos.map((gasto) => (
           <GastoMesCardMobile
             key={`m-${gasto.id}`}
             gasto={gasto}
@@ -103,19 +152,63 @@ export function GastosMesTabla({
               <th scope="col" className="py-2.5 px-2.5 w-9 text-center">
                 <span className="sr-only">Seleccionar</span>
               </th>
-              <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Concepto</th>
-              <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Categoría (50/30/20)</th>
+              <th
+                scope="col"
+                onClick={() => handleSort('concepto')}
+                className={`py-2.5 px-3 font-semibold cursor-pointer transition select-none ${
+                  sortField === 'concepto' ? 'text-primary bg-primary/5 font-bold' : 'text-foreground hover:bg-muted/60'
+                }`}
+              >
+                <span>Concepto</span>
+                {renderSortIcon('concepto')}
+              </th>
+              <th
+                scope="col"
+                onClick={() => handleSort('categoria')}
+                className={`py-2.5 px-3 font-semibold cursor-pointer transition select-none ${
+                  sortField === 'categoria' ? 'text-primary bg-primary/5 font-bold' : 'text-foreground hover:bg-muted/60'
+                }`}
+              >
+                <span>Categoría</span>
+                {renderSortIcon('categoria')}
+              </th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Método</th>
-              <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Fecha</th>
+              <th
+                scope="col"
+                onClick={() => handleSort('fecha')}
+                className={`py-2.5 px-3 font-semibold cursor-pointer transition select-none ${
+                  sortField === 'fecha' ? 'text-primary bg-primary/5 font-bold' : 'text-foreground hover:bg-muted/60'
+                }`}
+              >
+                <span>Fecha</span>
+                {renderSortIcon('fecha')}
+              </th>
               <th scope="col" className="py-2.5 px-3 text-foreground font-semibold">Cuota</th>
-              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Soles (S/)</th>
-              <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Dólares ($)</th>
-              <th scope="col" className="py-2.5 px-3 text-center text-foreground font-semibold">Estado</th>
+              <th
+                scope="col"
+                onClick={() => handleSort('monto')}
+                className={`py-2.5 px-3 text-right font-semibold cursor-pointer transition select-none ${
+                  sortField === 'monto' ? 'text-primary bg-primary/5 font-bold' : 'text-foreground hover:bg-muted/60'
+                }`}
+              >
+                <span>Monto</span>
+                {renderSortIcon('monto')}
+              </th>
+              <th
+                scope="col"
+                onClick={() => handleSort('estado')}
+                className={`py-2.5 px-3 text-center font-semibold cursor-pointer transition select-none ${
+                  sortField === 'estado' ? 'text-primary bg-primary/5 font-bold' : 'text-foreground hover:bg-muted/60'
+                }`}
+              >
+                <span>Estado</span>
+                {renderSortIcon('estado')}
+              </th>
               <th scope="col" className="py-2.5 px-3 text-right text-foreground font-semibold">Acciones</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border/40">
-            {gastos.map((gasto) => (
+            {sortedGastos.map((gasto) => (
               <GastoMesFila
                 key={gasto.id}
                 gasto={gasto}
@@ -144,24 +237,15 @@ export function GastosMesTabla({
                 <span className="text-amber-600 dark:text-amber-400 font-medium">{stats.pendientes} pendientes</span>
               </td>
               <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
-                {formatMoney(totalMontoSoles, moneda)}
-              </td>
-              <td className="py-2.5 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
-                {totalMontoUSD > 0 ? `$${totalMontoUSD.toFixed(2)}` : '—'}
+                {formatMoney(totalMonto, moneda)}
+                {totalMontoUSD > 0 && (
+                  <span className="block text-[10px] text-muted-foreground font-normal">
+                    (incluye ${totalMontoUSD.toFixed(2)} USD)
+                  </span>
+                )}
               </td>
               <td colSpan={2} />
             </tr>
-            {totalMontoUSD > 0 && (
-              <tr className="border-t border-border/40 bg-muted/30">
-                <td colSpan={6} className="py-2 px-3 text-muted-foreground text-[11px] font-medium">
-                  <span className="text-foreground font-semibold">Total en Soles</span> (consolidado al tipo de cambio)
-                </td>
-                <td colSpan={2} className="py-2 px-3 text-right font-mono font-bold text-xs sm:text-sm text-foreground tabular-nums whitespace-nowrap">
-                  {formatMoney(totalMonto, moneda)}
-                </td>
-                <td colSpan={2} />
-              </tr>
-            )}
           </tfoot>
         </table>
       </div>

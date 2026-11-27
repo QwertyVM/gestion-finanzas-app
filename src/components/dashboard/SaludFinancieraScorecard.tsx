@@ -34,20 +34,33 @@ export function SaludFinancieraScorecard({ salud, moneda }: SaludFinancieraScore
     }
   };
 
+  const esSaludGlobalOptima = dti.estado === 'OPTIMO' && rigidez.estado !== 'CRITICO';
+
   return (
     <div className="space-y-3">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Ratios Financieros Clave (Estándar de Banca y Consultoría)
-        </h2>
-        <span className="text-[11px] text-muted-foreground font-medium">Metas recomendadas</span>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+            Ratios Financieros Clave (Banca & Consultoría)
+          </h2>
+          <span
+            className={`text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider border ${
+              esSaludGlobalOptima
+                ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
+                : 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30'
+            }`}
+          >
+            {esSaludGlobalOptima ? '● Salud Financiera Estable' : '▲ Monitoreo de Alerta'}
+          </span>
+        </div>
+        <span className="text-[11px] text-muted-foreground font-medium">Metas bancarias recomendadas</span>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
         {/* 1. DTI */}
         <div className="bg-card border border-border/80 rounded-2xl p-4 shadow-2xs space-y-3 hover:border-border transition-all">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5" title="Debt to Income: Porcentaje de tus ingresos destinado al pago de préstamos y cuotas">
               <Scale className="w-3.5 h-3.5 text-primary" />
               <span>Endeudamiento (DTI)</span>
             </span>
@@ -81,7 +94,7 @@ export function SaludFinancieraScorecard({ salud, moneda }: SaludFinancieraScore
         {/* 2. Rigidez Financiera */}
         <div className="bg-card border border-border/80 rounded-2xl p-4 shadow-2xs space-y-3 hover:border-border transition-all">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground font-medium flex items-center gap-1.5" title="Porcentaje de tus ingresos atado a gastos fijos y deudas que no puedes cancelar de inmediato">
               <AlertTriangle className="w-3.5 h-3.5 text-amber-500" />
               <span>Rigidez de Flujo</span>
             </span>

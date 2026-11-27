@@ -1,19 +1,25 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ModalDetalleGasto } from '@/components/modals/ModalDetalleGasto';
 import { TableSkeleton } from '@/components/common/Skeleton';
-import { Receipt, Layers, Plus } from 'lucide-react';
 import { useGastosManager } from './hooks/useGastosManager';
+import { GastosHeader } from './GastosHeader';
 import { GastosFiltrosBar } from './GastosFiltrosBar';
 import { GastosMesTabla } from './GastosMesTabla';
 import { GastosSiguienteMesTabla } from './GastosSiguienteMesTabla';
 import { ComprasCuotasSection } from './ComprasCuotasSection';
 import { ModalEliminarCuota } from './ModalEliminarCuota';
+import { ModalConfirmarEliminarCompra } from './ModalConfirmarEliminarCompra';
 
 export function GastosClient() {
   const {
     periodo,
+    irMesAnterior,
+    irMesSiguiente,
+    puedeIrMesAnterior,
+    prefetchMesAnterior,
+    prefetchMesSiguiente,
     resumen,
     loading,
     selectedGastoIds,
@@ -26,6 +32,8 @@ export function GastosClient() {
     loadingCuotas,
     compraDesplegada,
     setCompraDesplegada,
+    compraParaEliminar,
+    setCompraParaEliminar,
     deletingCompraId,
     gastoParaEliminar,
     setGastoParaEliminar,
@@ -34,6 +42,8 @@ export function GastosClient() {
     setDetalleGasto,
     filtroEstado,
     setFiltroEstado,
+    filtroTarjeta,
+    setFiltroTarjeta,
     busqueda,
     setBusqueda,
     moneda,
@@ -54,60 +64,62 @@ export function GastosClient() {
     handleCambiarIngresoAsignado,
   } = useGastosManager();
 
+  // Métricas calculadas para cabecera ejecutiva
+  const totalGastosMes = useMemo(
+    () => listaGastos.reduce((sum, g) => sum + (g.monto || 0), 0),
+    [listaGastos]
+  );
+
+  const totalPagadoMes = useMemo(
+    () =>
+      listaGastos
+        .filter((g) => g.estado === 'PAGADO' || g.estado === 'ADELANTADO')
+        .reduce((sum, g) => sum + (g.monto || 0), 0),
+    [listaGastos]
+  );
+
+  const totalPendienteMes = useMemo(
+    () =>
+      listaGastos
+        .filter((g) => g.estado !== 'PAGADO' && g.estado !== 'ADELANTADO')
+        .reduce((sum, g) => sum + (g.monto || 0), 0),
+    [listaGastos]
+  );
+
+  const totalSiguienteMes = useMemo(
+    () => tarjetas.reduce((acc, t) => acc + (t.totalSiguientePeriodo || 0), 0),
+    [tarjetas]
+  );
+
   if (loading && !resumen) {
     return <TableSkeleton rows={8} />;
   }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-xl font-bold tracking-tight text-foreground">
-            Gastos & Compras
-          </h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            Registro con corte al día 10, selección interactiva y control de compras en cuotas.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5">
-          <div className="inline-flex items-center bg-muted/60 p-0.5 rounded-xl border border-border/60">
-            <button
-              type="button"
-              onClick={() => setVistaActiva('MES')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
-                vistaActiva === 'MES' ? 'bg-card text-foreground shadow-xs' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Receipt className="w-3.5 h-3.5" />
-              <span>Gastos del Mes</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setVistaActiva('COMPRAS_CUOTAS')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition flex items-center gap-1.5 cursor-pointer ${
-                vistaActiva === 'COMPRAS_CUOTAS' ? 'bg-card text-indigo-400 shadow-xs' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              <Layers className="w-3.5 h-3.5 text-indigo-400" />
-              <span>Compras en Cuotas</span>
-              {comprasCuotas.length > 0 && (
-                <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-indigo-500/20 text-indigo-400 font-bold border border-indigo-500/30">
-                  {comprasCuotas.length}
-                </span>
-              )}
-            </button>
-          </div>
-
-          <button
-            onClick={() => openRecordModal('GASTO')}
-            className="inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-foreground text-background font-semibold text-xs hover:opacity-90 transition active:scale-98 self-start sm:self-auto shadow-xs cursor-pointer"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            <span>Registrar Gasto</span>
-          </button>
-        </div>
-      </div>
+      <GastosHeader
+        periodo={periodo}
+        irMesAnterior={irMesAnterior}
+        irMesSiguiente={irMesSiguiente}
+        puedeIrMesAnterior={puedeIrMesAnterior}
+        prefetchMesAnterior={prefetchMesAnterior}
+        prefetchMesSiguiente={prefetchMesSiguiente}
+        vistaActiva={vistaActiva}
+        setVistaActiva={setVistaActiva}
+        totalComprasCuotas={comprasCuotas.length}
+        openRecordModal={openRecordModal}
+        totalGastosMes={totalGastosMes}
+        totalPagadoMes={totalPagadoMes}
+        totalPendienteMes={totalPendienteMes}
+        totalSiguienteMes={totalSiguienteMes}
+        moneda={moneda}
+        filtroEstadoActual={filtroEstado}
+        onSelectFiltroKpi={(nuevoEstado) => setFiltroEstado(nuevoEstado)}
+        onScrollToSiguiente={() => {
+          const el = document.getElementById('seccion-proximo-mes');
+          if (el) el.scrollIntoView({ behavior: 'smooth' });
+        }}
+      />
 
       {vistaActiva === 'COMPRAS_CUOTAS' ? (
         <ComprasCuotasSection
@@ -117,16 +129,20 @@ export function GastosClient() {
           compraDesplegada={compraDesplegada}
           onToggleDesplegar={(padreId) => setCompraDesplegada(compraDesplegada === padreId ? null : padreId)}
           deletingCompraId={deletingCompraId}
-          onEliminarCompraCompleta={handleEliminarCompraCuotasCompleta}
+          onEliminarCompraCompleta={(compra) => setCompraParaEliminar(compra)}
         />
       ) : (
         <>
           <GastosFiltrosBar
             filtroEstado={filtroEstado}
             onFiltroEstadoChange={setFiltroEstado}
+            filtroTarjeta={filtroTarjeta}
+            onFiltroTarjetaChange={setFiltroTarjeta}
+            tarjetasDisponibles={tarjetas.map((t: any) => ({ id: t.id, nombre: t.nombre, color: t.color }))}
             busqueda={busqueda}
             onBusquedaChange={setBusqueda}
             totalItems={listaGastos.length}
+            totalCoincidencias={listaGastos.length}
             todosSeleccionados={todosSeleccionados}
             onToggleSelectAll={() => selectAllGastos(listaGastos.map((g) => ({ id: g.id, monto: g.monto })))}
           />
@@ -143,12 +159,14 @@ export function GastosClient() {
             onClickTrash={(g) => (g.totalCuotas > 1 ? setGastoParaEliminar(g) : handleEliminarGastoDirecto(g.id, g.concepto, false))}
           />
 
-          <GastosSiguienteMesTabla
-            tarjetas={tarjetas}
-            moneda={moneda}
-            onSelectRow={(g, t) => setDetalleGasto(adaptGastoToDetalle({ ...g, tarjetaNombre: t.nombre, tarjetaColor: t.color, metodoPago: 'TARJETA_CREDITO' }))}
-            onClickTrash={(g) => (g.totalCuotas > 1 ? setGastoParaEliminar(g) : handleEliminarGastoDirecto(g.id, g.concepto, false))}
-          />
+          <div id="seccion-proximo-mes">
+            <GastosSiguienteMesTabla
+              tarjetas={tarjetas}
+              moneda={moneda}
+              onSelectRow={(g, t) => setDetalleGasto(adaptGastoToDetalle({ ...g, tarjetaNombre: t.nombre, tarjetaColor: t.color, metodoPago: 'TARJETA_CREDITO' }))}
+              onClickTrash={(g) => (g.totalCuotas > 1 ? setGastoParaEliminar(g) : handleEliminarGastoDirecto(g.id, g.concepto, false))}
+            />
+          </div>
         </>
       )}
 
@@ -160,6 +178,18 @@ export function GastosClient() {
         onClose={() => setGastoParaEliminar(null)}
         onEliminarSoloMes={() => handleEliminarGastoDirecto(gastoParaEliminar.id, gastoParaEliminar.concepto, false)}
         onEliminarTodaLaSerie={() => handleEliminarGastoDirecto(gastoParaEliminar.id, gastoParaEliminar.concepto, true)}
+      />
+
+      <ModalConfirmarEliminarCompra
+        compra={compraParaEliminar}
+        moneda={moneda}
+        isDeleting={Boolean(deletingCompraId)}
+        onClose={() => setCompraParaEliminar(null)}
+        onConfirmar={() => {
+          if (compraParaEliminar) {
+            handleEliminarCompraCuotasCompleta(compraParaEliminar);
+          }
+        }}
       />
 
       <ModalDetalleGasto
