@@ -3,7 +3,7 @@ import prisma from '@/lib/prisma';
 import { EstadoPago, MetodoPago } from '@prisma/client';
 import { getAuthenticatedUser } from '@/lib/auth';
 
-// POST: Actualizar registro mensual específico (ej: cambiar monto de Octubre a S/ 220 o cambiar estado o método de pago)
+// POST: Actualizar registro mensual específico (ej: cambiar monto de Octubre a S/ 220, concepto, categoría, estado o método de pago)
 export async function POST(request: NextRequest) {
   try {
     const user = await getAuthenticatedUser(request);
@@ -12,6 +12,10 @@ export async function POST(request: NextRequest) {
     const {
       costoFijoId,
       periodo,
+      concepto,
+      categoriaId,
+      tag,
+      excluido,
       estado,
       monto,
       monedaOriginal,
@@ -32,6 +36,18 @@ export async function POST(request: NextRequest) {
     const montoNum = (monto !== undefined && monto !== null && monto !== '') ? parseFloat(monto) : undefined;
 
     const updateData: any = {};
+    if (concepto !== undefined) {
+      updateData.concepto = concepto ? concepto.trim() : null;
+    }
+    if (categoriaId !== undefined) {
+      updateData.categoriaId = categoriaId || null;
+    }
+    if (tag !== undefined) {
+      updateData.tag = tag ? tag.trim() : null;
+    }
+    if (excluido !== undefined) {
+      updateData.excluido = Boolean(excluido);
+    }
     if (estado) {
       updateData.estado = estado as EstadoPago;
       updateData.fechaPagoReal = fechaPagoReal;
@@ -75,6 +91,10 @@ export async function POST(request: NextRequest) {
       create: {
         costoFijoId,
         periodo,
+        concepto: concepto !== undefined ? (concepto ? concepto.trim() : null) : null,
+        categoriaId: categoriaId !== undefined ? (categoriaId || null) : null,
+        tag: tag !== undefined ? (tag ? tag.trim() : null) : null,
+        excluido: excluido !== undefined ? Boolean(excluido) : false,
         monto: montoNum !== undefined ? montoNum : costoFijo.monto,
         monedaOriginal: monedaOriginal || costoFijo.monedaOriginal || 'PEN',
         montoOriginal: montoOriginal !== undefined
@@ -180,7 +200,7 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE: Eliminar costo fijo
+// DELETE: Eliminar costo fijo (Si incluye periodo, solo se excluye de ese mes; si no, se borra la plantilla completa)
 export async function DELETE(request: NextRequest) {
   try {
     const user = await getAuthenticatedUser(request);
@@ -188,18 +208,51 @@ export async function DELETE(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
+    const periodo = searchParams.get('periodo');
 
     if (!id) {
       return NextResponse.json({ error: 'ID es requerido' }, { status: 400 });
     }
 
-    const res = await prisma.costoFijo.deleteMany({
+    const costoFijo = await prisma.costoFijo.findFirst({
       where: { id, usuarioId: user.id },
     });
-
-    if (res.count === 0) {
+    if (!costoFijo) {
       return NextResponse.json({ error: 'Costo fijo no encontrado' }, { status: 404 });
     }
+
+    // Si se especifica periodo, es una eliminación local/mensual desde Finanzas del Mes
+    if (periodo) {
+      await prisma.registroCostoFijoMes.upsert({
+        where: {
+          costoFijoId_periodo: {
+            costoFijoId: id,
+            periodo,
+          },
+        },
+        update: {
+          excluido: true,
+        },
+        create: {
+          costoFijoId: id,
+          periodo,
+          monto: costoFijo.monto,
+          monedaOriginal: costoFijo.monedaOriginal,
+          montoOriginal: costoFijo.montoOriginal,
+          tipoCambio: costoFijo.tipoCambio,
+          estado: EstadoPago.PENDIENTE,
+          metodoPago: costoFijo.metodoPago,
+          tarjetaId: costoFijo.tarjetaId,
+          excluido: true,
+        },
+      });
+      return NextResponse.json({ success: true, excluidoMes: periodo });
+    }
+
+    // Eliminación global de la definición concurrente (desde Fijos y Préstamos)
+    await prisma.costoFijo.deleteMany({
+      where: { id, usuarioId: user.id },
+    });
 
     return NextResponse.json({ success: true });
   } catch (error: any) {

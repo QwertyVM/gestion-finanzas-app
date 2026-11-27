@@ -107,17 +107,18 @@ model TarjetaCredito {
 }
 
 model Categoria {
-  id          String      @id @default(uuid())
-  usuarioId   String?
-  usuario     Usuario?    @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
-  nombre      String
-  icono       String?     // Nombre del ícono lucide
-  color       String?     // Código hex o color tailwind
-  esFijo      Boolean     @default(false)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  gastos      Gasto[]
-  costosFijos CostoFijo[]
+  id                 String                 @id @default(uuid())
+  usuarioId          String?
+  usuario            Usuario?               @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  nombre             String
+  icono              String?                // Nombre del ícono lucide
+  color              String?                // Código hex o color tailwind
+  esFijo             Boolean                @default(false)
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  gastos             Gasto[]
+  costosFijos        CostoFijo[]
+  registrosCostoFijo RegistroCostoFijoMes[]
 
   @@unique([usuarioId, nombre])
 }
@@ -154,10 +155,15 @@ model RegistroCostoFijoMes {
   costoFijoId    String
   costoFijo      CostoFijo       @relation(fields: [costoFijoId], references: [id], onDelete: Cascade)
   periodo        String          // YYYY-MM (ej: "2026-11", "2026-12")
+  concepto       String?         // Override mensual de concepto/descripción
   monto          Decimal         @db.Decimal(12, 2)
   monedaOriginal String?         // "PEN" o "USD" (si es nulo hereda del CostoFijo)
   montoOriginal  Decimal?        @db.Decimal(12, 2)
   tipoCambio     Decimal?        @db.Decimal(6, 2)
+  categoriaId    String?
+  categoria      Categoria?      @relation(fields: [categoriaId], references: [id], onDelete: SetNull)
+  tag            String?         // Override de minitag para este mes
+  excluido       Boolean         @default(false) // Si se elimina únicamente en este mes
   estado         EstadoPago      @default(PENDIENTE)
   metodoPago     MetodoPago?
   tarjetaId      String?

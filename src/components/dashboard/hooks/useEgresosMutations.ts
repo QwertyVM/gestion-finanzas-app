@@ -142,7 +142,8 @@ export function useEgresosMutations({
   const handleEliminarGastoModal = async (item: DetalleItemData) => {
     try {
       if (item.tipo === 'FIJO') {
-        await fetch(`/api/fijos?id=${item.dbId}`, { method: 'DELETE' });
+        // En finanzas del mes, eliminar un costo fijo solo lo excluye de este periodo
+        await fetch(`/api/fijos?id=${item.dbId}&periodo=${periodo}`, { method: 'DELETE' });
       } else if (item.tipo === 'PRESTAMO') {
         await fetch(`/api/prestamos?id=${item.prestamoId || item.dbId}`, { method: 'DELETE' });
       } else {
@@ -244,10 +245,11 @@ export function useEgresosMutations({
     try {
       const id = item.dbId || item.id.replace('fijo-', '');
       if (item.tipo === 'FIJO') {
+        // En finanzas del mes, cambiar categoría impacta únicamente el registro mensual
         const res = await fetch('/api/fijos', {
-          method: 'PUT',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, categoriaId: nuevaCategoriaId }),
+          body: JSON.stringify({ costoFijoId: id, periodo, categoriaId: nuevaCategoriaId }),
         });
         if (!res.ok) throw new Error('Error al actualizar categoría');
       } else {
@@ -269,10 +271,11 @@ export function useEgresosMutations({
     try {
       if (item.tipo === 'FIJO') {
         const id = item.dbId || item.id.replace('fijo-', '');
+        // En finanzas del mes, cambiar concepto/descripción solo afecta este periodo
         const res = await fetch('/api/fijos', {
-          method: 'PUT',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, concepto: nuevoConcepto }),
+          body: JSON.stringify({ costoFijoId: id, periodo, concepto: nuevoConcepto }),
         });
         if (!res.ok) throw new Error('Error al actualizar descripción');
       } else {

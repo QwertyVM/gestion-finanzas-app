@@ -65,6 +65,7 @@ export async function getResumenMensual(periodo: string, usuarioOrId?: string | 
         registrosMes: {
           where: { periodo },
           include: {
+            categoria: true,
             tarjeta: true,
             ingreso: {
               select: { id: true, concepto: true, tipo: true },
@@ -272,6 +273,8 @@ export async function getResumenMensual(periodo: string, usuarioOrId?: string | 
     if (cf.mesFin && periodo > cf.mesFin) continue;
 
     const reg = cf.registrosMes[0];
+    if (reg?.excluido) continue;
+
     let montoNum = reg ? Number(reg.monto) : Number(cf.monto);
 
     const tcConfig = Number(config.tipoCambioUSD || 4.00);
@@ -313,24 +316,29 @@ export async function getResumenMensual(periodo: string, usuarioOrId?: string | 
       : null;
     const tarjetaId = tarjetaObj?.id || (metodoPago === MetodoPago.TARJETA_CREDITO ? (reg?.tarjetaId || cf.tarjetaId || null) : null);
 
-    const catNombre = cf.categoria?.nombre || 'General';
+    const conceptoFinal = reg?.concepto?.trim() || cf.concepto;
+    const catFinalObj = reg?.categoria || cf.categoria;
+    const catNombre = catFinalObj?.nombre || 'General';
     const catMeta = obtenerColorCategoriaBackend(catNombre);
-    const catColor = cf.categoria?.color || catMeta.color;
-    const catIcono = cf.categoria?.icono || catMeta.icono;
+    const catColor = catFinalObj?.color || catMeta.color;
+    const catIcono = catFinalObj?.icono || catMeta.icono;
+    const catId = reg?.categoriaId !== undefined && reg?.categoriaId !== null ? reg.categoriaId : (cf.categoriaId || null);
+    const tagFinal = reg?.tag !== undefined && reg?.tag !== null ? reg.tag : (cf.tag || null);
+
     const clasif = clasificarItemBackend({
       tipo: 'FIJO',
-      concepto: cf.concepto,
+      concepto: conceptoFinal,
       categoria: catNombre,
     });
 
     costosFijos.push({
       id: cf.id,
-      concepto: cf.concepto,
+      concepto: conceptoFinal,
       monto: montoNum,
       diaVencimiento: cf.diaVencimiento,
       categoria: catNombre,
-      categoriaId: cf.categoriaId || null,
-      tag: cf.tag || null,
+      categoriaId: catId,
+      tag: tagFinal,
       categoriaColor: catColor,
       categoriaIcono: catIcono,
       clasificacion: clasif.clasificacion,

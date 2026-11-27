@@ -175,9 +175,9 @@ export function useDetalleGasto(
       const id = item.dbId || item.id.replace('fijo-', '');
       if (item.tipo === 'FIJO') {
         const res = await fetch('/api/fijos', {
-          method: 'PUT',
+          method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, tag: nuevoTag.trim() }),
+          body: JSON.stringify({ costoFijoId: id, periodo, tag: nuevoTag.trim() }),
         });
         if (!res.ok) throw new Error('Error al actualizar minitag');
       } else {
@@ -227,13 +227,19 @@ export function useDetalleGasto(
         await onGuardarConcepto(item, nuevo);
       } else {
         const id = item.dbId || item.id.replace('fijo-', '');
-        const url = item.tipo === 'FIJO' ? '/api/fijos' : '/api/gastos';
-        const method = item.tipo === 'FIJO' ? 'PUT' : 'PATCH';
-        await fetch(url, {
-          method,
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id, concepto: nuevo, actualizarSerie: true }),
-        });
+        if (item.tipo === 'FIJO') {
+          await fetch('/api/fijos', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ costoFijoId: id, periodo, concepto: nuevo }),
+          });
+        } else {
+          await fetch('/api/gastos', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id, concepto: nuevo, actualizarSerie: true }),
+          });
+        }
         toast.success('Descripción actualizada');
         await refresh();
       }
