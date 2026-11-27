@@ -14,6 +14,8 @@ export interface EgresoItemTag {
   categoria: string;
   categoriaColor: string;
   estado: string;
+  tag?: string | null;
+  tarjetaId?: string | null;
 }
 
 interface ExecutiveTagsExplorerProps {

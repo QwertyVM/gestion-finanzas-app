@@ -50,19 +50,21 @@ export function TopNavDropdown({ pathname }: TopNavDropdownProps) {
       <button
         type="button"
         onClick={() => setOpen(!open)}
-      className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${isPlanificacionActive
-          ? 'bg-background text-foreground font-semibold shadow-2xs border border-border/50'
-          : 'text-muted-foreground hover:text-foreground hover:bg-background/50 font-medium'
+        className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs transition-all cursor-pointer ${
+          isPlanificacionActive
+            ? 'bg-background text-foreground font-semibold shadow-2xs border border-border/50'
+            : 'text-muted-foreground hover:text-foreground hover:bg-background/50 font-medium'
         }`}
       >
-      <span>Planificación</span>
-      <ChevronDown
-        open ? '-rotate-180' : ''
+        <span>Planificación</span>
+        <ChevronDown
+          className={`w-3.5 h-3.5 transition-transform duration-200 ${
+            open ? '-rotate-180' : ''
           }`}
         />
-      </button >
+      </button>
 
-      { open && (
+      {open && (
         <div className="absolute top-full left-0 mt-2 w-64 rounded-2xl bg-card border border-border/80 shadow-lg p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
           <div className="space-y-0.5">
             {planificacionLinks.map((link) => {
@@ -74,11 +76,11 @@ export function TopNavDropdown({ pathname }: TopNavDropdownProps) {
                   key={link.href}
                   href={link.href}
                   onClick={() => setOpen(false)}
-                  className={`flex items - start gap - 2.5 p - 2 rounded - xl text - xs transition ${
-              isActive
-              ? 'bg-muted text-foreground font-semibold'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
+                  className={`flex items-start gap-2.5 p-2 rounded-xl text-xs transition ${
+                    isActive
+                      ? 'bg-muted text-foreground font-semibold'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+                  }`}
                 >
                   <div className="w-7 h-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center shrink-0 mt-0.5">
                     <Icon className="w-3.5 h-3.5" />

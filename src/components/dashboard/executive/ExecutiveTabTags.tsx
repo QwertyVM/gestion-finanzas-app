@@ -63,7 +63,7 @@ export function ExecutiveTabTags({
     try {
       const lineas: string[] = ['*RESUMEN EJECUTIVO DE GASTOS POR CLASIFICACIÓN Y TAGS*'];
       clasificaciones.forEach((c) => {
-        lineas.push(`• ${c.label}: ${formatMoney(c.total, moneda)} (${c.porcentaje}%) - ${c.count} transacciones`);
+        lineas.push(`• ${c.badgeLabel || c.nombre}: ${formatMoney(c.total, moneda)} (${c.porcentaje}%) - ${c.conteo} transacciones`);
       });
       if (tagsAgrupados.length > 0) {
         lineas.push('\n*TOP ETIQUETAS (#TAGS):*');
